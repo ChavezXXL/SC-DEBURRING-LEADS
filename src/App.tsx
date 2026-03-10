@@ -8,6 +8,8 @@ import {
 import { RAW, STATUS, REGIONS, SCRIPTS, OBJECTIONS } from './data';
 import { Lead } from './types';
 import { generatePitch, researchContact } from './services/gemini';
+import { db } from './firebase';
+import { collection, onSnapshot, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
 const INIT_LEADS: Lead[] = RAW.map(l => ({ ...l, status: "new", notes: "" }));
 
@@ -18,19 +20,8 @@ const qs = {
 };
 
 export default function App() {
-  const [leads, setLeads] = useState<Lead[]>(() => {
-    try {
-      const r = localStorage.getItem("scdv11");
-      if (r) {
-        const p = JSON.parse(r);
-        return INIT_LEADS.map(l => {
-          const s = p.find((x: any) => x.id === l.id);
-          return s ? { ...l, ...s } : l;
-        });
-      }
-    } catch {}
-    return INIT_LEADS;
-  });
+  const [leads, setLeads] = useState<Lead[]>(INIT_LEADS);
+  const [loading, setLoading] = useState(true);
 
   const [tab, setTab] = useState<"leads" | "outreach">("leads");
   const [regF, setRegF] = useState("All Regions");
@@ -49,33 +40,51 @@ export default function App() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiText, setAiText] = useState("");
 
-  const tmr = useRef<number | null>(null);
-
-  const persist = useCallback((data: Lead[]) => {
-    if (tmr.current) clearTimeout(tmr.current);
-    tmr.current = window.setTimeout(() => {
-      try {
-        localStorage.setItem("scdv11", JSON.stringify(data.map(({ id, status, notes }) => ({ id, status, notes }))));
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
-      } catch {}
-    }, 400);
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "leads"), (snapshot) => {
+      if (snapshot.empty) {
+        // Seed database if empty
+        const batch = writeBatch(db);
+        INIT_LEADS.forEach(lead => {
+          const ref = doc(db, "leads", lead.id);
+          batch.set(ref, lead);
+        });
+        batch.commit().catch(console.error);
+        setLeads(INIT_LEADS);
+      } else {
+        const dbLeads = snapshot.docs.map(d => d.data() as Lead);
+        // Merge with INIT_LEADS to ensure we have all base data even if schema changes
+        setLeads(INIT_LEADS.map(baseLead => {
+          const dbLead = dbLeads.find(l => l.id === baseLead.id);
+          return dbLead ? { ...baseLead, ...dbLead } : baseLead;
+        }));
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Firestore Error: ", error);
+      setLoading(false);
+    });
+    return () => unsub();
   }, []);
 
-  const setStatus = (id: string, st: string) => {
-    setLeads(pr => {
-      const n = pr.map(l => l.id === id ? { ...l, status: st } : l);
-      persist(n);
-      return n;
-    });
+  const setStatus = async (id: string, st: string) => {
+    try {
+      await updateDoc(doc(db, "leads", id), { status: st });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      console.error("Error updating status:", e);
+    }
   };
 
-  const saveNote = (id: string, notes: string) => {
-    setLeads(pr => {
-      const n = pr.map(l => l.id === id ? { ...l, notes } : l);
-      persist(n);
-      return n;
-    });
+  const saveNote = async (id: string, notes: string) => {
+    try {
+      await updateDoc(doc(db, "leads", id), { notes });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      console.error("Error saving notes:", e);
+    }
     setEditId(null);
   };
 
@@ -123,6 +132,17 @@ export default function App() {
     warm: leads.filter(l => l.status === "interested").length,
     clients: leads.filter(l => l.status === "client").length,
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-300">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="animate-spin text-orange-500" size={32} />
+          <div className="text-sm font-mono text-zinc-500 animate-pulse">Connecting to Firebase...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-zinc-950 text-zinc-300 font-sans selection:bg-orange-500/30">
