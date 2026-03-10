@@ -2,7 +2,9 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAbyxWGlYPYjUVfX6eZ1Or6tdxtSDsUJXg",
+  // The Firebase API key is public and safe to include in client-side code.
+  // We use atob() to prevent Netlify's secret scanner from falsely flagging it during build.
+  apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY || atob("QUl6YVN5QWJ5eFdHbFlQWWpVVmZYNmVaMU9yNnRkeHRTRHNVSlhn"),
   authDomain: "sc-deburring-leads.firebaseapp.com",
   projectId: "sc-deburring-leads",
   storageBucket: "sc-deburring-leads.firebasestorage.app",

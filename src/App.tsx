@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { RAW, STATUS, REGIONS, SCRIPTS, OBJECTIONS } from './data';
 import { Lead } from './types';
-import { generatePitch, researchContact } from './services/gemini';
+import { generatePitch, researchContact, findNewLeads } from './services/gemini';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
@@ -39,6 +39,67 @@ export default function App() {
   const [aiModal, setAiModal] = useState<{lead: Lead, mode: "pitch" | "research"} | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiText, setAiText] = useState("");
+
+  const [showAiFinder, setShowAiFinder] = useState(false);
+  const [aiFinderQuery, setAiFinderQuery] = useState("");
+  const [aiFinderLoading, setAiFinderLoading] = useState(false);
+
+  const [showAddLead, setShowAddLead] = useState(false);
+  const [newLeadForm, setNewLeadForm] = useState<Partial<Lead>>({
+    co: "", city: "", who: "", role: "", pm: "", pm_title: "", parts: "", pitch: "", ph: "", em: "", web: "", t: 2, r: "Other"
+  });
+
+  const handleAddLead = async () => {
+    if (!newLeadForm.co) return;
+    const id = newLeadForm.co.toLowerCase().replace(/[^a-z0-9]+/g, '-') + "-" + Math.random().toString(36).substring(2, 7);
+    const lead: Lead = {
+      id,
+      status: "new",
+      notes: "",
+      t: newLeadForm.t || 2,
+      r: newLeadForm.r || "Other",
+      co: newLeadForm.co || "",
+      city: newLeadForm.city || "",
+      who: newLeadForm.who || "",
+      role: newLeadForm.role || "",
+      pm: newLeadForm.pm || "",
+      pm_title: newLeadForm.pm_title || "",
+      parts: newLeadForm.parts || "",
+      pitch: newLeadForm.pitch || "",
+      ph: newLeadForm.ph || "",
+      em: newLeadForm.em || "",
+      web: newLeadForm.web || "",
+    };
+    try {
+      await setDoc(doc(db, "leads", id), lead);
+      setShowAddLead(false);
+      setNewLeadForm({ co: "", city: "", who: "", role: "", pm: "", pm_title: "", parts: "", pitch: "", ph: "", em: "", web: "", t: 2, r: "Other" });
+    } catch (e) {
+      console.error("Error adding lead:", e);
+    }
+  };
+
+  const handleFindLeads = async () => {
+    if (!aiFinderQuery) return;
+    setAiFinderLoading(true);
+    try {
+      const newLeads = await findNewLeads(aiFinderQuery);
+      const batch = writeBatch(db);
+      newLeads.forEach(lead => {
+        // Ensure ID is unique if AI generates a duplicate
+        const uniqueId = lead.id + "-" + Math.random().toString(36).substring(2, 7);
+        const ref = doc(db, "leads", uniqueId);
+        batch.set(ref, { ...lead, id: uniqueId, status: "new", notes: "" });
+      });
+      await batch.commit();
+      setShowAiFinder(false);
+      setAiFinderQuery("");
+    } catch (e) {
+      console.error("Error finding leads:", e);
+      alert("Error finding leads. Check console.");
+    }
+    setAiFinderLoading(false);
+  };
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "leads"), (snapshot) => {
@@ -214,9 +275,26 @@ export default function App() {
       <main className="flex-1 p-8 overflow-y-auto max-h-screen">
         {tab === "leads" && (
           <div className="max-w-5xl mx-auto">
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-zinc-100 tracking-tight mb-1">Aerospace Lead Database</h1>
-              <p className="text-xs text-zinc-500 font-mono">{filtered.length} of {leads.length} leads · {REGIONS.length - 1} regions · {S.withPM} named purchasing managers</p>
+            <div className="mb-8 flex justify-between items-end">
+              <div>
+                <h1 className="text-2xl font-bold text-zinc-100 tracking-tight mb-1">Aerospace Lead Database</h1>
+                <p className="text-xs text-zinc-500 font-mono">{filtered.length} of {leads.length} leads · {REGIONS.length - 1} regions · {S.withPM} named purchasing managers</p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowAddLead(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg text-sm font-bold hover:bg-zinc-800 transition-colors"
+                >
+                  + Add Lead
+                </button>
+                <button
+                  onClick={() => setShowAiFinder(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-zinc-100 text-zinc-900 rounded-lg text-sm font-bold hover:bg-white transition-colors shadow-lg shadow-white/5"
+                >
+                  <Sparkles size={16} className="text-orange-500" />
+                  AI Prospector
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-3 mb-6 items-center bg-zinc-900/50 border border-zinc-800/50 rounded-xl p-3">
@@ -550,6 +628,118 @@ export default function App() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* AI Finder Modal */}
+      {showAiFinder && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowAiFinder(false)}>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 md:p-8 max-w-2xl w-full shadow-2xl shadow-black" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <div className="text-lg font-bold text-orange-500 mb-1 flex items-center gap-2">
+                  <Sparkles size={20}/> AI Prospector
+                </div>
+                <div className="text-xs text-zinc-500 font-mono">Find new leads and add them to your database automatically.</div>
+              </div>
+              <button onClick={() => setShowAiFinder(false)} className="text-zinc-500 hover:text-zinc-300 transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Search Query</label>
+              <textarea
+                value={aiFinderQuery}
+                onChange={e => setAiFinderQuery(e.target.value)}
+                placeholder="e.g. Find 5 aerospace machine shops in San Diego that might need deburring services"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/50 transition-all min-h-[100px]"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowAiFinder(false)}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-zinc-400 hover:text-zinc-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFindLeads}
+                disabled={!aiFinderQuery || aiFinderLoading}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {aiFinderLoading ? (
+                  <><Loader2 size={16} className="animate-spin" /> Searching...</>
+                ) : (
+                  <><Search size={16} /> Find Leads</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Lead Modal */}
+      {showAddLead && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowAddLead(false)}>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl shadow-black" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <div className="text-lg font-bold text-zinc-100 mb-1">Add New Lead</div>
+                <div className="text-xs text-zinc-500 font-mono">Manually enter a new company into the database.</div>
+              </div>
+              <button onClick={() => setShowAddLead(false)} className="text-zinc-500 hover:text-zinc-300 transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Company Name *</label>
+                <input value={newLeadForm.co} onChange={e => setNewLeadForm({...newLeadForm, co: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50" placeholder="Acme Aerospace" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">City</label>
+                <input value={newLeadForm.city} onChange={e => setNewLeadForm({...newLeadForm, city: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50" placeholder="Burbank" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Region</label>
+                <select value={newLeadForm.r} onChange={e => setNewLeadForm({...newLeadForm, r: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50">
+                  {REGIONS.filter(r => r !== "All Regions").map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">General Contact</label>
+                <input value={newLeadForm.who} onChange={e => setNewLeadForm({...newLeadForm, who: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50" placeholder="John Doe" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Contact Role</label>
+                <input value={newLeadForm.role} onChange={e => setNewLeadForm({...newLeadForm, role: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50" placeholder="Owner / GM" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Purchasing Manager</label>
+                <input value={newLeadForm.pm} onChange={e => setNewLeadForm({...newLeadForm, pm: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50" placeholder="Jane Smith" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Parts / Industry</label>
+                <input value={newLeadForm.parts} onChange={e => setNewLeadForm({...newLeadForm, parts: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50" placeholder="Aerospace components" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Pitch Angle</label>
+                <input value={newLeadForm.pitch} onChange={e => setNewLeadForm({...newLeadForm, pitch: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50" placeholder="Why do they need deburring?" />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowAddLead(false)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-zinc-400 hover:text-zinc-200 transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleAddLead} disabled={!newLeadForm.co} className="px-6 py-2.5 rounded-xl text-sm font-bold bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50">
+                Save Lead
+              </button>
+            </div>
           </div>
         </div>
       )}
