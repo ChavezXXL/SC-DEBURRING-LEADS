@@ -22,6 +22,7 @@ const qs = {
 export default function App() {
   const [leads, setLeads] = useState<Lead[]>(INIT_LEADS);
   const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState<string | null>(null);
 
   const [tab, setTab] = useState<"leads" | "outreach">("leads");
   const [regF, setRegF] = useState("All Regions");
@@ -74,8 +75,9 @@ export default function App() {
       await setDoc(doc(db, "leads", id), lead);
       setShowAddLead(false);
       setNewLeadForm({ co: "", city: "", who: "", role: "", pm: "", pm_title: "", parts: "", pitch: "", ph: "", em: "", web: "", t: 2, r: "Other" });
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error adding lead:", e);
+      alert("Error adding lead: " + e.message);
     }
   };
 
@@ -94,9 +96,9 @@ export default function App() {
       await batch.commit();
       setShowAiFinder(false);
       setAiFinderQuery("");
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error finding leads:", e);
-      alert("Error finding leads. Check console.");
+      alert("Error finding leads: " + e.message);
     }
     setAiFinderLoading(false);
   };
@@ -114,15 +116,24 @@ export default function App() {
         setLeads(INIT_LEADS);
       } else {
         const dbLeads = snapshot.docs.map(d => d.data() as Lead);
-        // Merge with INIT_LEADS to ensure we have all base data even if schema changes
-        setLeads(INIT_LEADS.map(baseLead => {
-          const dbLead = dbLeads.find(l => l.id === baseLead.id);
-          return dbLead ? { ...baseLead, ...dbLead } : baseLead;
-        }));
+        
+        // Start with all leads from the database
+        const mergedLeads = [...dbLeads];
+        
+        // Add any INIT_LEADS that aren't in the database yet
+        INIT_LEADS.forEach(baseLead => {
+          if (!mergedLeads.find(l => l.id === baseLead.id)) {
+            mergedLeads.push(baseLead);
+          }
+        });
+        
+        setLeads(mergedLeads);
       }
       setLoading(false);
-    }, (error) => {
+      setDbError(null);
+    }, (error: any) => {
       console.error("Firestore Error: ", error);
+      setDbError(error.message || "Failed to connect to database");
       setLoading(false);
     });
     return () => unsub();
@@ -130,21 +141,23 @@ export default function App() {
 
   const setStatus = async (id: string, st: string) => {
     try {
-      await updateDoc(doc(db, "leads", id), { status: st });
+      await setDoc(doc(db, "leads", id), { status: st }, { merge: true });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error updating status:", e);
+      alert("Error updating status: " + e.message);
     }
   };
 
   const saveNote = async (id: string, notes: string) => {
     try {
-      await updateDoc(doc(db, "leads", id), { notes });
+      await setDoc(doc(db, "leads", id), { notes }, { merge: true });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error saving notes:", e);
+      alert("Error saving notes: " + e.message);
     }
     setEditId(null);
   };
@@ -273,6 +286,18 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 p-8 overflow-y-auto max-h-screen">
+        {dbError && (
+          <div className="max-w-5xl mx-auto mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-400">
+            <X size={20} className="shrink-0 mt-0.5" />
+            <div>
+              <div className="font-bold text-sm mb-1">Database Connection Error</div>
+              <div className="text-xs opacity-80 leading-relaxed">
+                {dbError}. Changes will not be saved. If you are using a test Firebase project, your security rules may have expired.
+              </div>
+            </div>
+          </div>
+        )}
+
         {tab === "leads" && (
           <div className="max-w-5xl mx-auto">
             <div className="mb-8 flex justify-between items-end">
