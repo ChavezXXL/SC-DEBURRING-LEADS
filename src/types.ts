@@ -1,6 +1,17 @@
+export type LeadStatus =
+  | 'new'
+  | 'called'
+  | 'emailed'
+  | 'visited'
+  | 'voicemail'
+  | 'interested'
+  | 'quote'
+  | 'dead'
+  | 'client';
+
 export interface Lead {
   id: string;
-  t: number;
+  t: 1 | 2;
   r: string;
   co: string;
   city: string;
@@ -13,12 +24,12 @@ export interface Lead {
   pm_title: string;
   parts: string;
   pitch: string;
-  status: string;
+  status: LeadStatus;
   notes: string;
 }
 
 export interface StatusDef {
-  k: string;
+  k: LeadStatus;
   label: string;
   dot: string;
   bg: string;
@@ -27,7 +38,7 @@ export interface StatusDef {
 
 export interface ScriptDef {
   id: string;
-  cat: string;
+  cat: 'Cold Call' | 'Email' | 'Text' | 'Walk-In' | 'LinkedIn';
   icon: string;
   title: string;
   use: string;

@@ -18,14 +18,18 @@ import {
   X,
   Loader2,
   ClipboardList,
+  MapPin,
 } from 'lucide-react';
+
 import { RAW, STATUS, REGIONS, SCRIPTS, OBJECTIONS } from './data';
-import { Lead } from './types';
+import type { Lead } from './types';
 import { generatePitch, researchContact, findNewLeads } from './services/gemini';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, writeBatch } from 'firebase/firestore';
 
-const INIT_LEADS: Lead[] = RAW.map((l) => ({
+const safeRaw = Array.isArray(RAW) ? RAW : [];
+
+const INIT_LEADS: Lead[] = safeRaw.map((l) => ({
   ...l,
   status: 'new',
   notes: '',
@@ -93,7 +97,7 @@ export default function App() {
   const [aiFinderLoading, setAiFinderLoading] = useState(false);
 
   const [showAddLead, setShowAddLead] = useState(false);
-  const [newLeadForm, setNewLeadForm] = useState<Partial<Lead>>(EMPTY_LEAD_FORM);
+  const [newLeadForm, setNewLeadForm] = useState<Partial<Lead>>({ ...EMPTY_LEAD_FORM });
 
   const handleAddLead = async () => {
     if (!newLeadForm.co?.trim()) return;
@@ -125,7 +129,7 @@ export default function App() {
     try {
       await setDoc(doc(db, 'leads', id), lead);
       setShowAddLead(false);
-      setNewLeadForm(EMPTY_LEAD_FORM);
+      setNewLeadForm({ ...EMPTY_LEAD_FORM });
     } catch (e: any) {
       console.error('Error adding lead:', e);
       alert('Error adding lead: ' + (e?.message || 'Unknown error'));
@@ -307,11 +311,11 @@ export default function App() {
     if (q) {
       const lq = q.toLowerCase();
       return (
-        (l.co ?? '').toLowerCase().includes(lq) ||
-        (l.who ?? '').toLowerCase().includes(lq) ||
-        (l.pm ?? '').toLowerCase().includes(lq) ||
-        (l.parts ?? '').toLowerCase().includes(lq) ||
-        (l.city ?? '').toLowerCase().includes(lq)
+        (l.co || '').toLowerCase().includes(lq) ||
+        (l.who || '').toLowerCase().includes(lq) ||
+        (l.pm || '').toLowerCase().includes(lq) ||
+        (l.parts || '').toLowerCase().includes(lq) ||
+        (l.city || '').toLowerCase().includes(lq)
       );
     }
 
@@ -1215,6 +1219,70 @@ export default function App() {
               </div>
 
               <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  PM Title
+                </label>
+                <input
+                  value={newLeadForm.pm_title ?? ''}
+                  onChange={(e) => setNewLeadForm({ ...newLeadForm, pm_title: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+                  placeholder="Purchasing Manager"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  Phone
+                </label>
+                <input
+                  value={newLeadForm.ph ?? ''}
+                  onChange={(e) => setNewLeadForm({ ...newLeadForm, ph: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+                  placeholder="(818) 555-1234"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  Email
+                </label>
+                <input
+                  value={newLeadForm.em ?? ''}
+                  onChange={(e) => setNewLeadForm({ ...newLeadForm, em: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+                  placeholder="buyer@company.com"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  Website
+                </label>
+                <input
+                  value={newLeadForm.web ?? ''}
+                  onChange={(e) => setNewLeadForm({ ...newLeadForm, web: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+                  placeholder="https://company.com"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  Tier
+                </label>
+                <select
+                  value={newLeadForm.t ?? 2}
+                  onChange={(e) =>
+                    setNewLeadForm({ ...newLeadForm, t: Number(e.target.value) as 1 | 2 })
+                  }
+                  className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+                >
+                  <option value={1}>Tier 1 — Call Now</option>
+                  <option value={2}>Tier 2 — Target</option>
+                </select>
+              </div>
+
+              <div className="col-span-2">
                 <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
                   Parts / Industry
                 </label>

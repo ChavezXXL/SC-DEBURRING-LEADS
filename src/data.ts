@@ -1,4 +1,4 @@
-import { Lead, StatusDef, ScriptDef, ObjectionDef } from './types';
+import type { Lead, StatusDef, ScriptDef, ObjectionDef } from './types';
 
 export const STATUS: StatusDef[] = [
   {k:"new",label:"New",dot:"#94a3b8",bg:"#f1f5f9",tx:"#475569"},
