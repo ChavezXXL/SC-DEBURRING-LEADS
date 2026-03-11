@@ -302,7 +302,7 @@ export default function App() {
           <div className="max-w-5xl mx-auto">
             <div className="mb-8 flex justify-between items-end">
               <div>
-                <h1 className="text-2xl font-bold text-zinc-100 tracking-tight mb-1">Aerospace Lead Database</h1>
+                <h1 className="text-2xl font-bold text-zinc-100 tracking-tight mb-1">Aerospace Lead Database v2</h1>
                 <p className="text-xs text-zinc-500 font-mono">{filtered.length} of {leads.length} leads · {REGIONS.length - 1} regions · {S.withPM} named purchasing managers</p>
               </div>
               <div className="flex gap-3">
