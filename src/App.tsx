@@ -27,7 +27,7 @@ import { RAW, STATUS, REGIONS, SCRIPTS, OBJECTIONS } from './data';
 import type { Lead, LeadStatus, TabKey, AiMode } from './types';
 import { generatePitch, researchContact, findNewLeads } from './services/gemini';
 import { db } from './firebase';
-import { collection, onSnapshot, doc, setDoc, writeBatch, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, writeBatch, deleteDoc, deleteField } from 'firebase/firestore';
 
 import { Sidebar } from './components/Sidebar';
 import { OutreachTab } from './components/OutreachTab';
@@ -36,6 +36,7 @@ import { AddLeadModal } from './components/AddLeadModal';
 import { AiModal } from './components/AiModal';
 import { AiFinderModal } from './components/AiFinderModal';
 import { DeleteModal } from './components/DeleteModal';
+import { FancyLogo } from './components/FancyLogo';
 
 const safeRaw = Array.isArray(RAW) ? RAW : [];
 
@@ -128,6 +129,8 @@ function handleFirestoreError(error: any, operationType: OperationType, path: st
   throw error;
 }
 
+import { PipelineTab } from './components/PipelineTab';
+
 export default function App() {
   const [leads, setLeads] = useState<Lead[]>(INIT_LEADS);
   const [loading, setLoading] = useState(true);
@@ -138,6 +141,7 @@ export default function App() {
   const [stF, setStF] = useState('all');
   const [tierF, setTierF] = useState('all');
   const [pmOnly, setPmOnly] = useState(false);
+  const [remindersOnly, setRemindersOnly] = useState(false);
   const [q, setQ] = useState('');
 
   const [openId, setOpenId] = useState<string | null>(null);
@@ -185,6 +189,7 @@ export default function App() {
       ph: newLeadForm.ph ?? '',
       em: newLeadForm.em ?? '',
       web: newLeadForm.web ?? '',
+      ...(newLeadForm.reminderDate ? { reminderDate: newLeadForm.reminderDate } : {}),
     };
 
     try {
@@ -256,6 +261,7 @@ export default function App() {
           web: lead.web ?? '',
           t: (lead.t as 1 | 2) ?? 2,
           r: lead.r ?? 'Other',
+          ...(lead.reminderDate ? { reminderDate: lead.reminderDate } : {}),
         };
 
         batch.set(doc(db, 'leads', uniqueId), safeLead);
@@ -378,6 +384,27 @@ export default function App() {
     }
   };
 
+  const setReminder = async (id: string, reminderDate: string | null) => {
+    try {
+      if (reminderDate === null) {
+        await setDoc(doc(db, 'leads', id), { reminderDate: deleteField() }, { merge: true });
+      } else {
+        await setDoc(doc(db, 'leads', id), { reminderDate }, { merge: true });
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e: any) {
+      try {
+        handleFirestoreError(e, OperationType.UPDATE, `leads/${id}`);
+      } catch (err: any) {
+        let msg = err.message;
+        try { msg = JSON.parse(msg).error || msg; } catch {}
+        setAppError('Database Error: ' + msg);
+        throw err;
+      }
+    }
+  };
+
   const handleDeleteLead = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'leads', id));
@@ -424,10 +451,17 @@ export default function App() {
 
   const filtered = leads.filter((l) => {
     if (regF !== 'All Regions' && l.r !== regF) return false;
-    if (stF !== 'all' && l.status !== stF) return false;
+    
+    if (stF === 'active') {
+      if (['new', 'dead', 'client'].includes(l.status)) return false;
+    } else if (stF !== 'all' && l.status !== stF) {
+      return false;
+    }
+
     if (tierF === '1' && l.t !== 1) return false;
     if (tierF === '2' && l.t !== 2) return false;
     if (pmOnly && !l.pm) return false;
+    if (remindersOnly && !l.reminderDate) return false;
 
     if (q) {
       const lq = q.toLowerCase();
@@ -442,6 +476,14 @@ export default function App() {
 
     return true;
   });
+
+  if (remindersOnly) {
+    filtered.sort((a, b) => {
+      if (!a.reminderDate) return 1;
+      if (!b.reminderDate) return -1;
+      return new Date(a.reminderDate).getTime() - new Date(b.reminderDate).getTime();
+    });
+  }
 
   const S = {
     total: leads.length,
@@ -470,9 +512,7 @@ export default function App() {
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 border-b border-zinc-800/50 bg-zinc-900/90 backdrop-blur-md z-40 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-sm font-bold text-white shadow-lg shadow-orange-500/20">
-            SC
-          </div>
+          <FancyLogo className="h-8 w-8 drop-shadow-lg" />
           <div className="text-sm font-bold tracking-tight text-zinc-100">SC Deburring</div>
         </div>
         <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-zinc-400 hover:text-zinc-200">
@@ -488,6 +528,38 @@ export default function App() {
         setTab={setTab}
         leads={leads}
         saved={saved}
+        onPipelineClick={(filterType) => {
+          setTab('leads');
+          setMobileMenuOpen(false);
+          setQ('');
+          setRemindersOnly(false);
+          
+          if (filterType === 'total') {
+            setStF('all');
+            setTierF('all');
+            setPmOnly(false);
+          } else if (filterType === 't1') {
+            setStF('all');
+            setTierF('1');
+            setPmOnly(false);
+          } else if (filterType === 'pm') {
+            setStF('all');
+            setTierF('all');
+            setPmOnly(true);
+          } else if (filterType === 'active') {
+            setStF('active');
+            setTierF('all');
+            setPmOnly(false);
+          } else if (filterType === 'warm') {
+            setStF('interested');
+            setTierF('all');
+            setPmOnly(false);
+          } else if (filterType === 'clients') {
+            setStF('client');
+            setTierF('all');
+            setPmOnly(false);
+          }
+        }}
       />
 
       {/* Main Content */}
@@ -522,7 +594,7 @@ export default function App() {
             <div className="mb-8 flex items-end justify-between">
               <div>
                 <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-100">
-                  Aerospace Lead Database v2
+                  Aerospace Lead Database
                 </h1>
                 <p className="text-xs font-mono text-zinc-500">
                   {filtered.length} of {leads.length} leads · {REGIONS.length - 1} regions ·{' '}
@@ -596,6 +668,7 @@ export default function App() {
                 className="cursor-pointer rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-400 focus:border-orange-500/50 focus:outline-none"
               >
                 <option value="all">All Statuses</option>
+                <option value="active">Active Pipeline</option>
                 {STATUS.map((st) => (
                   <option key={st.k} value={st.k}>
                     {st.label}
@@ -612,6 +685,17 @@ export default function App() {
                 }`}
               >
                 {pmOnly ? 'Named PM Only' : 'Named PMs Only'}
+              </button>
+
+              <button
+                onClick={() => setRemindersOnly(!remindersOnly)}
+                className={`rounded-lg border px-3 py-2 text-xs font-medium font-mono transition-colors ${
+                  remindersOnly
+                    ? 'border-blue-500/30 bg-blue-500/10 text-blue-400'
+                    : 'border-zinc-800 bg-zinc-950 text-zinc-500 hover:border-zinc-700'
+                }`}
+              >
+                {remindersOnly ? 'Reminders Only' : 'Reminders'}
               </button>
             </div>
 
@@ -633,6 +717,7 @@ export default function App() {
                     setDraft={setDraft}
                     setStatus={setStatus}
                     saveNote={saveNote}
+                    setReminder={setReminder}
                     setDeleteModal={setDeleteModal}
                     handleAI={handleAI}
                     cp={cp}
@@ -646,6 +731,27 @@ export default function App() {
         )}
 
         {tab === 'outreach' && <OutreachTab />}
+        {tab === 'pipeline' && (
+          <PipelineTab
+            leads={leads}
+            onLeadClick={(id) => {
+              setTab('leads');
+              setRegF('All Regions');
+              setStF('all');
+              setTierF('all');
+              setPmOnly(false);
+              setRemindersOnly(false);
+              setQ('');
+              setOpenId(id);
+              
+              // Scroll to the lead after a short delay to allow rendering
+              setTimeout(() => {
+                const el = document.getElementById(`lead-${id}`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 100);
+            }}
+          />
+        )}
       </main>
 
       {deleteModal && (
