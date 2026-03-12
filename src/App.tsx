@@ -19,6 +19,7 @@ import {
   Loader2,
   ClipboardList,
   MapPin,
+  Menu,
 } from 'lucide-react';
 
 import { RAW, STATUS, REGIONS, SCRIPTS, OBJECTIONS } from './data';
@@ -148,6 +149,7 @@ export default function App() {
   const [aiFinderLoading, setAiFinderLoading] = useState(false);
 
   const [showAddLead, setShowAddLead] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [newLeadForm, setNewLeadForm] = useState<Partial<Lead>>({ ...EMPTY_LEAD_FORM });
 
   const handleAddLead = async () => {
@@ -388,9 +390,23 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen bg-zinc-950 font-sans text-zinc-300 selection:bg-orange-500/30">
-      <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col justify-between overflow-y-auto border-r border-zinc-800/50 bg-zinc-900/50 p-6">
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 border-b border-zinc-800/50 bg-zinc-900/90 backdrop-blur-md z-40 flex items-center justify-between px-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-sm font-bold text-white shadow-lg shadow-orange-500/20">
+            SC
+          </div>
+          <div className="text-sm font-bold tracking-tight text-zinc-100">SC Deburring</div>
+        </div>
+        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-zinc-400 hover:text-zinc-200">
+          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 z-30 flex h-screen w-64 shrink-0 flex-col justify-between overflow-y-auto border-r border-zinc-800/50 bg-zinc-950 md:bg-zinc-900/50 p-6 transition-transform duration-300 md:static md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div>
-          <div className="mb-8 flex items-center gap-3">
+          <div className="mb-8 hidden md:flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-500 text-lg font-bold text-white shadow-lg shadow-orange-500/20">
               SC
             </div>
@@ -404,7 +420,7 @@ export default function App() {
 
           <nav className="mb-8 space-y-1">
             <button
-              onClick={() => setTab('leads')}
+              onClick={() => { setTab('leads'); setMobileMenuOpen(false); }}
               className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold tracking-wide transition-colors ${
                 tab === 'leads'
                   ? 'bg-zinc-800/80 text-orange-500'
@@ -419,7 +435,7 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => setTab('outreach')}
+              onClick={() => { setTab('outreach'); setMobileMenuOpen(false); }}
               className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold tracking-wide transition-colors ${
                 tab === 'outreach'
                   ? 'bg-zinc-800/80 text-orange-500'
@@ -478,7 +494,8 @@ export default function App() {
         </div>
       </aside>
 
-      <main className="max-h-screen flex-1 overflow-y-auto p-8">
+      {/* Main Content */}
+      <main className="max-h-screen flex-1 overflow-y-auto p-4 pt-20 md:p-8 md:pt-8 w-full">
         {dbError && (
           <div className="mx-auto mb-6 flex max-w-5xl items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-red-400">
             <X size={20} className="mt-0.5 shrink-0" />
