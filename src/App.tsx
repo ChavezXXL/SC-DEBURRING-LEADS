@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 import { RAW, STATUS, REGIONS, SCRIPTS, OBJECTIONS } from './data';
-import type { Lead } from './types';
+import type { Lead, LeadStatus } from './types';
 import { generatePitch, researchContact, findNewLeads } from './services/gemini';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, writeBatch } from 'firebase/firestore';
@@ -68,7 +68,58 @@ const qs = {
 
 type TabKey = 'leads' | 'outreach';
 type AiMode = 'pitch' | 'research';
-type LeadStatus = Lead['status'];
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string;
+    email?: string;
+    emailVerified?: boolean;
+    isAnonymous?: boolean;
+    tenantId?: string;
+    providerInfo?: {
+      providerId: string;
+      displayName?: string;
+      email?: string;
+      photoUrl?: string;
+    }[];
+  }
+}
+
+function handleFirestoreError(error: any, operationType: OperationType, path: string | null) {
+  const msg = error?.message || String(error);
+  const code = error?.code || '';
+
+  if (
+    code.includes('permission-denied') ||
+    msg.toLowerCase().includes('missing or insufficient permissions')
+  ) {
+    const errInfo: FirestoreErrorInfo = {
+      error: msg,
+      authInfo: {
+        userId: undefined, // Add auth info if you have auth setup
+      },
+      operationType,
+      path
+    };
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
+    throw new Error(JSON.stringify(errInfo));
+  }
+  
+  console.error('Firestore Error:', error);
+  throw error;
+}
 
 export default function App() {
   const [leads, setLeads] = useState<Lead[]>(INIT_LEADS);
@@ -111,7 +162,7 @@ export default function App() {
       id,
       status: 'new',
       notes: '',
-      t: newLeadForm.t ?? 2,
+      t: (newLeadForm.t as 1 | 2) ?? 2,
       r: newLeadForm.r ?? 'Other',
       co: newLeadForm.co ?? '',
       city: newLeadForm.city ?? '',
@@ -131,8 +182,7 @@ export default function App() {
       setShowAddLead(false);
       setNewLeadForm({ ...EMPTY_LEAD_FORM });
     } catch (e: any) {
-      console.error('Error adding lead:', e);
-      alert('Error adding lead: ' + (e?.message || 'Unknown error'));
+      handleFirestoreError(e, OperationType.CREATE, `leads/${id}`);
     }
   };
 
@@ -177,20 +227,18 @@ export default function App() {
           ph: lead.ph ?? '',
           em: lead.em ?? '',
           web: lead.web ?? '',
-          t: lead.t ?? 2,
+          t: (lead.t as 1 | 2) ?? 2,
           r: lead.r ?? 'Other',
         };
 
-        const ref = doc(db, 'leads', uniqueId);
-        batch.set(ref, safeLead);
+        batch.set(doc(db, 'leads', uniqueId), safeLead);
       });
 
       await batch.commit();
       setShowAiFinder(false);
       setAiFinderQuery('');
     } catch (e: any) {
-      console.error('Error finding leads:', e);
-      alert('Error finding leads: ' + (e?.message || 'Unknown error'));
+      handleFirestoreError(e, OperationType.WRITE, 'leads');
     } finally {
       setAiFinderLoading(false);
     }
@@ -205,12 +253,9 @@ export default function App() {
 
           if (snapshot.empty) {
             const batch = writeBatch(db);
-
             INIT_LEADS.forEach((lead) => {
-              const ref = doc(db, 'leads', lead.id);
-              batch.set(ref, lead);
+              batch.set(doc(db, 'leads', lead.id), lead);
             });
-
             await batch.commit();
             setLeads(INIT_LEADS);
           } else {
@@ -221,13 +266,10 @@ export default function App() {
 
             if (missingBaseLeads.length > 0) {
               const batch = writeBatch(db);
-
               missingBaseLeads.forEach((lead) => {
-                const ref = doc(db, 'leads', lead.id);
-                batch.set(ref, lead, { merge: true });
+                batch.set(doc(db, 'leads', lead.id), lead, { merge: true });
                 mergedLeads.push(lead);
               });
-
               await batch.commit();
             }
 
@@ -243,8 +285,11 @@ export default function App() {
         }
       },
       (error: any) => {
-        console.error('Firestore Error:', error);
-        setDbError(error?.message || 'Failed to connect to database');
+        try {
+          handleFirestoreError(error, OperationType.LIST, 'leads');
+        } catch (err: any) {
+          setDbError(err?.message || 'Failed to connect to database');
+        }
         setLoading(false);
       }
     );
@@ -258,8 +303,7 @@ export default function App() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e: any) {
-      console.error('Error updating status:', e);
-      alert('Error updating status: ' + (e?.message || 'Unknown error'));
+      handleFirestoreError(e, OperationType.UPDATE, `leads/${id}`);
     }
   };
 
@@ -268,12 +312,10 @@ export default function App() {
       await setDoc(doc(db, 'leads', id), { notes }, { merge: true });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+      setEditId(null);
     } catch (e: any) {
-      console.error('Error saving notes:', e);
-      alert('Error saving notes: ' + (e?.message || 'Unknown error'));
+      handleFirestoreError(e, OperationType.UPDATE, `leads/${id}`);
     }
-
-    setEditId(null);
   };
 
   const copy = async (id: string, text: string) => {
@@ -442,10 +484,7 @@ export default function App() {
             <X size={20} className="mt-0.5 shrink-0" />
             <div>
               <div className="mb-1 text-sm font-bold">Database Connection Error</div>
-              <div className="text-xs leading-relaxed opacity-80">
-                {dbError}. Changes will not be saved. If you are using a test Firebase project,
-                your security rules may have expired.
-              </div>
+              <div className="text-xs leading-relaxed opacity-80">{dbError}</div>
             </div>
           </div>
         )}
@@ -546,21 +585,6 @@ export default function App() {
               >
                 {pmOnly ? 'Named PM Only' : 'Named PMs Only'}
               </button>
-
-              {(q || regF !== 'All Regions' || tierF !== 'all' || stF !== 'all' || pmOnly) && (
-                <button
-                  onClick={() => {
-                    setQ('');
-                    setRegF('All Regions');
-                    setTierF('all');
-                    setStF('all');
-                    setPmOnly(false);
-                  }}
-                  className="px-3 py-2 text-xs text-zinc-500 transition-colors hover:text-zinc-300"
-                >
-                  Reset
-                </button>
-              )}
             </div>
 
             {filtered.length === 0 ? (
@@ -633,10 +657,7 @@ export default function App() {
                             className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
                             style={{ background: st.bg, color: st.tx }}
                           >
-                            <span
-                              className="h-1.5 w-1.5 rounded-full"
-                              style={{ background: st.dot }}
-                            />
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.dot }} />
                             {st.label}
                           </span>
                           <span className="text-zinc-600">
@@ -674,8 +695,7 @@ export default function App() {
                                       : 'border-indigo-500/20 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20'
                                   }`}
                                 >
-                                  <Copy size={14} />{' '}
-                                  {cp === `em_${lead.id}` ? 'Copied!' : 'Copy Email'}
+                                  <Copy size={14} /> {cp === `em_${lead.id}` ? 'Copied!' : 'Copy Email'}
                                 </button>
                               </>
                             )}
@@ -770,9 +790,7 @@ export default function App() {
                                 <div className="mb-1 text-[10px] font-bold font-mono uppercase tracking-widest text-zinc-500">
                                   Email Address
                                 </div>
-                                <div className="text-xs font-semibold text-violet-400">
-                                  {lead.em}
-                                </div>
+                                <div className="text-xs font-semibold text-violet-400">{lead.em}</div>
                               </div>
                             )}
 
@@ -780,18 +798,14 @@ export default function App() {
                               <div className="mb-1 text-[10px] font-bold font-mono uppercase tracking-widest text-zinc-500">
                                 Parts and Programs
                               </div>
-                              <div className="text-xs leading-relaxed text-zinc-400">
-                                {lead.parts}
-                              </div>
+                              <div className="text-xs leading-relaxed text-zinc-400">{lead.parts}</div>
                             </div>
 
                             <div className="col-span-1 md:col-span-2">
                               <div className="mb-1 text-[10px] font-bold font-mono uppercase tracking-widest text-zinc-500">
                                 Pitch Angle
                               </div>
-                              <div className="text-xs leading-relaxed text-amber-500">
-                                {lead.pitch}
-                              </div>
+                              <div className="text-xs leading-relaxed text-amber-500">{lead.pitch}</div>
                             </div>
                           </div>
 
@@ -848,7 +862,7 @@ export default function App() {
                               {STATUS.map((statusOption) => (
                                 <button
                                   key={statusOption.k}
-                                  onClick={() => setStatus(lead.id, statusOption.k as LeadStatus)}
+                                  onClick={() => setStatus(lead.id, statusOption.k)}
                                   className="rounded-full border px-3 py-1 text-[11px] font-medium transition-all duration-200"
                                   style={{
                                     background:
@@ -880,9 +894,7 @@ export default function App() {
               <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-100">
                 Outreach Scripts
               </h1>
-              <p className="text-xs font-mono text-zinc-500">
-                7 battle-tested scripts + objection handling
-              </p>
+              <p className="text-xs font-mono text-zinc-500">7 battle-tested scripts + objection handling</p>
             </div>
 
             <div className="mb-10 rounded-2xl border border-orange-500/20 bg-orange-500/5 p-6">
@@ -905,16 +917,9 @@ export default function App() {
                     {items[0].icon} {cat}
                   </div>
 
-                  <div
-                    className={`grid gap-4 ${
-                      items.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'
-                    }`}
-                  >
+                  <div className={`grid gap-4 ${items.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                     {items.map((sc) => (
-                      <div
-                        key={sc.id}
-                        className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-5"
-                      >
+                      <div key={sc.id} className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-5">
                         <div className="mb-4 flex items-start justify-between gap-4">
                           <div>
                             <div className="mb-1 text-sm font-bold text-zinc-100">{sc.title}</div>
@@ -950,10 +955,7 @@ export default function App() {
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {OBJECTIONS.map((o, i) => (
-                  <div
-                    key={i}
-                    className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4"
-                  >
+                  <div key={i} className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
                     <div className="mb-2 text-xs font-bold text-red-400">"{o.q}"</div>
                     <div className="text-xs leading-relaxed text-zinc-400">→ {o.a}</div>
                   </div>
@@ -991,10 +993,7 @@ export default function App() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setAiModal(null)}
-                className="text-zinc-500 transition-colors hover:text-zinc-300"
-              >
+              <button onClick={() => setAiModal(null)} className="text-zinc-500 transition-colors hover:text-zinc-300">
                 <X size={24} />
               </button>
             </div>
@@ -1003,9 +1002,7 @@ export default function App() {
               <div className="flex flex-col items-center justify-center gap-4 py-16">
                 <Loader2 size={32} className="animate-spin text-orange-500" />
                 <div className="text-xs font-mono text-zinc-500">
-                  {aiModal.mode === 'pitch'
-                    ? 'Generating personalized pitch...'
-                    : 'Researching contact info...'}
+                  {aiModal.mode === 'pitch' ? 'Generating personalized pitch...' : 'Researching contact info...'}
                 </div>
               </div>
             ) : (
@@ -1067,10 +1064,7 @@ export default function App() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setShowAiFinder(false)}
-                className="text-zinc-500 transition-colors hover:text-zinc-300"
-              >
+              <button onClick={() => setShowAiFinder(false)} className="text-zinc-500 transition-colors hover:text-zinc-300">
                 <X size={24} />
               </button>
             </div>
@@ -1132,10 +1126,7 @@ export default function App() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setShowAddLead(false)}
-                className="text-zinc-500 transition-colors hover:text-zinc-300"
-              >
+              <button onClick={() => setShowAddLead(false)} className="text-zinc-500 transition-colors hover:text-zinc-300">
                 <X size={24} />
               </button>
             </div>
@@ -1174,11 +1165,13 @@ export default function App() {
                   onChange={(e) => setNewLeadForm({ ...newLeadForm, r: e.target.value })}
                   className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
                 >
-                  {REGIONS.filter((r) => r !== 'All Regions').map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
+                  {REGIONS
+                    .filter((r) => r !== 'All Regions')
+                    .map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
                 </select>
               </div>
 

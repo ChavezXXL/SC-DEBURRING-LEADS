@@ -43,7 +43,6 @@ Return a JSON array of companies. Fill in as much detail as possible using Googl
     model: 'gemini-3.1-pro-preview',
     contents: prompt,
     config: {
-      tools: [{ googleSearch: {} }],
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
