@@ -20,7 +20,7 @@ export async function findNewLeads(query: string): Promise<Lead[]> {
   const ai = getAi();
   const prompt = `You are a B2B sales prospector for a deburring shop. Find 3-5 new manufacturing companies that fit this query: "${query}".
   
-Return a JSON array of companies. Fill in as much detail as possible using Google Search.
+Return ONLY a raw JSON array of companies. Do not include markdown formatting like \`\`\`json. Fill in as much detail as possible using Google Search.
 - id: generate a unique lowercase string (e.g. "company-name-city")
 - t: tier (1 for large/aerospace, 2 for general machine shop, 3 for small)
 - r: region (e.g. "San Fernando Valley", "Orange County", "San Diego", "Other")
@@ -43,36 +43,59 @@ Return a JSON array of companies. Fill in as much detail as possible using Googl
     model: 'gemini-3.1-pro-preview',
     contents: prompt,
     config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            id: { type: Type.STRING },
-            t: { type: Type.NUMBER },
-            r: { type: Type.STRING },
-            co: { type: Type.STRING },
-            city: { type: Type.STRING },
-            ph: { type: Type.STRING },
-            em: { type: Type.STRING },
-            web: { type: Type.STRING },
-            who: { type: Type.STRING },
-            role: { type: Type.STRING },
-            pm: { type: Type.STRING },
-            pm_title: { type: Type.STRING },
-            parts: { type: Type.STRING },
-            pitch: { type: Type.STRING },
-            status: { type: Type.STRING },
-            notes: { type: Type.STRING }
-          },
-          required: ["id", "t", "r", "co", "city", "ph", "em", "web", "who", "role", "pm", "pm_title", "parts", "pitch", "status", "notes"]
-        }
-      }
+      tools: [{ googleSearch: {} }],
     }
   });
   
-  return JSON.parse(response.text || "[]");
+  let text = response.text || "[]";
+  
+  // 1. Strip markdown code blocks
+  text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+  
+  // 2. Robust JSON extraction: try to find the first valid JSON array or object
+  let parsed = null;
+  
+  // Try parsing the whole text first
+  try {
+    parsed = JSON.parse(text);
+  } catch (e) {
+    // If it fails, try to find a valid JSON substring
+    let found = false;
+    for (let i = 0; i < text.length; i++) {
+      if (text[i] === '[' || text[i] === '{') {
+        for (let j = text.length - 1; j >= i; j--) {
+          if ((text[i] === '[' && text[j] === ']') || (text[i] === '{' && text[j] === '}')) {
+            try {
+              parsed = JSON.parse(text.substring(i, j + 1));
+              found = true;
+              break;
+            } catch (err) {
+              // Continue searching
+            }
+          }
+        }
+      }
+      if (found) break;
+    }
+  }
+  
+  if (!parsed) {
+    console.error("Failed to parse JSON from AI:", text);
+    throw new Error("AI returned invalid data format. Please try again.");
+  }
+  
+  // Sometimes AI wraps it in an object like { "companies": [...] }
+  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    const keys = Object.keys(parsed);
+    for (const key of keys) {
+      if (Array.isArray(parsed[key])) {
+        parsed = parsed[key];
+        break;
+      }
+    }
+  }
+  
+  return Array.isArray(parsed) ? parsed : [];
 }
 
 export async function generatePitch(lead: any) {

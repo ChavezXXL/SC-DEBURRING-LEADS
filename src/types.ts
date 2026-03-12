@@ -49,3 +49,6 @@ export interface ObjectionDef {
   q: string;
   a: string;
 }
+
+export type TabKey = 'leads' | 'outreach';
+export type AiMode = 'pitch' | 'research';
