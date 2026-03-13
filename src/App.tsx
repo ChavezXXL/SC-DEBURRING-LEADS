@@ -289,10 +289,7 @@ export default function App() {
       collection(db, 'leads'),
       async (snapshot) => {
         try {
-         const dbLeads = snapshot.docs.map((d) => {
-            const data = d.data();
-            return { ...data, id: data.id || d.id } as Lead;
-          });
+          const dbLeads = snapshot.docs.map((d) => ({ ...d.data(), id: d.id }) as Lead);
 
           if (snapshot.empty) {
             setLeads(INIT_LEADS); // Set leads immediately
