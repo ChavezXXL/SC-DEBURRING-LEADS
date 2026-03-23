@@ -16,8 +16,57 @@ function getAi() {
   return aiInstance;
 }
 
-export async function findNewLeads(query: string): Promise<Lead[]> {
+const MODEL_CANDIDATES = (import.meta.env.VITE_GEMINI_MODELS as string | undefined)
+  ?.split(',')
+  .map(model => model.trim())
+  .filter(Boolean) || ['gemini-3.1-pro-preview', 'gemini-2.5-pro', 'gemini-2.5-flash'];
+
+function wait(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function shouldRetry(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes('503') ||
+    message.includes('unavailable') ||
+    message.includes('high demand') ||
+    message.includes('429') ||
+    message.includes('rate')
+  );
+}
+
+async function generateWithFallback(
+  request: Omit<Parameters<GoogleGenAI['models']['generateContent']>[0], 'model'>
+) {
   const ai = getAi();
+  const errors: string[] = [];
+
+  for (const model of MODEL_CANDIDATES) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        return await ai.models.generateContent({
+          model,
+          ...request
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        errors.push(`[${model}, attempt ${attempt}] ${message}`);
+
+        if (!shouldRetry(error) || attempt === 2) {
+          break;
+        }
+
+        await wait(800 * attempt);
+      }
+    }
+  }
+
+  throw new Error(`AI request failed after retries/model fallback. ${errors.join(' | ')}`);
+}
+
+export async function findNewLeads(query: string): Promise<Lead[]> {
   const prompt = `You are a B2B sales prospector for a deburring shop. Find 3-5 new manufacturing companies that fit this query: "${query}".
   
 Return ONLY a raw JSON array of companies. Do not include markdown formatting like \`\`\`json. Fill in as much detail as possible using Google Search.
@@ -39,8 +88,7 @@ Return ONLY a raw JSON array of companies. Do not include markdown formatting li
 - notes: ""
 `;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+  const response = await generateWithFallback({
     contents: prompt,
     config: {
       tools: [{ googleSearch: {} }],
@@ -99,7 +147,6 @@ Return ONLY a raw JSON array of companies. Do not include markdown formatting li
 }
 
 export async function generatePitch(lead: any) {
-  const ai = getAi();
   const prompt = `You write tight, human cold outreach for SC Precision Deburring — 35-year family-owned aerospace deburring shop in Pacoima CA. Anthony is the owner. Microscope-inspected precision deburring. No minimums. Fast turnaround. Write short, real, no-fluff outreach.
 
 Write a personalized cold email + 2-sentence phone opener:
@@ -118,15 +165,13 @@ Subject: [subject line]
 CALL OPENER
 [2 sentences max]`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+  const response = await generateWithFallback({
     contents: prompt,
   });
   return response.text;
 }
 
 export async function researchContact(lead: any) {
-  const ai = getAi();
   const prompt = `You are a B2B sales researcher. Your job is to find the right decision-maker contact at manufacturing companies for a deburring subcontract service. Be specific and honest about what you know vs. don't know. Always suggest the best search approach if you can't confirm details.
 
 Research the best contact at this company for outsourced deburring work:
@@ -148,8 +193,7 @@ Provide:
 
 Be specific. If you don't know the name, say so and give the best strategy to find them.`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+  const response = await generateWithFallback({
     contents: prompt,
     config: {
       tools: [{ googleSearch: {} }],
