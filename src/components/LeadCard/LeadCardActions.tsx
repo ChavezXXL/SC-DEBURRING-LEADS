@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Mail, Copy, Globe, Search, Briefcase, ClipboardList, Microscope, Sparkles } from 'lucide-react';
+import { Phone, Mail, Copy, Globe, Search, Briefcase, ClipboardList, Microscope, Sparkles, Send } from 'lucide-react';
 import type { Lead, AiMode } from '../../types';
 
 interface LeadCardActionsProps {
@@ -12,9 +12,11 @@ interface LeadCardActionsProps {
     indeed: (city: string) => string;
   };
   handleAI: (lead: Lead, mode: AiMode) => void;
+  showEmail: boolean;
+  setShowEmail: (show: boolean) => void;
 }
 
-export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy, qs, handleAI }) => {
+export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy, qs, handleAI, showEmail, setShowEmail }) => {
   return (
     <>
       <div className="flex flex-wrap gap-2 py-3">
@@ -101,6 +103,17 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
           className="inline-flex items-center gap-1.5 rounded-lg border border-orange-500/20 bg-orange-500/10 px-3 py-1.5 text-xs font-medium text-orange-500 transition-colors hover:bg-orange-500/20"
         >
           <Sparkles size={14} /> AI Pitch
+        </button>
+
+        <button
+          onClick={() => setShowEmail(!showEmail)}
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
+            showEmail
+              ? 'border-orange-500/40 bg-orange-500/20 text-orange-400'
+              : 'border-orange-500/30 bg-orange-500 text-white hover:bg-orange-400'
+          }`}
+        >
+          <Send size={14} /> {showEmail ? 'Close Email' : 'Quick Email'}
         </button>
       </div>
     </>

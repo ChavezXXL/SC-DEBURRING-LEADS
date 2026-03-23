@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Lead, LeadStatus, AiMode } from '../types';
 import { LeadCardHeader } from './LeadCard/LeadCardHeader';
 import { LeadCardActions } from './LeadCard/LeadCardActions';
 import { LeadCardDetails } from './LeadCard/LeadCardDetails';
 import { LeadCardNotes } from './LeadCard/LeadCardNotes';
 import { LeadCardStatus } from './LeadCard/LeadCardStatus';
+import { QuickEmail } from './LeadCard/QuickEmail';
 
 interface LeadCardProps {
   lead: Lead;
@@ -25,6 +26,7 @@ interface LeadCardProps {
     linkedin: (co: string) => string;
     indeed: (city: string) => string;
   };
+  setReminder: (id: string, reminderDate: string | null) => void;
 }
 
 export const LeadCard: React.FC<LeadCardProps> = ({
@@ -42,12 +44,15 @@ export const LeadCard: React.FC<LeadCardProps> = ({
   cp,
   copy,
   qs,
+  setReminder,
 }) => {
   const isDead = lead.status === 'dead';
   const isOpen = openId === lead.id;
+  const [showEmail, setShowEmail] = useState(false);
 
   return (
     <div
+      id={`lead-${lead.id}`}
       className={`overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-900/40 transition-all duration-200 hover:border-zinc-700/80 hover:shadow-lg hover:shadow-black/20 ${
         isDead ? 'opacity-50' : ''
       }`}
@@ -56,7 +61,16 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 
       {isOpen && (
         <div className="border-t border-zinc-800/50 bg-zinc-900/20 px-4 pb-4 pt-2">
-          <LeadCardActions lead={lead} cp={cp} copy={copy} qs={qs} handleAI={handleAI} />
+          <LeadCardActions
+            lead={lead}
+            cp={cp}
+            copy={copy}
+            qs={qs}
+            handleAI={handleAI}
+            showEmail={showEmail}
+            setShowEmail={setShowEmail}
+          />
+          {showEmail && <QuickEmail lead={lead} onClose={() => setShowEmail(false)} />}
           <LeadCardDetails lead={lead} />
           <LeadCardNotes
             lead={lead}
