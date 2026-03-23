@@ -5,6 +5,7 @@ import {
   Check,
   Sparkles,
   Kanban,
+  Brain,
 } from 'lucide-react';
 import type { Lead, TabKey } from '../types';
 import { FancyLogo } from './FancyLogo';
@@ -101,6 +102,21 @@ export function Sidebar({
           >
             <Kanban size={16} />
             PIPELINE
+          </button>
+
+          <button
+            onClick={() => {
+              setTab('brain');
+              setMobileMenuOpen(false);
+            }}
+            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold tracking-wide transition-colors ${
+              tab === 'brain'
+                ? 'bg-zinc-800/80 text-orange-500'
+                : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+            }`}
+          >
+            <Brain size={16} />
+            AI BRAIN
           </button>
         </nav>
 

@@ -17,8 +17,8 @@ const MODEL_CANDIDATES = (import.meta.env.VITE_GEMINI_MODELS as string | undefin
   ?.split(',')
   .map(model => model.trim())
   .filter(Boolean) || ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.1-pro-preview'];
-const REQUEST_TIMEOUT_MS = Number(import.meta.env.VITE_GEMINI_TIMEOUT_MS || 12000);
-const TOTAL_TIMEOUT_MS = Number(import.meta.env.VITE_GEMINI_TOTAL_TIMEOUT_MS || 20000);
+const REQUEST_TIMEOUT_MS = Number(import.meta.env.VITE_GEMINI_TIMEOUT_MS || 30000);
+const TOTAL_TIMEOUT_MS = Number(import.meta.env.VITE_GEMINI_TOTAL_TIMEOUT_MS || 45000);
 
 function wait(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));

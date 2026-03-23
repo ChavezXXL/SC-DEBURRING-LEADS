@@ -50,5 +50,5 @@ export interface ObjectionDef {
   a: string;
 }
 
-export type TabKey = 'leads' | 'outreach';
+export type TabKey = 'leads' | 'outreach' | 'pipeline' | 'brain';
 export type AiMode = 'pitch' | 'research';

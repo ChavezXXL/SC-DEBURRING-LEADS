@@ -38,6 +38,7 @@ import { AiFinderModal } from './components/AiFinderModal';
 import { DeleteModal } from './components/DeleteModal';
 import { FancyLogo } from './components/FancyLogo';
 import { BoltChat } from './components/BoltChat';
+import { AiBrain } from './components/AiBrain';
 
 const safeRaw = Array.isArray(RAW) ? RAW : [];
 
@@ -407,12 +408,19 @@ export default function App() {
   };
 
   const handleDeleteLead = async (id: string) => {
+    // Save scroll position so we can restore after re-render
+    const scrollEl = document.querySelector('main');
+    const scrollPos = scrollEl?.scrollTop || 0;
     try {
       await deleteDoc(doc(db, 'leads', id));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       if (openId === id) setOpenId(null);
       setDeleteModal(null);
+      // Restore scroll position after React re-renders
+      requestAnimationFrame(() => {
+        if (scrollEl) scrollEl.scrollTop = scrollPos;
+      });
     } catch (e: any) {
       try {
         handleFirestoreError(e, OperationType.DELETE, `leads/${id}`);
@@ -743,6 +751,27 @@ export default function App() {
                 if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }, 100);
             }}
+          />
+        )}
+        {tab === 'brain' && (
+          <AiBrain
+            leads={leads}
+            onLeadClick={(id) => {
+              setTab('leads');
+              setRegF('All Regions');
+              setStF('all');
+              setTierF('all');
+              setPmOnly(false);
+              setRemindersOnly(false);
+              setQ('');
+              setOpenId(id);
+              setTimeout(() => {
+                const el = document.getElementById(`lead-${id}`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 100);
+            }}
+            onDeleteLead={(id, co) => setDeleteModal({ id, co })}
+            setStatus={setStatus}
           />
         )}
       </main>
