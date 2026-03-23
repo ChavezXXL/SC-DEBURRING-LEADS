@@ -19,7 +19,9 @@ function getAi() {
 const MODEL_CANDIDATES = (import.meta.env.VITE_GEMINI_MODELS as string | undefined)
   ?.split(',')
   .map(model => model.trim())
-  .filter(Boolean) || ['gemini-3.1-pro-preview', 'gemini-2.5-pro', 'gemini-2.5-flash'];
+  .filter(Boolean) || ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.1-pro-preview'];
+const REQUEST_TIMEOUT_MS = Number(import.meta.env.VITE_GEMINI_TIMEOUT_MS || 12000);
+const TOTAL_TIMEOUT_MS = Number(import.meta.env.VITE_GEMINI_TOTAL_TIMEOUT_MS || 20000);
 
 function wait(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -37,19 +39,42 @@ function shouldRetry(error: unknown) {
   );
 }
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+      })
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
 async function generateWithFallback(
   request: Omit<Parameters<GoogleGenAI['models']['generateContent']>[0], 'model'>
 ) {
   const ai = getAi();
   const errors: string[] = [];
+  const startedAt = Date.now();
 
   for (const model of MODEL_CANDIDATES) {
     for (let attempt = 1; attempt <= 2; attempt++) {
+      if (Date.now() - startedAt > TOTAL_TIMEOUT_MS) {
+        throw new Error(`AI timed out after ${TOTAL_TIMEOUT_MS}ms. Please try again.`);
+      }
+
       try {
-        return await ai.models.generateContent({
-          model,
-          ...request
-        });
+        return await withTimeout(
+          ai.models.generateContent({
+            model,
+            ...request
+          }),
+          REQUEST_TIMEOUT_MS,
+          `Model ${model} timed out after ${REQUEST_TIMEOUT_MS}ms`
+        );
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         errors.push(`[${model}, attempt ${attempt}] ${message}`);
@@ -58,7 +83,7 @@ async function generateWithFallback(
           break;
         }
 
-        await wait(800 * attempt);
+        await wait(350 * attempt);
       }
     }
   }
@@ -91,6 +116,7 @@ Return ONLY a raw JSON array of companies. Do not include markdown formatting li
   const response = await generateWithFallback({
     contents: prompt,
     config: {
+      maxOutputTokens: 900,
       tools: [{ googleSearch: {} }],
     }
   });
@@ -167,6 +193,9 @@ CALL OPENER
 
   const response = await generateWithFallback({
     contents: prompt,
+    config: {
+      maxOutputTokens: 450,
+    }
   });
   return response.text;
 }
@@ -196,6 +225,7 @@ Be specific. If you don't know the name, say so and give the best strategy to fi
   const response = await generateWithFallback({
     contents: prompt,
     config: {
+      maxOutputTokens: 700,
       tools: [{ googleSearch: {} }],
     }
   });
