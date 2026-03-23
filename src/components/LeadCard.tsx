@@ -70,7 +70,15 @@ export const LeadCard: React.FC<LeadCardProps> = ({
             showEmail={showEmail}
             setShowEmail={setShowEmail}
           />
-          {showEmail && <QuickEmail lead={lead} onClose={() => setShowEmail(false)} />}
+          {showEmail && (
+            <QuickEmail
+              lead={lead}
+              onClose={() => setShowEmail(false)}
+              onEmailSent={(id) => {
+                setStatus(id, 'emailed');
+              }}
+            />
+          )}
           <LeadCardDetails lead={lead} />
           <LeadCardNotes
             lead={lead}
