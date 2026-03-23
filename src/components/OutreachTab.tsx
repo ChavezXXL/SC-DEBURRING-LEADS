@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { SCRIPTS, OBJECTIONS } from '../data';
 
 export function OutreachTab() {
@@ -12,6 +12,10 @@ export function OutreachTab() {
     parts: 'aerospace brackets',
     owner: 'Anthony',
   });
+  const [emailTo, setEmailTo] = useState('');
+  const [selectedEmailScriptId, setSelectedEmailScriptId] = useState<string>('s3');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
 
   const copy = async (id: string, text: string) => {
     try {
@@ -54,6 +58,32 @@ export function OutreachTab() {
       .replaceAll('[COMPANY]', persona.company)
       .replaceAll('[PARTS TYPE]', persona.parts)
       .replaceAll('Anthony', persona.owner);
+
+  const emailScripts = useMemo(() => SCRIPTS.filter((s) => s.cat === 'Email'), []);
+  const selectedEmailScript = useMemo(
+    () => emailScripts.find((s) => s.id === selectedEmailScriptId) || emailScripts[0],
+    [emailScripts, selectedEmailScriptId]
+  );
+
+  useEffect(() => {
+    if (!selectedEmailScript) return;
+    const personalized = applyTokens(selectedEmailScript.body);
+    const lines = personalized.split('\n');
+    const subjectLine = lines[0]?.toLowerCase().startsWith('subject:')
+      ? lines[0].replace(/^subject:\s*/i, '')
+      : `Deburring support for ${persona.company}`;
+    const bodyWithoutSubject = lines[0]?.toLowerCase().startsWith('subject:')
+      ? lines.slice(2).join('\n')
+      : personalized;
+    setEmailSubject(subjectLine);
+    setEmailBody(bodyWithoutSubject);
+  }, [selectedEmailScript, persona.name, persona.company, persona.parts, persona.owner]);
+
+  const draftMailto = useMemo(() => {
+    const encodedSubject = encodeURIComponent(emailSubject);
+    const encodedBody = encodeURIComponent(emailBody);
+    return `mailto:${emailTo}?subject=${encodedSubject}&body=${encodedBody}`;
+  }, [emailTo, emailSubject, emailBody]);
 
   const cadence = [
     { day: 'Day 0', action: 'Cold call + voicemail', detail: 'Use call script and ask for a test job.' },
@@ -135,6 +165,65 @@ export function OutreachTab() {
                 placeholder="Your name"
                 className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200"
               />
+            </div>
+          </div>
+
+          <div className="mb-6 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
+            <div className="mb-3 text-[10px] font-bold font-mono uppercase tracking-widest text-blue-400">
+              One-click Email Draft
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-3">
+                <label className="block text-[11px] font-semibold text-zinc-400">Recipient email</label>
+                <input
+                  value={emailTo}
+                  onChange={(e) => setEmailTo(e.target.value)}
+                  placeholder="buyer@company.com"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200"
+                />
+
+                <label className="block text-[11px] font-semibold text-zinc-400">Email script</label>
+                <select
+                  value={selectedEmailScriptId}
+                  onChange={(e) => setSelectedEmailScriptId(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200"
+                >
+                  {emailScripts.map((script) => (
+                    <option key={script.id} value={script.id}>
+                      {script.title}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={() => window.open(draftMailto, '_blank')}
+                  disabled={!emailTo.trim()}
+                  className={`w-full rounded-lg border px-3 py-2 text-sm font-semibold ${
+                    emailTo.trim()
+                      ? 'border-blue-500/40 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20'
+                      : 'cursor-not-allowed border-zinc-800 bg-zinc-900/40 text-zinc-500'
+                  }`}
+                >
+                  Open Draft in Email App
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <label className="block text-[11px] font-semibold text-zinc-400">Subject</label>
+                <input
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200"
+                />
+
+                <label className="block text-[11px] font-semibold text-zinc-400">Draft body (review before send)</label>
+                <textarea
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  rows={8}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs text-zinc-200"
+                />
+              </div>
             </div>
           </div>
 
