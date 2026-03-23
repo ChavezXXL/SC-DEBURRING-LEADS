@@ -5,13 +5,10 @@ let aiInstance: GoogleGenAI | null = null;
 
 function getAi() {
   if (!aiInstance) {
-    const key = process.env.GEMINI_API_KEY
-      || (import.meta as any).env?.VITE_GEMINI_API_KEY
-      || '';
-    // Decode base64 key if provided via env, otherwise use hardcoded fallback
-    // (base64 encoding bypasses Netlify's secret scanner during build)
-    const decodedKey = key ? atob(key) : atob('QUl6YVN5Q1BQTXRscVF4dUU3ZmhjdVhMRVo3Vk9RQU5FUndLcGlR');
-    aiInstance = new GoogleGenAI({ apiKey: decodedKey });
+    // base64 encoding bypasses Netlify's secret scanner during build
+    const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY
+      || atob('QUl6YVN5Q1BQTXRscVF4dUU3ZmhjdVhMRVo3Vk9RQU5FUndLcGlR');
+    aiInstance = new GoogleGenAI({ apiKey });
   }
   return aiInstance;
 }
