@@ -18,3 +18,20 @@ View your app in AI Studio: https://ai.studio/apps/3ab9b43d-4a14-4abf-96ce-20b75
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Deploy to Netlify (Production)
+
+This repo now includes `netlify.toml` so Netlify uses the correct build settings automatically.
+
+1. Push this repo/branch to GitHub.
+2. In Netlify, click **Add new site** → **Import an existing project**.
+3. Select this repository.
+4. Netlify should auto-detect:
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+5. Add required environment variables in Netlify Site Settings:
+   - `GEMINI_API_KEY` (base64-encoded value expected by current app flow)
+   - Any required `VITE_FIREBASE_*` keys
+6. Click **Deploy site**.
+
+For SPA routing, all paths are redirected to `index.html` via `netlify.toml`.
