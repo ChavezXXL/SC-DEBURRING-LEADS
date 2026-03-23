@@ -35,3 +35,18 @@ This repo now includes `netlify.toml` so Netlify uses the correct build settings
 6. Click **Deploy site**.
 
 For SPA routing, all paths are redirected to `index.html` via `netlify.toml`.
+
+## Push This Branch to GitHub
+
+I can commit changes in this environment, but pushing to GitHub requires your repository remote + auth token/SSH key.
+
+1. Add your GitHub remote (one time):
+   `git remote add origin https://github.com/<your-org-or-user>/<your-repo>.git`
+2. Push current branch:
+   `git push -u origin work`
+3. Open a PR on GitHub from `work` into your main branch.
+
+If you use GitHub CLI:
+- `gh auth login`
+- `gh repo set-default <your-org-or-user>/<your-repo>`
+- `git push -u origin work`
