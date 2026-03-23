@@ -37,6 +37,7 @@ import { AiModal } from './components/AiModal';
 import { AiFinderModal } from './components/AiFinderModal';
 import { DeleteModal } from './components/DeleteModal';
 import { FancyLogo } from './components/FancyLogo';
+import { BoltChat } from './components/BoltChat';
 
 const safeRaw = Array.isArray(RAW) ? RAW : [];
 
@@ -609,14 +610,6 @@ export default function App() {
                 >
                   + Add Lead
                 </button>
-
-                <button
-                  onClick={() => setShowAiFinder(true)}
-                  className="flex items-center gap-2 rounded-lg bg-zinc-100 px-4 py-2 text-sm font-bold text-zinc-900 shadow-lg shadow-white/5 transition-colors hover:bg-white"
-                >
-                  <Sparkles size={16} className="text-orange-500" />
-                  AI Prospector
-                </button>
               </div>
             </div>
 
@@ -774,16 +767,6 @@ export default function App() {
         />
       )}
 
-      {showAiFinder && (
-        <AiFinderModal
-          setShowAiFinder={setShowAiFinder}
-          aiFinderQuery={aiFinderQuery}
-          setAiFinderQuery={setAiFinderQuery}
-          aiFinderLoading={aiFinderLoading}
-          handleFindLeads={handleFindLeads}
-        />
-      )}
-
       {showAddLead && (
         <AddLeadModal
           newLeadForm={newLeadForm}
@@ -792,6 +775,8 @@ export default function App() {
           handleAddLead={handleAddLead}
         />
       )}
+
+      <BoltChat leads={leads} />
     </div>
   );
 }

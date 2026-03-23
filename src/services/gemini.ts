@@ -200,6 +200,57 @@ CALL OPENER
   return response.text;
 }
 
+export async function chatWithBolt(
+  message: string,
+  leads: Lead[],
+  history: { role: 'user' | 'bolt'; text: string }[]
+): Promise<string> {
+  const leadsSnapshot = leads.slice(0, 50).map(l => ({
+    co: l.co, city: l.city, status: l.status, t: l.t, r: l.r,
+    pm: l.pm, parts: l.parts, ph: l.ph, em: l.em, who: l.who, role: l.role,
+    notes: l.notes, pitch: l.pitch,
+  }));
+
+  const stats = {
+    total: leads.length,
+    tier1: leads.filter(l => l.t === 1).length,
+    tier2: leads.filter(l => l.t === 2).length,
+    withPM: leads.filter(l => !!l.pm).length,
+    byStatus: Object.fromEntries(
+      ['new','called','emailed','visited','voicemail','interested','quote','dead','client']
+        .map(s => [s, leads.filter(l => l.status === s).length])
+        .filter(([, c]) => (c as number) > 0)
+    ),
+    regions: [...new Set(leads.map(l => l.r))],
+  };
+
+  const conversationContext = history.slice(-6).map(h =>
+    `${h.role === 'user' ? 'User' : 'Bolt'}: ${h.text}`
+  ).join('\n');
+
+  const prompt = `You are Bolt, the AI sales assistant for SC Precision Deburring — a 35-year family-owned aerospace deburring shop in Pacoima, CA. Anthony is the owner. You help find leads, analyze the database, write outreach, and give sales advice.
+
+DATABASE STATS:
+${JSON.stringify(stats, null, 1)}
+
+SAMPLE LEADS (first 50):
+${JSON.stringify(leadsSnapshot, null, 1)}
+
+${conversationContext ? `RECENT CONVERSATION:\n${conversationContext}\n` : ''}
+User: ${message}
+
+Respond as Bolt — helpful, direct, knowledgeable about aerospace manufacturing and B2B sales. Keep responses concise but thorough. If asked to find NEW leads not in the database, use Google Search. If asked about existing leads, reference the data above. Format nicely with line breaks.`;
+
+  const response = await generateWithFallback({
+    contents: prompt,
+    config: {
+      maxOutputTokens: 1200,
+      tools: [{ googleSearch: {} }],
+    }
+  });
+  return response.text || 'Sorry, I couldn\'t generate a response. Try again.';
+}
+
 export async function researchContact(lead: any) {
   const prompt = `You are a B2B sales researcher. Your job is to find the right decision-maker contact at manufacturing companies for a deburring subcontract service. Be specific and honest about what you know vs. don't know. Always suggest the best search approach if you can't confirm details.
 
