@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Mail, Send, Copy, Check, ChevronDown, X, Sparkles, Loader2, AlertCircle } from 'lucide-react';
+import { Mail, Send, Copy, Check, X, Sparkles, Loader2 } from 'lucide-react';
 import { SCRIPTS } from '../../data';
 import type { Lead } from '../../types';
 import { generatePitch } from '../../services/gemini';
-import { sendEmail } from '../../services/email';
 
 interface QuickEmailProps {
   lead: Lead;
@@ -39,8 +38,6 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
   const [copied, setCopied] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
-  const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-  const [sendError, setSendError] = useState('');
 
   const selectedScript = useMemo(
     () => EMAIL_SCRIPTS.find((s) => s.id === selectedId),
@@ -74,30 +71,6 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
       setBody(`Error generating email: ${e?.message || 'Try again'}`);
     } finally {
       setAiLoading(false);
-    }
-  };
-
-  const handleSend = async () => {
-    if (!toEmail.trim()) return;
-    setSendStatus('sending');
-    setSendError('');
-
-    const result = await sendEmail({
-      to: toEmail,
-      subject,
-      body,
-      leadId: lead.id,
-      fromName: 'Anthony',
-    });
-
-    if (result.success) {
-      setSendStatus('sent');
-      onEmailSent?.(lead.id);
-      setTimeout(() => setSendStatus('idle'), 3000);
-    } else {
-      setSendStatus('error');
-      setSendError(result.error || 'Send failed');
-      setTimeout(() => setSendStatus('idle'), 5000);
     }
   };
 
@@ -196,33 +169,18 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
 
       {/* Actions */}
       <div className="flex flex-wrap gap-2">
-        <button
-          onClick={handleSend}
-          disabled={!toEmail.trim() || sendStatus === 'sending'}
-          className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold shadow-lg transition-all ${
-            sendStatus === 'sent'
-              ? 'bg-emerald-500 text-white shadow-emerald-500/20'
-              : sendStatus === 'error'
-              ? 'bg-red-500 text-white shadow-red-500/20'
-              : toEmail.trim()
-              ? 'bg-orange-500 text-white shadow-orange-500/20 hover:bg-orange-400'
-              : 'cursor-not-allowed bg-zinc-700 text-zinc-400'
-          }`}
-        >
-          {sendStatus === 'sending' && <Loader2 size={13} className="animate-spin" />}
-          {sendStatus === 'sent' && <Check size={13} />}
-          {sendStatus === 'error' && <AlertCircle size={13} />}
-          {sendStatus === 'idle' && <Send size={13} />}
-          {sendStatus === 'sending' ? 'Sending...' : sendStatus === 'sent' ? 'Sent!' : sendStatus === 'error' ? 'Failed' : 'Send Email'}
-        </button>
-
         <a
           href={gmailUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700"
+          onClick={() => onEmailSent?.(lead.id)}
+          className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold shadow-lg transition-all ${
+            toEmail.trim()
+              ? 'bg-orange-500 text-white shadow-orange-500/20 hover:bg-orange-400'
+              : 'pointer-events-none bg-zinc-700 text-zinc-400'
+          }`}
         >
-          <Mail size={13} /> Open in Gmail
+          <Send size={13} /> Open in Gmail — Ready to Send
         </a>
 
         <button
@@ -237,18 +195,6 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
           {copied ? 'Copied!' : 'Copy All'}
         </button>
       </div>
-
-      {sendStatus === 'error' && sendError && (
-        <div className="mt-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-[11px] text-red-400">
-          {sendError}
-        </div>
-      )}
-
-      {sendStatus === 'sent' && (
-        <div className="mt-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-400">
-          Email sent successfully! Lead status updated to "Emailed"
-        </div>
-      )}
     </div>
   );
 };

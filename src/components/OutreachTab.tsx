@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Send, Loader2, Check, AlertCircle } from 'lucide-react';
 import { SCRIPTS, OBJECTIONS } from '../data';
-import { sendEmail } from '../services/email';
 
 export function OutreachTab() {
   const [cp, setCp] = useState<string | null>(null);
@@ -197,25 +195,18 @@ export function OutreachTab() {
                   ))}
                 </select>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => window.open(draftMailto, '_blank')}
-                    disabled={!emailTo.trim()}
-                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold ${
-                      emailTo.trim()
-                        ? 'border-blue-500/40 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20'
-                        : 'cursor-not-allowed border-zinc-800 bg-zinc-900/40 text-zinc-500'
-                    }`}
-                  >
-                    Open Draft
-                  </button>
-                  <SendEmailButton
-                    to={emailTo}
-                    subject={emailSubject}
-                    body={emailBody}
-                    fromName={persona.owner}
-                  />
-                </div>
+                <a
+                  href={emailTo.trim() ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(emailTo)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}` : '#'}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`block w-full rounded-lg border px-3 py-2 text-center text-sm font-semibold transition-colors ${
+                    emailTo.trim()
+                      ? 'border-orange-500/40 bg-orange-500 text-white hover:bg-orange-400'
+                      : 'pointer-events-none cursor-not-allowed border-zinc-800 bg-zinc-900/40 text-zinc-500'
+                  }`}
+                >
+                  Open in Gmail — Ready to Send
+                </a>
               </div>
 
               <div className="space-y-3">
@@ -349,59 +340,3 @@ export function OutreachTab() {
   );
 }
 
-function SendEmailButton({ to, subject, body, fromName, leadId, onSent }: {
-  to: string;
-  subject: string;
-  body: string;
-  fromName?: string;
-  leadId?: string;
-  onSent?: (result: { emailId?: string; sentAt?: string }) => void;
-}) {
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
-
-  const handleSend = async () => {
-    if (!to.trim()) return;
-    setStatus('sending');
-    setErrorMsg('');
-
-    const result = await sendEmail({ to, subject, body, fromName, leadId });
-
-    if (result.success) {
-      setStatus('sent');
-      onSent?.({ emailId: result.emailId, sentAt: result.sentAt });
-      setTimeout(() => setStatus('idle'), 3000);
-    } else {
-      setStatus('error');
-      setErrorMsg(result.error || 'Send failed');
-      setTimeout(() => setStatus('idle'), 5000);
-    }
-  };
-
-  return (
-    <div className="flex flex-col gap-1">
-      <button
-        onClick={handleSend}
-        disabled={!to.trim() || status === 'sending'}
-        className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
-          status === 'sent'
-            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
-            : status === 'error'
-            ? 'border-red-500/40 bg-red-500/10 text-red-400'
-            : to.trim()
-            ? 'border-orange-500/40 bg-orange-500 text-white hover:bg-orange-400'
-            : 'cursor-not-allowed border-zinc-800 bg-zinc-900/40 text-zinc-500'
-        }`}
-      >
-        {status === 'sending' && <Loader2 size={14} className="animate-spin" />}
-        {status === 'sent' && <Check size={14} />}
-        {status === 'error' && <AlertCircle size={14} />}
-        {status === 'idle' && <Send size={14} />}
-        {status === 'sending' ? 'Sending...' : status === 'sent' ? 'Sent!' : status === 'error' ? 'Failed' : 'Send Now'}
-      </button>
-      {status === 'error' && errorMsg && (
-        <div className="text-[10px] text-red-400">{errorMsg}</div>
-      )}
-    </div>
-  );
-}
