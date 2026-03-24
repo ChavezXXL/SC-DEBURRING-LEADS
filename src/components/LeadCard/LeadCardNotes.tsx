@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
 import type { Lead } from '../../types';
+import { renderMarkdown } from '../../utils/markdown';
 
 interface LeadCardNotesProps {
   lead: Lead;
@@ -21,9 +22,22 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
 }) => {
   return (
     <div className="mb-4">
-      <div className="mb-2 flex items-center gap-1 text-[10px] font-bold font-mono uppercase tracking-widest text-zinc-500">
-        <FileText size={12} />
-        Call Log / Notes
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-1 text-[10px] font-bold font-mono uppercase tracking-widest text-zinc-500">
+          <FileText size={12} />
+          Call Log / Notes
+        </div>
+        {lead.notes && editId !== lead.id && (
+          <button
+            onClick={() => {
+              setEditId(lead.id);
+              setDraft(lead.notes || '');
+            }}
+            className="rounded px-2 py-0.5 text-[10px] font-mono text-zinc-600 transition-colors hover:bg-zinc-800 hover:text-zinc-400"
+          >
+            Edit
+          </button>
+        )}
       </div>
 
       {editId === lead.id ? (
@@ -53,14 +67,18 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
       ) : (
         <div
           onClick={() => {
-            setEditId(lead.id);
-            setDraft(lead.notes || '');
+            if (!lead.notes) {
+              setEditId(lead.id);
+              setDraft(lead.notes || '');
+            }
           }}
-          className={`min-h-[44px] cursor-text whitespace-pre-wrap rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-xs leading-relaxed transition-colors hover:border-zinc-700 ${
-            lead.notes ? 'text-zinc-300' : 'italic text-zinc-600'
+          className={`min-h-[44px] rounded-lg border border-zinc-800 bg-zinc-950 p-4 text-xs leading-relaxed transition-colors ${
+            lead.notes
+              ? 'text-zinc-300'
+              : 'cursor-text italic text-zinc-600 hover:border-zinc-700'
           }`}
         >
-          {lead.notes || 'Click to add notes...'}
+          {lead.notes ? renderMarkdown(lead.notes) : 'Click to add notes...'}
         </div>
       )}
     </div>

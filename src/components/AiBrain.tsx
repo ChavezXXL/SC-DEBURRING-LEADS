@@ -2,15 +2,17 @@ import React, { useMemo, useState } from 'react';
 import {
   Brain, AlertTriangle, Users, Trophy, Clock, Mail, Phone,
   Zap, TrendingUp, Trash2, ChevronDown, ChevronUp, Merge,
-  Search, Star, Target, BarChart3,
+  Search, Star, Target, BarChart3, Loader2, Microscope,
+  CalendarCheck, PhoneCall, SendHorizonal, Globe, SkipForward,
 } from 'lucide-react';
-import type { Lead } from '../types';
+import type { Lead, AiMode } from '../types';
 
 interface AiBrainProps {
   leads: Lead[];
   onLeadClick: (id: string) => void;
   onDeleteLead: (id: string, co: string) => void;
   setStatus: (id: string, st: any) => void;
+  handleAI?: (lead: Lead, mode: AiMode) => void;
 }
 
 // --- Duplicate detection: only truly same company names ---
@@ -89,8 +91,11 @@ function priorityScore(lead: Lead): { score: number; reasons: string[] } {
   return { score, reasons };
 }
 
-export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus }: AiBrainProps) {
-  const [activeSection, setActiveSection] = useState<'overview' | 'duplicates' | 'priority' | 'stale' | 'gaps'>('overview');
+export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI }: AiBrainProps) {
+  const [activeSection, setActiveSection] = useState<'overview' | 'duplicates' | 'priority' | 'stale' | 'gaps' | 'enrich'>('overview');
+  const [enriching, setEnriching] = useState<string | null>(null);
+  const [enrichedIds, setEnrichedIds] = useState<Set<string>>(new Set());
+  const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
 
   // --- Computed insights ---
   const duplicates = useMemo(() => findDuplicates(leads), [leads]);
@@ -125,6 +130,43 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus }: AiBrain
       });
   }, [leads]);
 
+  // Leads that need research: missing email/phone but HAVE a website
+  const needsResearch = useMemo(() => {
+    return leads
+      .filter(l => l.status !== 'dead' && !enrichedIds.has(l.id) && !skippedIds.has(l.id))
+      .filter(l => (!l.em || !l.ph || !l.pm))
+      .map(l => {
+        const hasWeb = !!l.web && l.web.length > 3;
+        const missing: string[] = [];
+        if (!l.em) missing.push('email');
+        if (!l.ph) missing.push('phone');
+        if (!l.pm) missing.push('contact name');
+        return { lead: l, hasWeb, missing };
+      })
+      .sort((a, b) => {
+        // Prioritize: T1 first, then ones with website, then by most missing
+        const aScore = (a.lead.t === 1 ? 100 : 0) + (a.hasWeb ? 50 : 0) + a.missing.length * 10;
+        const bScore = (b.lead.t === 1 ? 100 : 0) + (b.hasWeb ? 50 : 0) + b.missing.length * 10;
+        return bScore - aScore;
+      });
+  }, [leads, enrichedIds, skippedIds]);
+
+  // Today's game plan
+  const todaysPlan = useMemo(() => {
+    const callFirst = leads
+      .filter(l => l.t === 1 && l.pm && l.status === 'new')
+      .slice(0, 5);
+    const followUp = leads
+      .filter(l => ['called', 'emailed', 'voicemail', 'visited'].includes(l.status) && l.notes)
+      .slice(0, 5);
+    const hotLeads = leads
+      .filter(l => ['interested', 'quote'].includes(l.status));
+    const needEmail = leads
+      .filter(l => l.t === 1 && !l.em && l.web && l.status !== 'dead')
+      .slice(0, 5);
+    return { callFirst, followUp, hotLeads, needEmail };
+  }, [leads]);
+
   const prioritized = useMemo(() => {
     return leads
       .filter(l => l.status !== 'dead' && l.status !== 'client')
@@ -153,6 +195,7 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus }: AiBrain
     { id: 'priority', label: 'Call First', icon: Trophy, count: prioritized.length },
     { id: 'stale', label: 'Stale Leads', icon: Clock, count: staleLeads.length },
     { id: 'gaps', label: 'Missing Info', icon: Search, count: missingInfo.length },
+    { id: 'enrich', label: 'Deep Research', icon: Microscope, count: needsResearch.filter(n => n.hasWeb).length },
   ];
 
   return (
@@ -172,7 +215,7 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus }: AiBrain
       </div>
 
       {/* Section Tabs */}
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-6 flex flex-wrap gap-2.5">
         {sections.map((s) => (
           <button
             key={s.id}
@@ -199,6 +242,69 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus }: AiBrain
       {/* OVERVIEW */}
       {activeSection === 'overview' && (
         <div className="space-y-6">
+          {/* Today's Game Plan */}
+          <div className="rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/5 to-amber-500/5 p-6">
+            <div className="mb-4 flex items-center gap-2 text-base font-bold text-orange-400">
+              <CalendarCheck size={16} /> Today's Game Plan
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {todaysPlan.hotLeads.length > 0 && (
+                <div className="rounded-lg border border-emerald-500/20 bg-zinc-950/50 p-4">
+                  <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold font-mono uppercase tracking-widest text-emerald-400">
+                    <Zap size={12} /> Hot — Close These
+                  </div>
+                  {todaysPlan.hotLeads.map(l => (
+                    <div key={l.id} onClick={() => onLeadClick(l.id)} className="cursor-pointer rounded px-2 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">
+                      <span className="font-semibold">{l.co}</span> <span className="text-zinc-500">· {l.pm || 'no contact'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {todaysPlan.callFirst.length > 0 && (
+                <div className="rounded-lg border border-orange-500/20 bg-zinc-950/50 p-4">
+                  <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold font-mono uppercase tracking-widest text-orange-400">
+                    <PhoneCall size={12} /> Call First — T1 with Contacts
+                  </div>
+                  {todaysPlan.callFirst.map(l => (
+                    <div key={l.id} onClick={() => onLeadClick(l.id)} className="cursor-pointer rounded px-2 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">
+                      <span className="font-semibold">{l.co}</span> <span className="text-violet-400">· {l.pm}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {todaysPlan.followUp.length > 0 && (
+                <div className="rounded-lg border border-blue-500/20 bg-zinc-950/50 p-4">
+                  <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold font-mono uppercase tracking-widest text-blue-400">
+                    <SendHorizonal size={12} /> Follow Up — In Pipeline
+                  </div>
+                  {todaysPlan.followUp.map(l => (
+                    <div key={l.id} onClick={() => onLeadClick(l.id)} className="cursor-pointer rounded px-2 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">
+                      <span className="font-semibold">{l.co}</span> <span className="text-zinc-500">· {l.status}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {todaysPlan.needEmail.length > 0 && (
+                <div className="rounded-lg border border-violet-500/20 bg-zinc-950/50 p-4">
+                  <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold font-mono uppercase tracking-widest text-violet-400">
+                    <Mail size={12} /> Research — Need Emails
+                  </div>
+                  {todaysPlan.needEmail.map(l => (
+                    <div key={l.id} onClick={() => onLeadClick(l.id)} className="cursor-pointer rounded px-2 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">
+                      <span className="font-semibold">{l.co}</span> <span className="text-zinc-500">· has website, no email</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {todaysPlan.hotLeads.length === 0 && todaysPlan.callFirst.length === 0 &&
+             todaysPlan.followUp.length === 0 && todaysPlan.needEmail.length === 0 && (
+              <div className="text-center text-xs text-zinc-500 py-4">
+                Start by researching Tier 1 leads with the Deep Research tab
+              </div>
+            )}
+          </div>
+
           {/* Stats Grid */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {[
@@ -213,7 +319,7 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus }: AiBrain
             ].map((s) => (
               <div key={s.label} className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
                 <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">{s.label}</div>
-                <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
+                <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
               </div>
             ))}
           </div>
@@ -393,6 +499,81 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus }: AiBrain
                 </div>
               </div>
             ))
+          )}
+        </div>
+      )}
+
+      {/* DEEP RESEARCH / ENRICH */}
+      {activeSection === 'enrich' && (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 text-xs text-violet-300">
+            <div className="font-bold mb-1">Deep Research — Find Missing Emails & Contacts</div>
+            Click "Research" on any lead to have AI dig deep. Leads without a website are flagged — probably not worth the time.
+          </div>
+
+          {needsResearch.length === 0 ? (
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
+              <div className="text-emerald-400 text-sm font-bold">All leads have been researched!</div>
+              <div className="text-xs text-zinc-500 mt-1">Or skipped because they have no website</div>
+            </div>
+          ) : (
+            <>
+              <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+                {needsResearch.filter(n => n.hasWeb).length} with website · {needsResearch.filter(n => !n.hasWeb).length} no website (skip)
+              </div>
+              {needsResearch.map(({ lead, hasWeb, missing }) => (
+                <div key={lead.id} className={`flex items-center justify-between rounded-xl border p-3 ${
+                  hasWeb ? 'border-zinc-800/60 bg-zinc-900/40' : 'border-zinc-800/30 bg-zinc-900/20 opacity-50'
+                }`}>
+                  <div className="flex-1 cursor-pointer" onClick={() => onLeadClick(lead.id)}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-zinc-200">{lead.co}</span>
+                      {lead.t === 1 && <span className="rounded bg-orange-500/20 px-1.5 py-0.5 text-[9px] font-bold text-orange-400">T1</span>}
+                      {!hasWeb && (
+                        <span className="flex items-center gap-1 rounded bg-red-500/10 px-1.5 py-0.5 text-[9px] font-bold text-red-400">
+                          No Website
+                        </span>
+                      )}
+                      {hasWeb && (
+                        <span className="flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-400">
+                          <Globe size={9} /> {lead.web}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap gap-1">
+                      {missing.map(m => (
+                        <span key={m} className="text-[10px] text-red-400/70">missing {m}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 ml-3">
+                    {hasWeb && handleAI ? (
+                      <button
+                        onClick={() => {
+                          setEnriching(lead.id);
+                          handleAI(lead, 'research');
+                          // Mark as enriched after click
+                          setEnrichedIds(prev => new Set([...prev, lead.id]));
+                          setTimeout(() => setEnriching(null), 1000);
+                        }}
+                        disabled={enriching === lead.id}
+                        className="flex items-center gap-1.5 rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-[11px] font-medium text-violet-400 hover:bg-violet-500/20 disabled:opacity-50"
+                      >
+                        {enriching === lead.id ? <Loader2 size={12} className="animate-spin" /> : <Microscope size={12} />}
+                        Research
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setSkippedIds(prev => new Set([...prev, lead.id]))}
+                        className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-[11px] font-medium text-zinc-500 hover:bg-zinc-700"
+                      >
+                        <SkipForward size={12} /> Skip
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </>
           )}
         </div>
       )}

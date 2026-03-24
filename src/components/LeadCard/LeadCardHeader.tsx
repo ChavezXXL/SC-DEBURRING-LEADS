@@ -16,7 +16,7 @@ export const LeadCardHeader: React.FC<LeadCardHeaderProps> = ({ lead, isOpen, se
 
   return (
     <div
-      className={`flex cursor-pointer items-center justify-between gap-4 border-l-4 p-4 ${
+      className={`flex cursor-pointer items-center justify-between gap-4 border-l-4 px-5 py-4 ${
         isClient
           ? 'border-l-amber-500'
           : lead.t === 1
@@ -27,7 +27,7 @@ export const LeadCardHeader: React.FC<LeadCardHeaderProps> = ({ lead, isOpen, se
     >
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-2">
-          <span className="text-sm font-bold text-zinc-100">{lead.co}</span>
+          <span className="text-sm font-bold text-zinc-100 md:text-base">{lead.co}</span>
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-bold font-mono ${
               lead.t === 1

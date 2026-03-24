@@ -139,8 +139,14 @@ export const SCRIPTS: ScriptDef[] = [
 ];
 
 export const OBJECTIONS: ObjectionDef[] = [
-  {q:"We do it in-house",a:"Totally understand — most shops do. We're here when you have overflow or a rush job that needs to go out fast."},
-  {q:"Not interested",a:"No problem — can I leave a card in case things change? We're 10 minutes away and shops call us all the time when they're jammed."},
-  {q:"What's your pricing?",a:"Depends on complexity — can I look at a print? No obligation. Just want to show you what we can do."},
-  {q:"Send me some info",a:"Absolutely — what email should I use? And who's best to follow up with after you review it?"},
+  {q:"We do it in-house",a:"Yeah most shops do — until they're slammed and their guys are deburring instead of running parts. We're the backup so your machines never stop. Just one test lot, see if it makes sense."},
+  {q:"Not interested",a:"All good — mind if I leave a card? Shops around here call us when they're jammed and need parts out the door. No pressure at all."},
+  {q:"What's your pricing?",a:"Depends on the part — shoot me a print and I'll get you numbers same day. No obligation. We're usually cheaper than people expect because this is literally all we do."},
+  {q:"Send me some info",a:"For sure — what's the best email? And who should I follow up with once you've had a look?"},
+  {q:"We already have a vendor",a:"Smart. But every shop needs a backup — when your guy is backed up or misses a deadline, we turn work in 24-48 hours. Let me be your plan B."},
+  {q:"Too busy to talk",a:"I hear you — 30 seconds. SC Precision Deburring, Pacoima, 35 years aerospace. When's better for a quick 2-minute call?"},
+  {q:"We don't outsource",a:"That's what half our clients said before they tried us during a crunch. One test lot, zero commitment. If it saves your guys time, we keep going. If not, no hard feelings."},
+  {q:"Your shop is too far",a:"We pick up and deliver all across the Valley and LA. Most of our clients have never been here — we come to you. Next-day turnaround."},
+  {q:"How do I know the quality?",a:"35 years, microscope inspection on every part, aerospace-grade. But don't take my word for it — send us a test lot. Free sample run, zero risk. You'll see the quality yourself."},
+  {q:"I need to check with my boss",a:"Totally — who's that? I can shoot them a quick email so they have something to look at. What's the best way to reach them?"},
 ];

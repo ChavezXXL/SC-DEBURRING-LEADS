@@ -134,9 +134,15 @@ function handleFirestoreError(error: any, operationType: OperationType, path: st
 import { PipelineTab } from './components/PipelineTab';
 
 export default function App() {
-  const [leads, setLeads] = useState<Lead[]>(INIT_LEADS);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState<string | null>(null);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('sc_deleted_leads');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch { return new Set(); }
+  });
 
   const [tab, setTab] = useState<TabKey>('leads');
   const [regF, setRegF] = useState('All Regions');
@@ -291,11 +297,13 @@ export default function App() {
       collection(db, 'leads'),
       async (snapshot) => {
         try {
-          const dbLeads = snapshot.docs.map((d) => ({ ...d.data(), id: d.id }) as Lead);
+          const dbLeads = snapshot.docs
+            .map((d) => ({ ...d.data(), id: d.id }) as Lead);
 
-          if (snapshot.empty) {
-            setLeads(INIT_LEADS); // Set leads immediately
-            
+          if (snapshot.empty && !localStorage.getItem('sc_leads_seeded')) {
+            // First-time setup only — seed the database once
+            setLeads(INIT_LEADS);
+            localStorage.setItem('sc_leads_seeded', '1');
             try {
               const batch = writeBatch(db);
               INIT_LEADS.forEach((lead) => {
@@ -306,27 +314,10 @@ export default function App() {
               console.warn('Could not write init leads to DB (might be read-only):', e);
             }
           } else {
-            const mergedLeads = [...dbLeads];
-            const missingBaseLeads = INIT_LEADS.filter(
-              (baseLead) => !dbLeads.some((l) => l.id === baseLead.id)
-            );
-
-            if (missingBaseLeads.length > 0) {
-              const batch = writeBatch(db);
-              missingBaseLeads.forEach((lead) => {
-                batch.set(doc(db, 'leads', lead.id), lead, { merge: true });
-                mergedLeads.push(lead);
-              });
-              
-              setLeads(mergedLeads); // Set leads immediately so UI updates
-              
-              try {
-                await batch.commit();
-              } catch (e) {
-                console.warn('Could not write missing base leads to DB (might be read-only):', e);
-              }
-            } else {
-              setLeads(mergedLeads);
+            // Use Firebase as the source of truth — never re-seed
+            setLeads(dbLeads);
+            if (!localStorage.getItem('sc_leads_seeded')) {
+              localStorage.setItem('sc_leads_seeded', '1');
             }
           }
 
@@ -353,7 +344,16 @@ export default function App() {
 
   const setStatus = async (id: string, st: LeadStatus) => {
     try {
-      await setDoc(doc(db, 'leads', id), { status: st }, { merge: true });
+      // Auto-log status change with timestamp
+      const lead = leads.find((l) => l.id === id);
+      const oldStatus = lead?.status || 'unknown';
+      if (oldStatus !== st) {
+        const stamp = `[${new Date().toLocaleDateString()} — Status: ${oldStatus} → ${st}]`;
+        const newNotes = lead?.notes ? lead.notes + '\n\n' + stamp : stamp;
+        await setDoc(doc(db, 'leads', id), { status: st, notes: newNotes }, { merge: true });
+      } else {
+        await setDoc(doc(db, 'leads', id), { status: st }, { merge: true });
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e: any) {
@@ -364,6 +364,22 @@ export default function App() {
         try { msg = JSON.parse(msg).error || msg; } catch {}
         setAppError('Database Error: ' + msg);
         throw err;
+      }
+    }
+  };
+
+  const updateLeadFields = async (id: string, fields: Partial<Lead>) => {
+    try {
+      await setDoc(doc(db, 'leads', id), fields, { merge: true });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e: any) {
+      try {
+        handleFirestoreError(e, OperationType.UPDATE, `leads/${id}`);
+      } catch (err: any) {
+        let msg = err.message;
+        try { msg = JSON.parse(msg).error || msg; } catch {}
+        setAppError('Database Error: ' + msg);
       }
     }
   };
@@ -411,26 +427,22 @@ export default function App() {
     // Save scroll position so we can restore after re-render
     const scrollEl = document.querySelector('main');
     const scrollPos = scrollEl?.scrollTop || 0;
-    try {
-      await deleteDoc(doc(db, 'leads', id));
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-      if (openId === id) setOpenId(null);
-      setDeleteModal(null);
-      // Restore scroll position after React re-renders
-      requestAnimationFrame(() => {
-        if (scrollEl) scrollEl.scrollTop = scrollPos;
-      });
-    } catch (e: any) {
-      try {
-        handleFirestoreError(e, OperationType.DELETE, `leads/${id}`);
-      } catch (err: any) {
-        let msg = err.message;
-        try { msg = JSON.parse(msg).error || msg; } catch {}
-        setAppError('Database Error: ' + msg);
-        throw err;
-      }
-    }
+    // Always track deletion locally (Firebase rules may block server-side delete)
+    const newDeleted = new Set(deletedIds);
+    newDeleted.add(id);
+    setDeletedIds(newDeleted);
+    localStorage.setItem('sc_deleted_leads', JSON.stringify([...newDeleted]));
+
+    // Try Firebase delete too (best effort)
+    try { await deleteDoc(doc(db, 'leads', id)); } catch {}
+
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+    if (openId === id) setOpenId(null);
+    setDeleteModal(null);
+    requestAnimationFrame(() => {
+      if (scrollEl) scrollEl.scrollTop = scrollPos;
+    });
   };
 
   const copy = async (id: string, text: string) => {
@@ -458,7 +470,10 @@ export default function App() {
     }
   };
 
-  const filtered = leads.filter((l) => {
+  // Filter out deleted leads everywhere
+  const visibleLeads = leads.filter((l) => !deletedIds.has(l.id));
+
+  const filtered = visibleLeads.filter((l) => {
     if (regF !== 'All Regions' && l.r !== regF) return false;
     
     if (stF === 'active') {
@@ -495,12 +510,12 @@ export default function App() {
   }
 
   const S = {
-    total: leads.length,
-    t1: leads.filter((l) => l.t === 1).length,
-    withPM: leads.filter((l) => !!l.pm).length,
-    active: leads.filter((l) => !['new', 'dead', 'client'].includes(l.status)).length,
-    warm: leads.filter((l) => l.status === 'interested').length,
-    clients: leads.filter((l) => l.status === 'client').length,
+    total: visibleLeads.length,
+    t1: visibleLeads.filter((l) => l.t === 1).length,
+    withPM: visibleLeads.filter((l) => !!l.pm).length,
+    active: visibleLeads.filter((l) => !['new', 'dead', 'client'].includes(l.status)).length,
+    warm: visibleLeads.filter((l) => l.status === 'interested').length,
+    clients: visibleLeads.filter((l) => l.status === 'client').length,
   };
 
   if (loading) {
@@ -535,7 +550,7 @@ export default function App() {
         setMobileMenuOpen={setMobileMenuOpen}
         tab={tab}
         setTab={setTab}
-        leads={leads}
+        leads={visibleLeads}
         saved={saved}
         onPipelineClick={(filterType) => {
           setTab('leads');
@@ -606,7 +621,7 @@ export default function App() {
                   Aerospace Lead Database
                 </h1>
                 <p className="text-xs font-mono text-zinc-500">
-                  {filtered.length} of {leads.length} leads · {REGIONS.length - 1} regions ·{' '}
+                  {filtered.length} of {visibleLeads.length} leads · {REGIONS.length - 1} regions ·{' '}
                   {S.withPM} named purchasing managers
                 </p>
               </div>
@@ -734,7 +749,7 @@ export default function App() {
         {tab === 'outreach' && <OutreachTab />}
         {tab === 'pipeline' && (
           <PipelineTab
-            leads={leads}
+            leads={visibleLeads}
             onLeadClick={(id) => {
               setTab('leads');
               setRegF('All Regions');
@@ -755,7 +770,7 @@ export default function App() {
         )}
         {tab === 'brain' && (
           <AiBrain
-            leads={leads}
+            leads={visibleLeads}
             onLeadClick={(id) => {
               setTab('leads');
               setRegF('All Regions');
@@ -772,6 +787,7 @@ export default function App() {
             }}
             onDeleteLead={(id, co) => setDeleteModal({ id, co })}
             setStatus={setStatus}
+            handleAI={handleAI}
           />
         )}
       </main>
@@ -793,6 +809,7 @@ export default function App() {
           cp={cp}
           copy={copy}
           saveNote={saveNote}
+          updateLeadFields={updateLeadFields}
         />
       )}
 
@@ -805,7 +822,7 @@ export default function App() {
         />
       )}
 
-      <BoltChat leads={leads} />
+      <BoltChat leads={visibleLeads} />
     </div>
   );
 }

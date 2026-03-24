@@ -194,7 +194,7 @@ CALL OPENER
       maxOutputTokens: 450,
     }
   });
-  return response.text;
+  return (response.text || '').replace(/\[cite:\s*[\d,\s#]+\]/gi, '').replace(/\s{2,}/g, ' ');
 }
 
 export async function chatWithBolt(
@@ -245,37 +245,135 @@ Respond as Bolt — helpful, direct, knowledgeable about aerospace manufacturing
       tools: [{ googleSearch: {} }],
     }
   });
-  return response.text || 'Sorry, I couldn\'t generate a response. Try again.';
+  const raw = response.text || 'Sorry, I couldn\'t generate a response. Try again.';
+  return raw.replace(/\[cite:\s*[\d,\s#]+\]/gi, '').replace(/\s{2,}/g, ' ');
+}
+
+/** Generate email variations from a name + domain */
+function generateEmails(firstName: string, lastName: string, domain: string): string[] {
+  if (!firstName || !lastName || !domain) return [];
+  const f = firstName.toLowerCase().replace(/[^a-z]/g, '');
+  const l = lastName.toLowerCase().replace(/[^a-z]/g, '');
+  return [
+    `${f}.${l}@${domain}`,
+    `${f}${l}@${domain}`,
+    `${f[0]}${l}@${domain}`,
+    `${f}@${domain}`,
+    `${f[0]}.${l}@${domain}`,
+  ];
 }
 
 export async function researchContact(lead: any) {
-  const prompt = `You are a B2B sales researcher. Your job is to find the right decision-maker contact at manufacturing companies for a deburring subcontract service. Be specific and honest about what you know vs. don't know. Always suggest the best search approach if you can't confirm details.
+  const domain = lead.web?.replace(/https?:\/\/(www\.)?/, '').replace(/\/.*/, '') || '';
 
-Research the best contact at this company for outsourced deburring work:
+  const prompt = `Search Google for people who work at "${lead.co}" in ${lead.city}, CA.
+
+SKIP ANY PLANNING OR EXPLANATION. Go straight to results.
 
 Company: ${lead.co}
+Website: ${lead.web || 'unknown'}
 City: ${lead.city}, CA
-Industry: Aerospace/Defense precision machining
-What they make: ${lead.parts}
-Current contact on file: ${lead.who} — ${lead.role}
-${lead.pm ? `Named contact on file: ${lead.pm} (${lead.pm_title})` : "No named contact yet"}
+Makes: ${lead.parts || 'precision machined parts'}
 
-Provide:
-1. Best contact name & title (Purchasing Manager, Procurement, Operations Mgr, or Owner)
-2. Email address or best email pattern to try
-3. Direct LinkedIn search URL to find them
-4. Best outreach angle for this specific company
-5. Confidence level: HIGH / MEDIUM / LOW
-6. Top Google search query to find their buyer
+Return ONLY this JSON format (no markdown, no explanation, no code blocks):
+{
+  "people": [
+    {"name": "First Last", "title": "Their Job Title", "source": "linkedin/website/press"},
+    {"name": "First Last", "title": "Their Job Title", "source": "linkedin/website/press"}
+  ],
+  "phone": "real company phone from website or Google",
+  "general_email": "info@domain.com or sales@domain.com from website",
+  "website_domain": "theirdomain.com",
+  "what_they_do": "one sentence about their actual products"
+}
 
-Be specific. If you don't know the name, say so and give the best strategy to find them.`;
+RULES:
+- Search LinkedIn for "${lead.co}" employees
+- Search their website for team/about/contact pages
+- I need REAL FIRST AND LAST NAMES of people who work there
+- Find at least the owner/president and someone in operations or purchasing
+- Include the company phone from their website or Google Maps listing
+- Return ONLY valid JSON. Nothing else.`;
 
   const response = await generateWithFallback({
     contents: prompt,
     config: {
-      maxOutputTokens: 700,
+      maxOutputTokens: 600,
       tools: [{ googleSearch: {} }],
     }
   });
-  return response.text;
+
+  let raw = (response.text || '').replace(/\[cite:\s*[\d,\s#]+\]/gi, '');
+
+  // Try to parse as JSON first
+  try {
+    // Strip markdown code blocks if present
+    raw = raw.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
+
+    const data = JSON.parse(raw);
+    const emailDomain = data.website_domain || domain;
+
+    // Build a nice formatted result from the structured data
+    let result = '';
+
+    if (data.people && data.people.length > 0) {
+      result += '### People Found\n';
+      for (const p of data.people) {
+        result += `- **${p.name}** — ${p.title} (${p.source})\n`;
+      }
+
+      // Pick best contact (first person with purchasing/operations/owner in title, or just first)
+      const best = data.people.find((p: any) =>
+        /purchas|procure|buyer|operation|supply|owner|president|vp|director/i.test(p.title)
+      ) || data.people[0];
+
+      result += `\n### Best Contact\n**${best.name}** — ${best.title}\n`;
+
+      // Generate real email attempts
+      const nameParts = best.name.trim().split(/\s+/);
+      if (nameParts.length >= 2 && emailDomain) {
+        const firstName = nameParts[0];
+        const lastName = nameParts[nameParts.length - 1];
+        const emails = generateEmails(firstName, lastName, emailDomain);
+
+        result += `\n### Email Addresses to Try\n`;
+        for (const em of emails) {
+          result += `- ${em}\n`;
+        }
+      }
+
+      // Add general email
+      if (data.general_email) {
+        result += `- ${data.general_email} (general)\n`;
+      }
+
+      // Generate emails for ALL people found
+      if (data.people.length > 1 && emailDomain) {
+        result += `\n### Other Contacts' Emails\n`;
+        for (const p of data.people.slice(1)) {
+          const parts = p.name.trim().split(/\s+/);
+          if (parts.length >= 2) {
+            const f = parts[0].toLowerCase();
+            const l = parts[parts.length - 1].toLowerCase();
+            result += `- **${p.name}**: ${f}.${l}@${emailDomain} / ${f[0]}${l}@${emailDomain}\n`;
+          }
+        }
+      }
+    } else {
+      result += '### No specific people found\n';
+    }
+
+    if (data.phone) {
+      result += `\n### Phone\n${data.phone}\n`;
+    }
+
+    if (data.what_they_do) {
+      result += `\n### Quick Pitch\n${data.what_they_do} — perfect candidate for outsourced deburring.\n`;
+    }
+
+    return result;
+  } catch {
+    // If JSON parsing fails, return the raw text cleaned up
+    return raw.replace(/\s{2,}/g, ' ');
+  }
 }
