@@ -312,7 +312,19 @@ RULES:
     // Strip markdown code blocks if present
     raw = raw.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
 
-    const data = JSON.parse(raw);
+    // Gemini sometimes returns multiple JSON objects or extra text — extract just the first valid one
+    let data: any = null;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      // Find the first { ... } block with balanced braces
+      let depth = 0, start = -1;
+      for (let i = 0; i < raw.length; i++) {
+        if (raw[i] === '{') { if (depth === 0) start = i; depth++; }
+        if (raw[i] === '}') { depth--; if (depth === 0 && start >= 0) { data = JSON.parse(raw.slice(start, i + 1)); break; } }
+      }
+    }
+    if (!data || !data.people) throw new Error('no valid data');
     const emailDomain = data.website_domain || domain;
 
     // Build a nice formatted result from the structured data
@@ -375,7 +387,26 @@ RULES:
 
     return result;
   } catch {
-    // If JSON parsing fails, return the raw text cleaned up
-    return raw.replace(/\s{2,}/g, ' ');
+    // If ALL parsing fails, try to extract names from the raw text and build emails ourselves
+    const nameMatches = raw.match(/"name"\s*:\s*"([^"]+)"/g);
+    if (nameMatches && nameMatches.length > 0 && domain) {
+      let result = '### People Found\n';
+      const seen = new Set<string>();
+      for (const m of nameMatches) {
+        const name = m.match(/"name"\s*:\s*"([^"]+)"/)?.[1];
+        if (!name || seen.has(name)) continue;
+        seen.add(name);
+        result += `- **${name}**\n`;
+        const parts = name.trim().split(/\s+/);
+        if (parts.length >= 2) {
+          const emails = generateEmails(parts[0], parts[parts.length - 1], domain);
+          result += `\n### Emails for ${name}\n`;
+          for (const em of emails) result += `- ${em}\n`;
+        }
+      }
+      return result;
+    }
+    // Last resort — strip JSON artifacts and return readable text
+    return raw.replace(/[{}"[\]]/g, '').replace(/,\s*/g, '\n').replace(/\s{2,}/g, '\n').trim();
   }
 }
