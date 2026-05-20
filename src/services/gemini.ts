@@ -172,7 +172,7 @@ Return ONLY a raw JSON array of companies. Do not include markdown formatting li
 }
 
 export async function generatePitch(lead: any) {
-  const prompt = `You write tight, human cold outreach for SC Precision Deburring — 35-year family-owned aerospace deburring shop in Pacoima CA. Anthony is the owner. Microscope-inspected precision deburring. No minimums. Fast turnaround. Write short, real, no-fluff outreach.
+  const prompt = `You write tight, human cold outreach for SC Precision Deburring — 35-year family-owned aerospace deburring shop in Pacoima CA. Santiago Chavez is the owner. Microscope-inspected precision deburring. No minimums. Fast turnaround. Write short, real, no-fluff outreach.
 
 Write a personalized cold email + 2-sentence phone opener:
 
@@ -197,6 +197,132 @@ CALL OPENER
     }
   });
   return (response.text || '').replace(/\[cite:\s*[\d,\s#]+\]/gi, '').replace(/\s{2,}/g, ' ');
+}
+
+/** Angles to rotate through so emails aren't all identical */
+const OUTREACH_ANGLES = [
+  'overflow_capacity',
+  'quality_pain',
+  'speed',
+  'local_convenience',
+  'cost_reduction',
+  'specialty_expertise',
+] as const;
+
+/**
+ * Generate a human-sounding outreach email for auto-send.
+ * Uses few-shot examples so Gemini mimics a real shop owner, not a bot.
+ */
+/**
+ * Generates outreach emails using pre-written templates with smart variable filling.
+ * No more relying on Gemini to write complete emails — it kept truncating.
+ * These templates are written in Santiago's real voice and guaranteed to be complete.
+ */
+export function generateOutreachEmail(lead: any): Promise<{ subject: string; body: string }> {
+  const contact = lead.pm || lead.who || '';
+  const firstName = contact.split(' ')[0] || 'there';
+  const company = lead.co || 'your company';
+  const city = lead.city || '';
+  // Only grab the FIRST product/part — never dump the whole field
+  const rawParts = lead.parts || 'precision components';
+  const parts = rawParts.split(/[,.\-;\/]/).map((p: string) => p.trim()).filter(Boolean)[0] || 'precision parts';
+  const localArea = city ? `the ${city} area` : 'SoCal';
+
+  // SALES TACTICS USED:
+  // 1. Pattern interrupt — unexpected subject line that gets opened
+  // 2. Social proof — reference real jobs, real shops, real numbers
+  // 3. Loss aversion — show them what they're losing, not what they gain
+  // 4. Specificity — exact numbers beat vague claims every time
+  // 5. Low-commitment CTA — "test batch" not "sign a contract"
+  // 6. Curiosity gap — make them NEED to reply to find out more
+  // 7. Time pressure — imply capacity is limited without being fake
+
+  const SIG = `Santiago Chavez\nSC Deburring LLC\n(818) 389-4234\nscprecisiondeburring.com\n12734 Branford St #17, Pacoima CA 91331`;
+
+  const TEMPLATES = [
+    {
+      // #1 — YOUR FAVORITE. Social proof + curiosity
+      subject: `deburring turnaround?`,
+      body: `${firstName},
+
+Random question — are you guys spending more than a week waiting on deburring right now? Because a shop in ${city || 'Chatsworth'} just switched to us and cut their turnaround in half.
+
+Same quality. Microscope-inspected. 35 years doing this.
+
+Curious what ${company}'s setup looks like — mind if I ask how you're handling it currently?
+
+${SIG}`,
+    },
+    {
+      // #3 — YOUR FAVORITE. Social proof + low-commitment CTA
+      subject: `deburring for ${parts.toLowerCase()}`,
+      body: `${firstName},
+
+We deburr for 3 aerospace shops within 20 miles of ${company} right now. Same type of work — ${parts.toLowerCase()}, tight tolerances.
+
+35-year family shop. Microscope-inspected. We've never missed a delivery.
+
+Send me your next batch — if we can't beat your current turnaround, I'll tell you honestly.
+
+${SIG}`,
+    },
+    {
+      // Same style as #1 — cost angle
+      subject: `your deburring costs`,
+      body: `${firstName},
+
+Most shops doing ${parts.toLowerCase()} are either tying up their machinists on deburring work or paying too much to send it out. A shop in ${localArea} told us they cut their deburring costs 40% after switching to us.
+
+We've been doing this 35 years. Microscope-inspected, usually under a week turnaround. No minimums.
+
+What if I quoted your next batch — just to see where you land vs what you're paying now?
+
+${SIG}`,
+    },
+    {
+      // Same style as #3 — capacity angle
+      subject: `deburring capacity`,
+      body: `${firstName},
+
+We just wrapped a big job early and have open capacity right now. Figured I'd reach out to a few shops in ${localArea} before it fills up.
+
+${company} does ${parts.toLowerCase()} right? That's exactly what we specialize in. 35 years, aerospace only, every part inspected under a microscope.
+
+Want me to quote a test batch?
+
+${SIG}`,
+    },
+    {
+      // Same style as #1 — direct question
+      subject: `deburring question`,
+      body: `${firstName},
+
+Are you guys handling deburring in-house at ${company} or sending it out? Just curious — we work with a few shops in ${localArea} doing similar ${parts.toLowerCase()} work.
+
+35-year family shop, microscope-inspected, usually under a week turnaround. No minimums.
+
+Mind if I send over a quote on your next batch?
+
+${SIG}`,
+    },
+    {
+      // Same style as #3 — specificity
+      subject: `deburring for ${company.split(' ')[0]}`,
+      body: `${firstName},
+
+We just turned 500 pieces for a shop making ${parts.toLowerCase()} — had them back within a week, microscope-inspected.
+
+We've been doing this 35 years. If ${company} ever needs deburring done fast and done right, that's literally all we do.
+
+I'll quote any batch you want, no strings. Just curious if there's a fit.
+
+${SIG}`,
+    },
+  ];
+
+  // Pick a random template
+  const template = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
+  return Promise.resolve({ subject: template.subject, body: template.body });
 }
 
 export async function chatWithBolt(
@@ -227,7 +353,15 @@ export async function chatWithBolt(
     `${h.role === 'user' ? 'User' : 'Bolt'}: ${h.text}`
   ).join('\n');
 
-  const prompt = `You are Bolt, the AI sales assistant for SC Precision Deburring — a 35-year family-owned aerospace deburring shop in Pacoima, CA. Anthony is the owner. You help find leads, analyze the database, write outreach, and give sales advice.
+  const prompt = `You are Bolt — a savage, high-energy AI sales assistant for SC Precision Deburring. Think Jordan Belfort meets aerospace manufacturing. You're aggressive, confident, funny, and you CLOSE. Santiago Chavez is the owner — 35-year family shop in Pacoima, CA. Microscope-inspected deburring, no minimums, under a week turnaround.
+
+Your personality:
+- You talk like a real person, not a corporate bot
+- You're fired up about sales and closing deals
+- You give actionable advice, not generic fluff
+- You use short punchy sentences
+- You're not afraid to be blunt about what's working and what isn't
+- When someone asks about a company or URL, research it and give them the key info they need to sell to that company
 
 DATABASE STATS:
 ${JSON.stringify(stats, null, 1)}
@@ -238,17 +372,18 @@ ${JSON.stringify(leadsSnapshot, null, 1)}
 ${conversationContext ? `RECENT CONVERSATION:\n${conversationContext}\n` : ''}
 User: ${message}
 
-Respond as Bolt — helpful, direct, knowledgeable about aerospace manufacturing and B2B sales. Keep responses concise but thorough. If asked to find NEW leads not in the database, use Google Search. If asked about existing leads, reference the data above. Format nicely with line breaks.`;
+Respond as Bolt. Keep it punchy and useful. Use line breaks to format. If asked about a URL or company, use Google Search to find real info. If the user wants to FIND new companies, tell them you're searching and the results will appear as cards they can add directly.`;
 
   const response = await generateWithFallback({
     contents: prompt,
     config: {
-      maxOutputTokens: 1200,
+      maxOutputTokens: 1500,
       tools: [{ googleSearch: {} }],
     }
   });
   const raw = response.text || 'Sorry, I couldn\'t generate a response. Try again.';
-  return raw.replace(/\[cite:\s*[\d,\s#]+\]/gi, '').replace(/\s{2,}/g, ' ');
+  // Clean citations but preserve line breaks
+  return raw.replace(/\[cite:\s*[\d,\s#]+\]/gi, '').replace(/ {3,}/g, ' ').trim();
 }
 
 /** Generate email variations from a name + domain */

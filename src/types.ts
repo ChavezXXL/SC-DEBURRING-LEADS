@@ -26,6 +26,12 @@ export interface Lead {
   pitch: string;
   status: LeadStatus;
   notes: string;
+  /** ISO date string (YYYY-MM-DD) for the next reminder/follow-up to act on this lead. Optional. */
+  reminderDate?: string;
+  /** ISO timestamp of when this lead was last contacted (email/call/text). Powers "stale leads" view. */
+  lastContactedAt?: string;
+  /** Total touches across all channels. Increment when sending email, logging a call, etc. */
+  touchCount?: number;
 }
 
 export interface StatusDef {
@@ -50,5 +56,25 @@ export interface ObjectionDef {
   a: string;
 }
 
-export type TabKey = 'leads' | 'outreach' | 'pipeline' | 'brain';
+export type TabKey = 'leads' | 'outreach' | 'pipeline' | 'brain' | 'autopilot';
 export type AiMode = 'pitch' | 'research';
+
+export type OutreachMode = 'all_new' | 'tier1' | 'tagged';
+
+export interface AutoOutreachSettings {
+  enabled: boolean;
+  mode: OutreachMode;
+  dailyLimit: number;
+}
+
+export interface OutreachLog {
+  id: string;
+  leadId: string;
+  company: string;
+  contact: string;
+  email: string;
+  subject: string;
+  body: string;
+  sentAt: string;
+  status: 'sent' | 'opened' | 'replied' | 'bounced';
+}
