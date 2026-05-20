@@ -27,7 +27,8 @@ import { RAW, STATUS, REGIONS, SCRIPTS, OBJECTIONS } from './data';
 import type { Lead, LeadStatus, TabKey, AiMode } from './types';
 import { generatePitch, researchContact, findNewLeads } from './services/gemini';
 import { db } from './firebase';
-import { collection, onSnapshot, doc, setDoc, writeBatch, deleteDoc, deleteField } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, writeBatch, deleteDoc, deleteField, query, where } from 'firebase/firestore';
+import { useAuth } from './auth/AuthContext';
 
 import { Sidebar } from './components/Sidebar';
 import { OutreachTab } from './components/OutreachTab';
@@ -135,6 +136,12 @@ function handleFirestoreError(error: any, operationType: OperationType, path: st
 import { PipelineTab } from './components/PipelineTab';
 
 export default function App() {
+  // Multi-tenant scoping. When auth is enabled, tenantId comes from the
+  // logged-in user's profile. When auth is off (live site default), tenantId
+  // is undefined and the app behaves like before (no filtering).
+  const { tenant, profile, signOut } = useAuth();
+  const tenantId = tenant?.id;
+
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState<string | null>(null);
@@ -219,6 +226,7 @@ export default function App() {
       em: newLeadForm.em ?? '',
       web: newLeadForm.web ?? '',
       ...(newLeadForm.reminderDate ? { reminderDate: newLeadForm.reminderDate } : {}),
+      ...(tenantId ? { tenantId } : {}),
     };
 
     try {
@@ -291,6 +299,7 @@ export default function App() {
           t: (lead.t as 1 | 2) ?? 2,
           r: lead.r ?? 'Other',
           ...(lead.reminderDate ? { reminderDate: lead.reminderDate } : {}),
+          ...(tenantId ? { tenantId } : {}),
         };
 
         batch.set(doc(db, 'leads', uniqueId), safeLead);
@@ -314,15 +323,30 @@ export default function App() {
   };
 
   useEffect(() => {
+    // If auth is enabled but tenant hasn't loaded yet, wait — don't subscribe
+    // to the global leads collection (would expose other tenants' data).
+    const REQUIRE_AUTH =
+      (import.meta as any).env?.VITE_REQUIRE_AUTH === 'true';
+    if (REQUIRE_AUTH && !tenantId) {
+      return; // AuthGate is showing Login or loading; nothing to do here.
+    }
+
+    // Tenant-scoped query when we have a tenantId; otherwise legacy (all leads).
+    const leadsRef = collection(db, 'leads');
+    const leadsQuery = tenantId
+      ? query(leadsRef, where('tenantId', '==', tenantId))
+      : leadsRef;
+
     const unsub = onSnapshot(
-      collection(db, 'leads'),
+      leadsQuery,
       async (snapshot) => {
         try {
           const dbLeads = snapshot.docs
             .map((d) => ({ ...d.data(), id: d.id }) as Lead);
 
-          if (snapshot.empty && !localStorage.getItem('sc_leads_seeded')) {
-            // First-time setup only — seed the database once
+          // Only seed initial leads in legacy single-tenant mode. New tenants
+          // get a fresh empty CRM — that's the whole point of "suit them".
+          if (!tenantId && snapshot.empty && !localStorage.getItem('sc_leads_seeded')) {
             setLeads(INIT_LEADS);
             localStorage.setItem('sc_leads_seeded', '1');
             try {
@@ -361,7 +385,7 @@ export default function App() {
     );
 
     return () => unsub();
-  }, []);
+  }, [tenantId]);
 
   const setStatus = async (id: string, st: LeadStatus) => {
     try {
@@ -463,6 +487,7 @@ export default function App() {
         ph: lead.ph ?? '',
         em: lead.em ?? '',
         web: lead.web ?? '',
+        ...(tenantId ? { tenantId } : {}),
       };
       await setDoc(doc(db, 'leads', lead.id), fullLead);
       setSaved(true);
@@ -609,11 +634,11 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-300">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin text-orange-500" size={32} />
-          <div className="animate-pulse text-sm font-mono text-zinc-500">
-            Connecting to Firebase...
+          <Loader2 className="animate-spin text-blue-500" size={32} />
+          <div className="text-sm text-slate-500">
+            Loading your CRM…
           </div>
         </div>
       </div>
@@ -621,15 +646,20 @@ export default function App() {
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 font-sans text-zinc-300 selection:bg-orange-500/30">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-700 selection:bg-blue-500/20">
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 border-b border-zinc-800/50 bg-zinc-900/90 backdrop-blur-md z-40 flex items-center justify-between px-4">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-xl ring-1 ring-slate-200/70 z-40 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <FancyLogo className="h-8 w-8 drop-shadow-lg" />
-          <div className="text-sm font-bold tracking-tight text-zinc-100">SC Deburring</div>
+          <FancyLogo className="h-8 w-8" />
+          <div className="text-sm font-semibold tracking-tight text-slate-900">
+            {tenant?.name || 'SC Deburring'}
+          </div>
         </div>
-        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-zinc-400 hover:text-zinc-200">
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition"
+        >
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
@@ -641,6 +671,11 @@ export default function App() {
         setTab={setTab}
         leads={visibleLeads}
         saved={saved}
+        tenant={tenant}
+        profile={profile}
+        onSignOut={() => {
+          void signOut();
+        }}
         onPipelineClick={(filterType) => {
           setTab('leads');
           setMobileMenuOpen(false);
@@ -678,25 +713,25 @@ export default function App() {
       {/* Main Content */}
       <main className="max-h-screen flex-1 overflow-y-auto p-4 pt-20 md:p-8 md:pt-8 w-full">
         {dbError && (
-          <div className="mx-auto mb-6 flex max-w-5xl items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-red-400">
+          <div className="mx-auto mb-6 flex max-w-5xl items-start gap-3 rounded-2xl bg-red-50 ring-1 ring-red-200/60 p-4 text-red-700">
             <X size={20} className="mt-0.5 shrink-0" />
             <div>
-              <div className="mb-1 text-sm font-bold">Database Connection Error</div>
+              <div className="mb-1 text-sm font-semibold">Database Connection Error</div>
               <div className="text-xs leading-relaxed opacity-80">{dbError}</div>
             </div>
           </div>
         )}
 
         {appError && (
-          <div className="mx-auto mb-6 flex max-w-5xl items-start justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-red-400 shadow-lg">
+          <div className="mx-auto mb-6 flex max-w-5xl items-start justify-between gap-3 rounded-2xl bg-red-50 ring-1 ring-red-200/60 p-4 text-red-700 shadow-sm">
             <div className="flex gap-3">
               <X size={20} className="mt-0.5 shrink-0" />
               <div>
-                <div className="mb-1 text-sm font-bold">Error</div>
+                <div className="mb-1 text-sm font-semibold">Error</div>
                 <div className="text-xs leading-relaxed opacity-80">{appError}</div>
               </div>
             </div>
-            <button onClick={() => setAppError(null)} className="shrink-0 p-1 hover:bg-red-500/20 rounded-md transition-colors">
+            <button onClick={() => setAppError(null)} className="shrink-0 p-1 hover:bg-red-100 rounded-md transition-colors">
               <X size={16} />
             </button>
           </div>
@@ -706,10 +741,10 @@ export default function App() {
           <div className="mx-auto max-w-5xl">
             <div className="mb-8 flex items-end justify-between">
               <div>
-                <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-100">
-                  {hot5 ? "Today's Pipeline" : "Aerospace Lead Database"}
+                <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-900">
+                  {hot5 ? "Today's Pipeline" : "Leads"}
                 </h1>
-                <p className="text-xs font-mono text-zinc-500">
+                <p className="text-xs text-slate-500">
                   {filtered.length} of {visibleLeads.length} leads · {REGIONS.length - 1} regions ·{' '}
                   {S.withPM} named purchasing managers
                 </p>
@@ -718,7 +753,7 @@ export default function App() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowAddLead(true)}
-                  className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-bold text-zinc-300 transition-colors hover:bg-zinc-800"
+                  className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 active:scale-[0.99]"
                 >
                   + Add Lead
                 </button>
@@ -726,19 +761,19 @@ export default function App() {
             </div>
 
             {hot5 && filtered.length > 0 && (
-              <div className="mb-6 rounded-xl border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-orange-500/5 p-4">
+              <div className="mb-6 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 ring-1 ring-orange-200/60 p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <div className="font-bold text-orange-300 text-sm flex items-center gap-2">
+                    <div className="font-semibold text-orange-700 text-sm flex items-center gap-2">
                       🔥 Today's {filtered.length} — your move
                     </div>
-                    <div className="mt-1 text-xs text-zinc-400 leading-relaxed">
+                    <div className="mt-1 text-xs text-slate-600 leading-relaxed">
                       Tier-1 leads with named decision-makers and verified emails. Send {filtered.length} emails before lunch — that's your daily goal. After each send, expand the card and mark status &quot;emailed&quot; so it drops off the list.
                     </div>
                   </div>
                   <button
                     onClick={() => setHot5(false)}
-                    className="shrink-0 rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-1.5 text-xs font-mono text-zinc-400 hover:bg-zinc-800"
+                    className="shrink-0 rounded-xl bg-white ring-1 ring-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                     title="Exit HOT 5 mode and view all leads"
                   >
                     View all leads
@@ -747,22 +782,22 @@ export default function App() {
               </div>
             )}
 
-            <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-3">
+            <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl bg-white ring-1 ring-slate-200/70 p-3">
               <div className="relative min-w-[200px] flex-1">
                 <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                   size={16}
                 />
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Search company, contact, city, parts..."
-                  className="w-full rounded-lg border border-zinc-800 bg-zinc-950 py-2 pl-9 pr-8 text-sm text-zinc-200 transition-all focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+                  className="w-full rounded-xl bg-slate-50 py-2 pl-9 pr-8 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-slate-200 transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                 />
                 {q && (
                   <button
                     onClick={() => setQ('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
                     <X size={16} />
                   </button>
@@ -772,7 +807,7 @@ export default function App() {
               <select
                 value={regF}
                 onChange={(e) => setRegF(e.target.value)}
-                className="cursor-pointer rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-400 focus:border-orange-500/50 focus:outline-none"
+                className="cursor-pointer rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600 ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
               >
                 {REGIONS.map((r) => (
                   <option key={r}>{r}</option>
@@ -782,7 +817,7 @@ export default function App() {
               <select
                 value={tierF}
                 onChange={(e) => setTierF(e.target.value)}
-                className="cursor-pointer rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-400 focus:border-orange-500/50 focus:outline-none"
+                className="cursor-pointer rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600 ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
               >
                 <option value="all">All Tiers</option>
                 <option value="1">Tier 1 — Call Now</option>
@@ -792,7 +827,7 @@ export default function App() {
               <select
                 value={stF}
                 onChange={(e) => setStF(e.target.value)}
-                className="cursor-pointer rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-400 focus:border-orange-500/50 focus:outline-none"
+                className="cursor-pointer rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600 ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
               >
                 <option value="all">All Statuses</option>
                 <option value="active">Active Pipeline</option>
@@ -816,10 +851,10 @@ export default function App() {
                   }
                   setHot5(!hot5);
                 }}
-                className={`rounded-lg border px-3 py-2 text-xs font-bold font-mono transition-colors ${
+                className={`rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
                   hot5
-                    ? 'border-orange-500 bg-orange-500/20 text-orange-300 shadow-lg shadow-orange-500/20'
-                    : 'border-orange-500/50 bg-orange-500/5 text-orange-400 hover:bg-orange-500/10'
+                    ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/30'
+                    : 'bg-orange-50 text-orange-700 ring-1 ring-orange-200 hover:bg-orange-100'
                 }`}
                 title="Show top 5 actionable leads to contact today (new + has email + has named PM)"
               >
@@ -828,10 +863,10 @@ export default function App() {
 
               <button
                 onClick={() => setPmOnly(!pmOnly)}
-                className={`rounded-lg border px-3 py-2 text-xs font-medium font-mono transition-colors ${
+                className={`rounded-xl px-3 py-2 text-xs font-medium transition-all ${
                   pmOnly
-                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-500'
-                    : 'border-zinc-800 bg-zinc-950 text-zinc-500 hover:border-zinc-700'
+                    ? 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
+                    : 'bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100'
                 }`}
               >
                 {pmOnly ? 'Named PM Only' : 'Named PMs Only'}
@@ -839,10 +874,10 @@ export default function App() {
 
               <button
                 onClick={() => setRemindersOnly(!remindersOnly)}
-                className={`rounded-lg border px-3 py-2 text-xs font-medium font-mono transition-colors ${
+                className={`rounded-xl px-3 py-2 text-xs font-medium transition-all ${
                   remindersOnly
-                    ? 'border-blue-500/30 bg-blue-500/10 text-blue-400'
-                    : 'border-zinc-800 bg-zinc-950 text-zinc-500 hover:border-zinc-700'
+                    ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200'
+                    : 'bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100'
                 }`}
               >
                 {remindersOnly ? 'Reminders Only' : 'Reminders'}
@@ -850,7 +885,7 @@ export default function App() {
             </div>
 
             {filtered.length === 0 ? (
-              <div className="py-20 text-center text-sm text-zinc-500">
+              <div className="py-20 text-center text-sm text-slate-400">
                 No leads match your filters.
               </div>
             ) : (

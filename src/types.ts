@@ -11,6 +11,10 @@ export type LeadStatus =
 
 export interface Lead {
   id: string;
+  /** Multi-tenant scoping. Each tenant only sees leads with their tenantId.
+   * Optional for backward-compat — legacy leads pre-multi-tenant don't have it,
+   * and the migration script tags those with tenantId="sc-deburring". */
+  tenantId?: string;
   t: 1 | 2;
   r: string;
   co: string;
@@ -77,4 +81,32 @@ export interface OutreachLog {
   body: string;
   sentAt: string;
   status: 'sent' | 'opened' | 'replied' | 'bounced';
+}
+
+/**
+ * A tenant = one business that logs into the CRM.
+ * Santiago is the first tenant (sc-deburring). Each marketing-agency client
+ * he onboards becomes another tenant.
+ */
+export interface Tenant {
+  id: string;            // slug, e.g. "sc-deburring"
+  name: string;          // display name, e.g. "SC Deburring LLC"
+  ownerEmail: string;    // who can manage this tenant
+  primaryColor?: string; // hex, used to "suit them" — defaults to neutral
+  logoUrl?: string;      // optional custom logo
+  createdAt: string;     // ISO timestamp
+  plan?: 'trial' | 'paid' | 'internal';
+}
+
+/**
+ * A user = one Firebase Auth account.
+ * Maps a Firebase Auth UID to the tenant they belong to + their role.
+ */
+export interface UserProfile {
+  uid: string;
+  email: string;
+  tenantId: string;          // which tenant's data this user sees
+  role: 'super-admin' | 'owner' | 'member';
+  displayName?: string;
+  createdAt: string;
 }

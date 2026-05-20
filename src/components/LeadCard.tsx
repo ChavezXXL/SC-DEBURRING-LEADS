@@ -27,6 +27,7 @@ interface LeadCardProps {
     indeed: (city: string) => string;
   };
   setReminder: (id: string, reminderDate: string | null) => void;
+  onQueueOutreach?: (lead: Lead) => void;
 }
 
 export const LeadCard: React.FC<LeadCardProps> = ({
@@ -45,6 +46,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
   copy,
   qs,
   setReminder,
+  onQueueOutreach,
 }) => {
   const isDead = lead.status === 'dead';
   const isOpen = openId === lead.id;
@@ -53,14 +55,14 @@ export const LeadCard: React.FC<LeadCardProps> = ({
   return (
     <div
       id={`lead-${lead.id}`}
-      className={`overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-900/40 transition-all duration-200 hover:border-zinc-700/80 hover:shadow-lg hover:shadow-black/20 ${
+      className={`overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200/70 transition-all duration-200 hover:ring-slate-300 hover:shadow-md hover:shadow-slate-900/5 ${
         isDead ? 'opacity-50' : ''
       }`}
     >
       <LeadCardHeader lead={lead} isOpen={isOpen} setOpenId={setOpenId} />
 
       {isOpen && (
-        <div className="border-t border-zinc-800/50 bg-zinc-900/20 px-4 pb-4 pt-2">
+        <div className="border-t border-slate-200/70 bg-slate-50/50 px-4 pb-4 pt-2">
           <LeadCardActions
             lead={lead}
             cp={cp}
@@ -69,6 +71,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
             handleAI={handleAI}
             showEmail={showEmail}
             setShowEmail={setShowEmail}
+            onQueueOutreach={onQueueOutreach}
           />
           {showEmail && (
             <QuickEmail
