@@ -39,6 +39,7 @@ import { DeleteModal } from './components/DeleteModal';
 import { FancyLogo } from './components/FancyLogo';
 import { BoltChat } from './components/BoltChat';
 import { AiBrain } from './components/AiBrain';
+import { AutoOutreach } from './components/AutoOutreach';
 
 const safeRaw = Array.isArray(RAW) ? RAW : [];
 
@@ -150,6 +151,7 @@ export default function App() {
   const [tierF, setTierF] = useState('all');
   const [pmOnly, setPmOnly] = useState(false);
   const [remindersOnly, setRemindersOnly] = useState(false);
+  const [hot5, setHot5] = useState(false);
   const [q, setQ] = useState('');
 
   const [openId, setOpenId] = useState<string | null>(null);
@@ -423,6 +425,57 @@ export default function App() {
     }
   };
 
+  const addLeadFromBolt = async (lead: Lead) => {
+    try {
+      const fullLead: Lead = {
+        ...lead,
+        status: 'new',
+        notes: '',
+        t: lead.t ?? 2,
+        r: lead.r ?? 'Other',
+        co: lead.co ?? '',
+        city: lead.city ?? '',
+        who: lead.who ?? '',
+        role: lead.role ?? '',
+        pm: lead.pm ?? '',
+        pm_title: lead.pm_title ?? '',
+        parts: lead.parts ?? '',
+        pitch: lead.pitch ?? '',
+        ph: lead.ph ?? '',
+        em: lead.em ?? '',
+        web: lead.web ?? '',
+      };
+      await setDoc(doc(db, 'leads', lead.id), fullLead);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e: any) {
+      try {
+        handleFirestoreError(e, OperationType.CREATE, `leads/${lead.id}`);
+      } catch (err: any) {
+        let msg = err.message;
+        try { msg = JSON.parse(msg).error || msg; } catch {}
+        setAppError('Database Error: ' + msg);
+      }
+    }
+  };
+
+  const queueOutreach = async (lead: Lead) => {
+    try {
+      const current = (lead as any).queued_for_outreach;
+      await setDoc(doc(db, 'leads', lead.id), { queued_for_outreach: !current }, { merge: true });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e: any) {
+      try {
+        handleFirestoreError(e, OperationType.UPDATE, `leads/${lead.id}`);
+      } catch (err: any) {
+        let msg = err.message;
+        try { msg = JSON.parse(msg).error || msg; } catch {}
+        setAppError('Database Error: ' + msg);
+      }
+    }
+  };
+
   const handleDeleteLead = async (id: string) => {
     // Save scroll position so we can restore after re-render
     const scrollEl = document.querySelector('main');
@@ -487,6 +540,14 @@ export default function App() {
     if (pmOnly && !l.pm) return false;
     if (remindersOnly && !l.reminderDate) return false;
 
+    // HOT 5 TODAY: only show actionable leads (new + has email + has named PM, not snoozed)
+    if (hot5) {
+      if (l.status !== 'new') return false;
+      if (!l.em || !l.em.trim()) return false;
+      if (!l.pm || !l.pm.trim()) return false;
+      if (l.reminderDate && new Date(l.reminderDate) > new Date()) return false;
+    }
+
     if (q) {
       const lq = q.toLowerCase();
       return (
@@ -507,6 +568,15 @@ export default function App() {
       if (!b.reminderDate) return -1;
       return new Date(a.reminderDate).getTime() - new Date(b.reminderDate).getTime();
     });
+  }
+
+  // HOT 5: sort tier-1 first then alphabetical, then take top 5
+  if (hot5) {
+    filtered.sort((a, b) => {
+      if (a.t !== b.t) return a.t - b.t;
+      return (a.co || '').localeCompare(b.co || '');
+    });
+    filtered.splice(5);
   }
 
   const S = {
@@ -693,6 +763,29 @@ export default function App() {
               </select>
 
               <button
+                onClick={() => {
+                  // Toggling HOT 5 clears other filters for clean focused view
+                  if (!hot5) {
+                    setRegF('All Regions');
+                    setTierF('all');
+                    setStF('all');
+                    setPmOnly(false);
+                    setRemindersOnly(false);
+                    setQ('');
+                  }
+                  setHot5(!hot5);
+                }}
+                className={`rounded-lg border px-3 py-2 text-xs font-bold font-mono transition-colors ${
+                  hot5
+                    ? 'border-orange-500 bg-orange-500/20 text-orange-300 shadow-lg shadow-orange-500/20'
+                    : 'border-orange-500/50 bg-orange-500/5 text-orange-400 hover:bg-orange-500/10'
+                }`}
+                title="Show top 5 actionable leads to contact today (new + has email + has named PM)"
+              >
+                {hot5 ? '🔥 HOT 5 ACTIVE' : '🔥 HOT 5 TODAY'}
+              </button>
+
+              <button
                 onClick={() => setPmOnly(!pmOnly)}
                 className={`rounded-lg border px-3 py-2 text-xs font-medium font-mono transition-colors ${
                   pmOnly
@@ -739,6 +832,7 @@ export default function App() {
                     cp={cp}
                     copy={copy}
                     qs={qs}
+                    onQueueOutreach={queueOutreach}
                   />
                 ))}
               </div>
@@ -747,6 +841,7 @@ export default function App() {
         )}
 
         {tab === 'outreach' && <OutreachTab />}
+        {tab === 'autopilot' && <AutoOutreach leads={visibleLeads} />}
         {tab === 'pipeline' && (
           <PipelineTab
             leads={visibleLeads}
@@ -822,7 +917,7 @@ export default function App() {
         />
       )}
 
-      <BoltChat leads={visibleLeads} />
+      <BoltChat leads={visibleLeads} onAddLead={addLeadFromBolt} />
     </div>
   );
 }
