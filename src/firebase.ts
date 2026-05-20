@@ -2,7 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
-// Split key parts to avoid Netlify secret scanner pattern detection at build time
+// Split key parts to avoid build-time secret scanners flagging this as an API key leak
 const _fk = ['QUl6YVN5QWJ5eFdH', 'bFlQWWpVVmZYNmVa', 'MU9yNnRkeHRTRHNVSlhn'];
 
 const firebaseConfig = {

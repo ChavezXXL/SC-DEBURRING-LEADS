@@ -1,135 +1,76 @@
-# Netlify → Cloudflare Pages migration playbook
+# Cloudflare-only hosting — the deploy playbook
 
-You want to move hosting off Netlify onto Cloudflare. Firebase Firestore stays put for data. This is the step-by-step.
+This repo is now **Cloudflare-only**. Netlify is fully stripped:
+- ❌ `netlify.toml` deleted
+- ❌ `netlify/functions/` deleted
+- ❌ `@netlify/functions` dep removed
+- ✅ `functions/api/send-email.ts` — Cloudflare Pages Function
+- ✅ `workers/auto-outreach/` — Cloudflare Worker with daily cron trigger
+- ✅ `src/services/email.ts` now hits `/api/send-email` (not `/.netlify/functions/...`)
 
-## What stays the same
+## Two things to deploy
 
-- **Code repo** (GitHub) — Cloudflare Pages connects to the same repo
-- **Firebase Firestore** — data layer doesn't change at all
-- **Domain `scleads.netlify.app`** — eventually point your custom domain at Cloudflare. The `.netlify.app` URL will keep working until you delete the Netlify site.
+### 1. The CRM app → Cloudflare Pages
 
-## What changes
+1. Cloudflare dashboard → **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**
+2. Pick repo **`ChavezXXL/SC-DEBURRING-LEADS`**
+3. Project name: `apexgrowth-crm` (or whatever)
+4. **Production branch:** `main`
+5. Build settings (Vite preset):
+   - Build command: `npm run build`
+   - Build output: `dist`
+6. Environment variables:
+   | Name | Value |
+   |---|---|
+   | `NODE_VERSION` | `20` |
+   | `VITE_FIREBASE_API_KEY` | (from Firebase Console → Project settings) |
+   | `RESEND_API_KEY` | (your Resend key) |
+   | `RESEND_DOMAIN` | `scprecisiondeburring.com` |
+   | `VITE_REQUIRE_AUTH` | `true` when ready to gate behind login |
+7. **Save and Deploy.**
 
-| Piece | Netlify | Cloudflare |
-|---|---|---|
-| Hosting | `scleads.netlify.app` | `apexgrowth-crm.pages.dev` (or whatever you name it) |
-| Serverless functions | `netlify/functions/*.ts` | `functions/api/*.ts` (already added) |
-| Send-email endpoint | `/.netlify/functions/send-email` | `/api/send-email` |
-| Scheduled function (auto-outreach) | Netlify Scheduled Function | Cloudflare Cron Trigger (Workers) |
-| Env vars | Netlify dashboard | Cloudflare dashboard |
-| Build command | `npm run build` | Same |
-| Output dir | `dist` | Same |
+Cloudflare auto-deploys every branch. Your `apex-shell-preview` branch will get its own URL like `<hash>-apex-shell-preview.<project>.pages.dev` — that's your live preview of the iOS shell + multi-tenant work.
 
-## What I already prepared
+### 2. The auto-outreach scheduled job → Cloudflare Worker
 
-- ✅ `functions/api/send-email.ts` — Cloudflare Pages Function equivalent of the Netlify version. Drop-in compatible with Resend, no Node-only deps.
-- ✅ Existing Netlify config (`netlify.toml`, `netlify/functions/*`) left in place so the old site keeps working during the transition.
+Separate from the Pages site because cron triggers run on Workers, not Pages.
 
-## What's NOT yet ported (and why)
-
-**`netlify/functions/auto-outreach.ts`** — the scheduled job that runs daily at 8am PT and sends auto-outreach emails. It uses `firebase-admin` (Node-only) and Netlify's cron syntax. To run on Cloudflare you'd need to:
-
-- Replace `firebase-admin` with the Firestore REST API (Workers don't run native Node modules), OR
-- Run it as a Cloudflare Worker (not Pages Function) with a Cron Trigger configured in `wrangler.toml`, OR
-- Keep this one job on Netlify for now (cheapest path), only migrate hosting + send-email.
-
-Recommendation: **migrate hosting first, keep auto-outreach on Netlify temporarily**. Once stable, port auto-outreach in a separate pass.
-
----
-
-## Step-by-step (≈30 min total, mostly waiting on deploys)
-
-### 1. Connect the repo to Cloudflare Pages (5 min)
-
-1. Go to https://dash.cloudflare.com → Workers & Pages → Create application → Pages → Connect to Git
-2. Authorize Cloudflare to access your GitHub
-3. Pick the `SC LEADS PP` repo (or whatever you renamed it to on GitHub)
-4. Build settings:
-   - **Framework preset:** Vite
-   - **Build command:** `npm run build`
-   - **Build output directory:** `dist`
-   - **Root directory:** `/` (leave blank)
-   - **Node version:** 20 (set via env var `NODE_VERSION=20`)
-
-### 2. Add environment variables (5 min)
-
-In Cloudflare Pages → Settings → Environment Variables, add:
-
-| Name | Value | Where to find it |
-|---|---|---|
-| `NODE_VERSION` | `20` | — |
-| `VITE_FIREBASE_API_KEY` | (your existing Firebase web API key) | Firebase Console → Project settings |
-| `RESEND_API_KEY` | (your existing Resend key) | Currently in Netlify env vars |
-| `RESEND_DOMAIN` | `scprecisiondeburring.com` | — |
-| `VITE_REQUIRE_AUTH` | `true` (when you're ready to require login) | — |
-
-### 3. Trigger the first deploy (2 min)
-
-Click "Save and Deploy" in Cloudflare Pages. First build takes 2-3 min. You'll get a URL like `apexgrowth-crm-abc.pages.dev`.
-
-### 4. Test the deploy (5 min)
-
-Open the `.pages.dev` URL and check:
-
-- [ ] App loads
-- [ ] Login screen appears (if VITE_REQUIRE_AUTH=true)
-- [ ] Sign in works → leads load from Firestore
-- [ ] Send a test outreach email → confirm it routes through `/api/send-email`
-- [ ] Open browser devtools → no console errors
-
-### 5. Update the email endpoint in the app code (1 min)
-
-The current code probably hits `/.netlify/functions/send-email`. Change it to `/api/send-email` so Cloudflare Pages routes it to your new function.
-
-Search the codebase:
 ```
-grep -r "netlify/functions" "C:\Users\scpre\SC LEADS PP\src"
+cd workers/auto-outreach
+npx wrangler login              # one-time
+npx wrangler deploy             # deploys + registers the cron
+npx wrangler secret put FIREBASE_SERVICE_ACCOUNT   # paste full JSON on one line
+npx wrangler secret put GEMINI_API_KEY
+npx wrangler secret put RESEND_API_KEY
 ```
 
-Replace `/.netlify/functions/send-email` → `/api/send-email`. Same for auto-outreach when you eventually port it.
+Schedule: `0 15 * * *` UTC = 8am PT, daily.
 
-### 6. Point your custom domain (optional, 5 min + DNS propagation)
+**Manual test trigger** (after deploy, no waiting for cron):
+```
+curl -X POST https://apexgrowth-auto-outreach.<your-account>.workers.dev
+```
 
-If you have a custom domain (e.g. `crm.scdeburring.com`):
+You should get back JSON listing what was sent.
 
-1. Cloudflare Pages → your project → Custom domains → Set up a custom domain
-2. Cloudflare walks you through the DNS records. If your domain is already on Cloudflare DNS, it just adds the CNAME automatically.
-3. SSL certificate provisions in ~1 min.
+### How auto-outreach authenticates to Firebase without `firebase-admin`
 
-### 7. Cut over (when you're confident)
+The Worker can't run Node-only packages. So it:
+1. Reads your Firebase **service-account JSON** from a Worker secret
+2. Signs a JWT with the service account's private key using WebCrypto (RSASSA-PKCS1-v1_5 + SHA-256)
+3. Exchanges that JWT for an OAuth access token at `oauth2.googleapis.com/token`
+4. Calls the Firestore REST API directly with that token
 
-- Update any links that pointed to `scleads.netlify.app` → the new Cloudflare URL
-- Leave the Netlify site running for a week as a fallback
-- Once you're sure CF is stable, delete the Netlify site (optional — costs nothing to leave it)
+How to get the service-account JSON: Firebase Console → Project settings → Service accounts → **Generate new private key** → download. Then `wrangler secret put FIREBASE_SERVICE_ACCOUNT` and paste the entire JSON.
 
----
+## After deploy
 
-## Phase 2: Port the auto-outreach scheduled job
+Once Pages is live and you're happy:
 
-When you're ready, the cleanest path is a separate Cloudflare Worker (not a Pages Function) with a Cron Trigger.
-
-Rough plan:
-1. New file: `workers/auto-outreach/worker.ts`
-2. `workers/auto-outreach/wrangler.toml` with:
-   ```
-   name = "apexgrowth-auto-outreach"
-   compatibility_date = "2025-01-01"
-   [triggers]
-   crons = ["0 15 * * *"]   # 8am PT daily
-   ```
-3. Use Firestore REST API instead of `firebase-admin`. The web `firebase/firestore` SDK works in Workers if you use the modular tree-shakeable API, but service-account auth is trickier — easiest path is signing a JWT with a service account and calling the REST endpoint directly.
-4. Deploy with `npx wrangler deploy`.
-
-Estimate: 1-2 hours of focused work.
-
----
+1. **Delete the Netlify site** (Netlify dashboard → Site settings → Delete this site). Your old Netlify environment vars contain your Resend key — make sure you've copied it into Cloudflare first.
+2. **Point your custom domain (optional):** Pages → Custom domains → add `crm.scdeburring.com` or whatever. Cloudflare provisions SSL in ~1 min.
+3. Flip `VITE_REQUIRE_AUTH=true` once you've signed yourself in via Firebase Auth and run the migration script to tag your 177 leads as the `sc-deburring` tenant.
 
 ## Rollback
 
-Netlify and Cloudflare can run in parallel forever. If something breaks on Cloudflare:
-
-- The Netlify site keeps serving `scleads.netlify.app` unchanged
-- Just point users back to that URL
-- Investigate the CF issue at your own pace
-
-Nothing is destructive about this migration until you flip your custom domain DNS — and even that is just a CNAME change you can reverse in 5 min.
+If something breaks: do nothing. Netlify site is still live until YOU delete it. Just keep using `scleads.netlify.app` while we debug. Nothing destructive happens automatically.

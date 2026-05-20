@@ -19,22 +19,27 @@ View your app in AI Studio: https://ai.studio/apps/3ab9b43d-4a14-4abf-96ce-20b75
 3. Run the app:
    `npm run dev`
 
-## Deploy to Netlify (Production)
+## Deploy to Cloudflare Pages (Production)
 
-This repo now includes `netlify.toml` so Netlify uses the correct build settings automatically.
-
-1. Push this repo/branch to GitHub.
-2. In Netlify, click **Add new site** → **Import an existing project**.
-3. Select this repository.
-4. Netlify should auto-detect:
+1. Push this repo to GitHub (already done).
+2. In Cloudflare dashboard → **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**.
+3. Pick this repo.
+4. Build settings (Framework preset: **Vite**):
    - Build command: `npm run build`
-   - Publish directory: `dist`
-5. Add required environment variables in Netlify Site Settings:
-   - `GEMINI_API_KEY` (base64-encoded value expected by current app flow)
-   - Any required `VITE_FIREBASE_*` keys
-6. Click **Deploy site**.
+   - Build output: `dist`
+5. Environment variables → add:
+   - `NODE_VERSION` = `20`
+   - `VITE_FIREBASE_API_KEY` (web API key from Firebase Console)
+   - `RESEND_API_KEY` (for the `/api/send-email` Pages function)
+   - `RESEND_DOMAIN` = `scprecisiondeburring.com`
+   - `VITE_REQUIRE_AUTH` = `true` (when ready to gate behind login)
+6. Save and Deploy.
 
-For SPA routing, all paths are redirected to `index.html` via `netlify.toml`.
+Pages Functions live under `functions/`. SPA routing is handled by Pages automatically.
+
+### Auto-outreach scheduled job
+
+The daily auto-outreach worker is a separate Cloudflare Worker at `workers/auto-outreach/`. Deploy it independently with `npx wrangler deploy` from that directory. See the wrangler.toml for required secrets.
 
 ## Push This Branch to GitHub
 

@@ -7,5 +7,6 @@ coverage/
 .env*
 !.env.example
 
-# Local Netlify folder
-.netlify
+# Cloudflare Wrangler local state
+.wrangler
+.dev.vars

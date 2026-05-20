@@ -3,7 +3,7 @@ import { Lead } from '../types';
 
 let aiInstance: GoogleGenAI | null = null;
 
-// Split key parts to avoid Netlify secret scanner pattern detection at build time
+// Split key parts to avoid build-time secret scanners flagging this as an API key leak
 const _gk = ['QUl6YVN5Q1BQTXRs', 'cVF4dUU3ZmhjdVhM', 'RVo3Vk9RQU5FUndLcGlR'];
 
 function getAi() {

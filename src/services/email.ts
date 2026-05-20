@@ -20,7 +20,7 @@ export async function sendEmail(req: SendEmailRequest): Promise<SendEmailRespons
   }
 
   try {
-    const res = await fetch('/.netlify/functions/send-email', {
+    const res = await fetch('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req),
