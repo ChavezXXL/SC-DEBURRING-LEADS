@@ -151,7 +151,26 @@ export default function App() {
   const [tierF, setTierF] = useState('all');
   const [pmOnly, setPmOnly] = useState(false);
   const [remindersOnly, setRemindersOnly] = useState(false);
-  const [hot5, setHot5] = useState(false);
+  // HOT 5 auto-activates once per day on first visit so you open the app to "what to do today"
+  const [hot5, setHot5] = useState(() => {
+    try {
+      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const lastDailyKick = localStorage.getItem('sc_leads_hot5_last_kick');
+      return lastDailyKick !== today;
+    } catch {
+      return true;
+    }
+  });
+
+  // Mark today's hot5 kick once it activates so we don't re-trigger on every render today
+  useEffect(() => {
+    if (hot5) {
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        localStorage.setItem('sc_leads_hot5_last_kick', today);
+      } catch {}
+    }
+  }, [hot5]);
   const [q, setQ] = useState('');
 
   const [openId, setOpenId] = useState<string | null>(null);
@@ -688,7 +707,7 @@ export default function App() {
             <div className="mb-8 flex items-end justify-between">
               <div>
                 <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-100">
-                  Aerospace Lead Database
+                  {hot5 ? "Today's Pipeline" : "Aerospace Lead Database"}
                 </h1>
                 <p className="text-xs font-mono text-zinc-500">
                   {filtered.length} of {visibleLeads.length} leads · {REGIONS.length - 1} regions ·{' '}
@@ -705,6 +724,28 @@ export default function App() {
                 </button>
               </div>
             </div>
+
+            {hot5 && filtered.length > 0 && (
+              <div className="mb-6 rounded-xl border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-orange-500/5 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="font-bold text-orange-300 text-sm flex items-center gap-2">
+                      🔥 Today's {filtered.length} — your move
+                    </div>
+                    <div className="mt-1 text-xs text-zinc-400 leading-relaxed">
+                      Tier-1 leads with named decision-makers and verified emails. Send {filtered.length} emails before lunch — that's your daily goal. After each send, expand the card and mark status &quot;emailed&quot; so it drops off the list.
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setHot5(false)}
+                    className="shrink-0 rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-1.5 text-xs font-mono text-zinc-400 hover:bg-zinc-800"
+                    title="Exit HOT 5 mode and view all leads"
+                  >
+                    View all leads
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-zinc-800/50 bg-zinc-900/50 p-3">
               <div className="relative min-w-[200px] flex-1">
