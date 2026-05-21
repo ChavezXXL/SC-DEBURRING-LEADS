@@ -35,6 +35,16 @@ service cloud.firestore {
       return myProfile().tenantId;
     }
 
+    function myTenant() {
+      return get(/databases/$(database)/documents/tenants/$(myTenantId())).data;
+    }
+
+    // If the tenant is flagged disabled, all reads/writes for users in that
+    // tenant are blocked (super-admin can still override).
+    function tenantIsActive() {
+      return isSuperAdmin() || myTenant().disabled != true;
+    }
+
     function belongsToMyTenant(doc) {
       return doc.tenantId == myTenantId();
     }
@@ -92,25 +102,27 @@ service cloud.firestore {
     // Write: must stamp the lead with your tenantId; cannot change tenantId
     // afterwards; super-admin can do whatever.
     match /leads/{leadId} {
-      allow read: if isSignedIn() && (
+      allow read: if isSignedIn() && tenantIsActive() && (
         isSuperAdmin()
         || (resource != null && belongsToMyTenant(resource))
       );
 
-      allow list: if isSignedIn();
+      allow list: if isSignedIn() && tenantIsActive();
       // ^ list is gated further by the client-side query's `where tenantId == X`.
       // Without that where-clause, the security rules will deny non-matching
       // docs at fetch time. Super-admin lists everything.
 
-      allow create: if isSignedIn() && (isSuperAdmin() || writeBelongsToMyTenant());
+      allow create: if isSignedIn() && tenantIsActive()
+        && (isSuperAdmin() || writeBelongsToMyTenant());
 
-      allow update: if isSignedIn() && (
+      allow update: if isSignedIn() && tenantIsActive() && (
         isSuperAdmin()
         || (belongsToMyTenant(resource) && writeBelongsToMyTenant()
             && request.resource.data.tenantId == resource.data.tenantId)
       );
 
-      allow delete: if isSignedIn() && (isSuperAdmin() || belongsToMyTenant(resource));
+      allow delete: if isSignedIn() && tenantIsActive()
+        && (isSuperAdmin() || belongsToMyTenant(resource));
     }
 
     // ---- /outreach-logs ---------------------------------------------------

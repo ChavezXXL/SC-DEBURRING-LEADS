@@ -8,7 +8,7 @@ import {
   Brain,
   Zap,
   LogOut,
-  UserPlus,
+  Shield,
 } from 'lucide-react';
 import type { Lead, TabKey, Tenant, UserProfile } from '../types';
 import { FancyLogo } from './FancyLogo';
@@ -117,6 +117,7 @@ export function Sidebar({
           {navItem('pipeline', 'Pipeline', Kanban)}
           {navItem('brain', 'AI Brain', Brain)}
           {navItem('autopilot', 'Autopilot', Zap)}
+          {profile?.role === 'super-admin' && navItem('admin', 'Admin', Shield)}
         </nav>
 
         {/* Pipeline status */}
@@ -172,15 +173,7 @@ export function Sidebar({
           Gemini AI Active
         </div>
 
-        {profile?.role === 'super-admin' && onCreateAccount && (
-          <button
-            onClick={onCreateAccount}
-            className="flex w-full items-center gap-2 rounded-xl bg-blue-50 ring-1 ring-blue-200/70 px-3 py-2.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition"
-          >
-            <UserPlus size={14} />
-            <span>Create client account</span>
-          </button>
-        )}
+        {/* Create-account button now lives inside the Admin tab. */}
 
         {profile && (
           <div className="rounded-xl bg-slate-50 ring-1 ring-slate-200/70 px-3 py-2.5">

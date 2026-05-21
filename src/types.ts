@@ -60,7 +60,7 @@ export interface ObjectionDef {
   a: string;
 }
 
-export type TabKey = 'leads' | 'outreach' | 'pipeline' | 'brain' | 'autopilot';
+export type TabKey = 'leads' | 'outreach' | 'pipeline' | 'brain' | 'autopilot' | 'admin';
 export type AiMode = 'pitch' | 'research';
 
 export type OutreachMode = 'all_new' | 'tier1' | 'tagged';
@@ -96,6 +96,15 @@ export interface Tenant {
   logoUrl?: string;      // optional custom logo
   createdAt: string;     // ISO timestamp
   plan?: 'trial' | 'paid' | 'internal';
+  disabled?: boolean;    // super-admin can disable a tenant; blocks all reads
+  disabledAt?: string;
+  lastActivityAt?: string;
+}
+
+/** Stats row for the admin panel. Computed server-side per tenant. */
+export interface TenantStats extends Tenant {
+  leadCount: number;
+  userCount: number;
 }
 
 /**
