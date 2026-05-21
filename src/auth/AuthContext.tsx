@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut as fbSignOut,
   User as FirebaseUser,
 } from 'firebase/auth';
@@ -151,34 +150,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (profile?.role !== 'super-admin') {
       throw new Error('Only the super-admin can create new accounts.');
     }
-    // 1) Create the Firebase Auth user
-    const cred = await createUserWithEmailAndPassword(
-      auth,
-      args.ownerEmail,
-      args.ownerPassword,
-    );
-    // 2) Create the tenant doc
-    const tenantDoc: Tenant = {
-      id: args.tenantId,
-      name: args.tenantName,
-      ownerEmail: args.ownerEmail,
-      primaryColor: args.primaryColor,
-      createdAt: new Date().toISOString(),
-      plan: 'trial',
-    };
-    await setDoc(doc(db, 'tenants', args.tenantId), tenantDoc);
-    // 3) Create the user-profile doc for the new owner
-    const newProfile: UserProfile = {
-      uid: cred.user.uid,
-      email: args.ownerEmail,
-      tenantId: args.tenantId,
-      role: 'owner',
-      createdAt: new Date().toISOString(),
-    };
-    await setDoc(doc(db, 'users', cred.user.uid), newProfile);
-    // Note: createUserWithEmailAndPassword auto-signs-in the new user, which
-    // would knock Santiago out of his super-admin session. After this call
-    // the UI should sign him back in. For now we let the caller handle that.
+    if (!user) throw new Error('Not signed in.');
+    // Server-side via /api/create-tenant-account so the super-admin stays
+    // signed in and gets the welcome email sent automatically. The endpoint
+    // verifies the caller's ID token + super-admin role before proceeding.
+    const idToken = await user.getIdToken();
+    const resp = await fetch('/api/create-tenant-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        idToken,
+        tenantId: args.tenantId,
+        tenantName: args.tenantName,
+        ownerEmail: args.ownerEmail,
+        ownerPassword: args.ownerPassword,
+        primaryColor: args.primaryColor,
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      throw new Error(data?.error || `Failed (${resp.status})`);
+    }
   };
 
   const value: AuthCtx = {

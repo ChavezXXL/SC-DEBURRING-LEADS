@@ -41,6 +41,7 @@ import { FancyLogo } from './components/FancyLogo';
 import { BoltChat } from './components/BoltChat';
 import { AiBrain } from './components/AiBrain';
 import { AutoOutreach } from './components/AutoOutreach';
+import { CreateAccountModal } from './components/CreateAccountModal';
 
 const safeRaw = Array.isArray(RAW) ? RAW : [];
 
@@ -199,6 +200,7 @@ export default function App() {
   const [newLeadForm, setNewLeadForm] = useState<Partial<Lead>>({ ...EMPTY_LEAD_FORM });
   const [deleteModal, setDeleteModal] = useState<{ id: string; co: string } | null>(null);
   const [appError, setAppError] = useState<string | null>(null);
+  const [showCreateAccount, setShowCreateAccount] = useState(false);
 
   const handleAddLead = async () => {
     if (!newLeadForm.co?.trim()) return;
@@ -676,6 +678,7 @@ export default function App() {
         onSignOut={() => {
           void signOut();
         }}
+        onCreateAccount={() => setShowCreateAccount(true)}
         onPipelineClick={(filterType) => {
           setTab('leads');
           setMobileMenuOpen(false);
@@ -970,6 +973,12 @@ export default function App() {
           handleDeleteLead={handleDeleteLead}
         />
       )}
+
+      <CreateAccountModal
+        open={showCreateAccount}
+        onClose={() => setShowCreateAccount(false)}
+      />
+
 
       {aiModal && (
         <AiModal

@@ -8,6 +8,7 @@ import {
   Brain,
   Zap,
   LogOut,
+  UserPlus,
 } from 'lucide-react';
 import type { Lead, TabKey, Tenant, UserProfile } from '../types';
 import { FancyLogo } from './FancyLogo';
@@ -24,6 +25,7 @@ interface SidebarProps {
   tenant?: Tenant | null;
   profile?: UserProfile | null;
   onSignOut?: () => void;
+  onCreateAccount?: () => void; // super-admin only
 }
 
 /**
@@ -41,6 +43,7 @@ export function Sidebar({
   tenant,
   profile,
   onSignOut,
+  onCreateAccount,
 }: SidebarProps) {
   const S = {
     total: leads.length,
@@ -168,6 +171,16 @@ export function Sidebar({
           <Sparkles size={14} />
           Gemini AI Active
         </div>
+
+        {profile?.role === 'super-admin' && onCreateAccount && (
+          <button
+            onClick={onCreateAccount}
+            className="flex w-full items-center gap-2 rounded-xl bg-blue-50 ring-1 ring-blue-200/70 px-3 py-2.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition"
+          >
+            <UserPlus size={14} />
+            <span>Create client account</span>
+          </button>
+        )}
 
         {profile && (
           <div className="rounded-xl bg-slate-50 ring-1 ring-slate-200/70 px-3 py-2.5">
