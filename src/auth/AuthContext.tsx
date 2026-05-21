@@ -43,9 +43,9 @@ interface AuthCtx {
 
 const AuthContext = createContext<AuthCtx | null>(null);
 
-/** Santiago's super-admin bootstrap. First time he signs up with this email,
+/** Santiago's super-admin bootstrap. First time he signs in with this email,
  * he automatically becomes super-admin of the sc-deburring tenant. */
-const BOOTSTRAP_SUPER_ADMIN_EMAIL = 'santiago@scdeburring.com';
+const BOOTSTRAP_SUPER_ADMIN_EMAIL = 'scprecisiondeburring@gmail.com';
 const BOOTSTRAP_TENANT_ID = 'sc-deburring';
 const BOOTSTRAP_TENANT_NAME = 'SC Deburring LLC';
 

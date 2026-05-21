@@ -15,7 +15,7 @@ export function renderMarkdown(text: string): React.ReactNode {
   function flushList() {
     if (listItems.length > 0) {
       elements.push(
-        <ul key={`list-${listKey++}`} className="ml-4 list-disc space-y-0.5 text-zinc-400">
+        <ul key={`list-${listKey++}`} className="ml-4 list-disc space-y-0.5 text-slate-500">
           {listItems}
         </ul>
       );
@@ -68,13 +68,13 @@ export function renderMarkdown(text: string): React.ReactNode {
         );
       } else if (first.type === 'bold') {
         const m = first.match;
-        parts.push(<strong key={key++} className="font-semibold text-zinc-200">{m[1] || m[2]}</strong>);
+        parts.push(<strong key={key++} className="font-semibold text-slate-800">{m[1] || m[2]}</strong>);
       } else if (first.type === 'italic') {
         const m = first.match;
-        parts.push(<em key={key++} className="italic text-zinc-400">{m[1] || m[2]}</em>);
+        parts.push(<em key={key++} className="italic text-slate-500">{m[1] || m[2]}</em>);
       } else if (first.type === 'code') {
         const m = first.match;
-        parts.push(<code key={key++} className="rounded bg-zinc-800 px-1 py-0.5 text-orange-300">{m[1]}</code>);
+        parts.push(<code key={key++} className="rounded bg-slate-100 px-1 py-0.5 text-orange-300">{m[1]}</code>);
       }
 
       remaining = remaining.substring(idx + first.match[0].length);
@@ -120,7 +120,7 @@ export function renderMarkdown(text: string): React.ReactNode {
     if (bulletMatch) {
       const indent = line.match(/^(\s*)/)?.[1]?.length || 0;
       listItems.push(
-        <li key={i} className={indent > 2 ? 'ml-4 text-zinc-500' : ''}>
+        <li key={i} className={indent > 2 ? 'ml-4 text-slate-400' : ''}>
           {formatInline(bulletMatch[1])}
         </li>
       );
@@ -132,7 +132,7 @@ export function renderMarkdown(text: string): React.ReactNode {
     if (stampMatch) {
       flushList();
       elements.push(
-        <div key={i} className="mt-3 mb-1 flex items-center gap-2 rounded-md bg-zinc-800/50 px-2 py-1 text-[10px] font-mono text-zinc-500">
+        <div key={i} className="mt-3 mb-1 flex items-center gap-2 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-mono text-slate-400">
           <span className="text-orange-500/70">{stampMatch[1]}</span>
           <span>·</span>
           <span>{stampMatch[2]}</span>
@@ -150,7 +150,7 @@ export function renderMarkdown(text: string): React.ReactNode {
     // Regular paragraph
     flushList();
     elements.push(
-      <p key={i} className="text-zinc-400 leading-relaxed">
+      <p key={i} className="text-slate-500 leading-relaxed">
         {formatInline(line)}
       </p>
     );

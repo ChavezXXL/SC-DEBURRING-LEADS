@@ -22,7 +22,7 @@ export const AiFinderModal: React.FC<AiFinderModalProps> = ({
       onClick={() => setShowAiFinder(false)}
     >
       <div
-        className="w-full max-w-2xl rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl shadow-black md:p-8"
+        className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-black md:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-6 flex items-start justify-between">
@@ -30,32 +30,32 @@ export const AiFinderModal: React.FC<AiFinderModalProps> = ({
             <div className="mb-1 flex items-center gap-2 text-lg font-bold text-orange-500">
               <Sparkles size={20} /> AI Prospector
             </div>
-            <div className="text-xs font-mono text-zinc-500">
+            <div className="text-xs font-mono text-slate-400">
               Find new leads and add them to your database automatically.
             </div>
           </div>
 
-          <button onClick={() => setShowAiFinder(false)} className="text-zinc-500 transition-colors hover:text-zinc-300">
+          <button onClick={() => setShowAiFinder(false)} className="text-slate-400 transition-colors hover:text-slate-700">
             <X size={24} />
           </button>
         </div>
 
         <div className="mb-6">
-          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
             Search Query
           </label>
           <textarea
             value={aiFinderQuery}
             onChange={(e) => setAiFinderQuery(e.target.value)}
             placeholder="e.g. Find 5 aerospace machine shops in San Diego that might need deburring services"
-            className="min-h-[100px] w-full rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-200 transition-all focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+            className="min-h-[100px] w-full rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-800 transition-all focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
           />
         </div>
 
         <div className="flex justify-end gap-3">
           <button
             onClick={() => setShowAiFinder(false)}
-            className="rounded-xl px-5 py-2.5 text-sm font-bold text-zinc-400 transition-colors hover:text-zinc-200"
+            className="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-500 transition-colors hover:text-slate-800"
           >
             Cancel
           </button>

@@ -95,10 +95,10 @@ export function OutreachTab() {
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6">
-        <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-100">
+        <h1 className="mb-1 text-2xl font-bold tracking-tight text-slate-900">
           Outreach Command Center
         </h1>
-        <p className="text-xs font-mono text-zinc-500">Email composer · Scripts · 14-day cadence · Objection handling</p>
+        <p className="text-xs font-mono text-slate-400">Email composer · Scripts · 14-day cadence · Objection handling</p>
       </div>
 
       {/* Core Opener */}
@@ -121,7 +121,7 @@ export function OutreachTab() {
             className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-colors ${
               activeView === v.id
                 ? 'border-orange-500/40 bg-orange-500/10 text-orange-300'
-                : 'border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700'
+                : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
             }`}
           >
             <v.icon size={14} /> {v.label}
@@ -133,53 +133,53 @@ export function OutreachTab() {
       {activeView === 'email' && (
         <div className="space-y-4">
           {/* Recipient Info */}
-          <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-5">
-            <div className="mb-4 text-[10px] font-bold font-mono uppercase tracking-widest text-zinc-500">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            <div className="mb-4 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400">
               Recipient Info — fill in to personalize all templates
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-zinc-400">Email address</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-500">Email address</label>
                 <input
                   value={emailTo}
                   onChange={(e) => setEmailTo(e.target.value)}
                   placeholder="buyer@company.com"
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-zinc-400">Contact name</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-500">Contact name</label>
                 <input
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
                   placeholder="Bridget, Mike, etc."
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-zinc-400">Company</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-500">Company</label>
                 <input
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   placeholder="Vescio Manufacturing"
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-zinc-400">Parts they make</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-500">Parts they make</label>
                 <input
                   value={partsType}
                   onChange={(e) => setPartsType(e.target.value)}
                   placeholder="aerospace brackets, engine mounts"
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
           {/* Template Picker */}
-          <div className="rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-5">
-            <div className="mb-4 text-[10px] font-bold font-mono uppercase tracking-widest text-zinc-500">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            <div className="mb-4 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400">
               Pick a template
             </div>
             <div className="flex flex-wrap gap-2">
@@ -190,7 +190,7 @@ export function OutreachTab() {
                   className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                     selectedTemplateId === s.id
                       ? 'border-orange-500/30 bg-orange-500/10 text-orange-400'
-                      : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700'
+                      : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
                   }`}
                 >
                   {s.title}
@@ -206,20 +206,20 @@ export function OutreachTab() {
             </div>
             <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-zinc-400">Subject</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-500">Subject</label>
                 <input
                   value={emailSubject}
                   onChange={(e) => setEmailSubject(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 focus:border-blue-500/50 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-500/50 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-semibold text-zinc-400">Body</label>
+                <label className="mb-1 block text-[11px] font-semibold text-slate-500">Body</label>
                 <textarea
                   value={emailBody}
                   onChange={(e) => setEmailBody(e.target.value)}
                   rows={10}
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-xs leading-relaxed text-zinc-300 focus:border-blue-500/50 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs leading-relaxed text-slate-700 focus:border-blue-500/50 focus:outline-none"
                 />
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
@@ -230,7 +230,7 @@ export function OutreachTab() {
                   className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold shadow-lg transition-all ${
                     emailTo.trim()
                       ? 'bg-orange-500 text-white shadow-orange-500/20 hover:bg-orange-400'
-                      : 'pointer-events-none bg-zinc-700 text-zinc-400'
+                      : 'pointer-events-none bg-slate-200 text-slate-500'
                   }`}
                 >
                   <Send size={15} /> Open in Gmail — Ready to Send
@@ -240,7 +240,7 @@ export function OutreachTab() {
                   className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
                     cp === 'email-draft'
                       ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
-                      : 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                      : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
                   {cp === 'email-draft' ? <Check size={15} /> : <Copy size={15} />}
@@ -266,7 +266,7 @@ export function OutreachTab() {
                 className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${
                   channelFilter === channel
                     ? 'border-orange-500/40 bg-orange-500/10 text-orange-300'
-                    : 'border-zinc-800 bg-zinc-900/40 text-zinc-400'
+                    : 'border-slate-200 bg-slate-50 text-slate-500'
                 }`}
               >
                 {channel}
@@ -276,35 +276,35 @@ export function OutreachTab() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search scripts..."
-              className="min-w-[180px] flex-1 rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-1.5 text-xs text-zinc-300 focus:border-orange-500/50 focus:outline-none"
+              className="min-w-[180px] flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 focus:border-orange-500/50 focus:outline-none"
             />
           </div>
 
           {scriptsByCategory.map(({ cat, items }) => (
             <div key={cat} className="mb-8">
-              <div className="mb-3 flex items-center gap-2 border-b border-zinc-800 pb-2 text-[10px] font-bold font-mono uppercase tracking-widest text-zinc-500">
-                {items[0].icon} {cat} <span className="text-zinc-600">({items.length})</span>
+              <div className="mb-3 flex items-center gap-2 border-b border-slate-200 pb-2 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400">
+                {items[0].icon} {cat} <span className="text-slate-300">({items.length})</span>
               </div>
               <div className={`grid gap-3 ${items.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                 {items.map((sc) => (
-                  <div key={sc.id} className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
+                  <div key={sc.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div className="mb-3 flex items-start justify-between gap-3">
                       <div>
-                        <div className="text-sm font-bold text-zinc-100">{sc.title}</div>
-                        <div className="text-[11px] italic text-zinc-500">Use: {sc.use}</div>
+                        <div className="text-sm font-bold text-slate-900">{sc.title}</div>
+                        <div className="text-[11px] italic text-slate-400">Use: {sc.use}</div>
                       </div>
                       <button
                         onClick={() => copy(sc.id, applyTokens(sc.body))}
                         className={`shrink-0 rounded-lg border px-3 py-1.5 text-[11px] font-semibold transition-colors ${
                           cp === sc.id
                             ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
-                            : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:bg-zinc-800'
+                            : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-100'
                         }`}
                       >
                         {cp === sc.id ? 'Copied!' : 'Copy'}
                       </button>
                     </div>
-                    <pre className="whitespace-pre-wrap rounded-lg border border-zinc-800/50 bg-zinc-950 p-3 font-mono text-[11px] leading-relaxed text-zinc-400">
+                    <pre className="whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-3 font-mono text-[11px] leading-relaxed text-slate-500">
                       {applyTokens(sc.body)}
                     </pre>
                   </div>
@@ -322,18 +322,18 @@ export function OutreachTab() {
             Follow this 14-day sequence for every new lead. Most deals close after 5-7 touches — don't stop at 2.
           </div>
           {cadence.map((step, idx) => (
-            <div key={step.day} className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
+            <div key={step.day} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-start gap-3">
-                <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-950 ${step.color}`}>
+                <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white ${step.color}`}>
                   <step.icon size={16} />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <div className="text-xs font-mono uppercase tracking-wider text-orange-400">{step.day}</div>
-                    <div className="text-[10px] text-zinc-600">Step {idx + 1} / {cadence.length}</div>
+                    <div className="text-[10px] text-slate-300">Step {idx + 1} / {cadence.length}</div>
                   </div>
-                  <div className="mb-1 text-sm font-bold text-zinc-100">{step.action}</div>
-                  <div className="mb-2 text-xs leading-relaxed text-zinc-400">{step.detail}</div>
+                  <div className="mb-1 text-sm font-bold text-slate-900">{step.action}</div>
+                  <div className="mb-2 text-xs leading-relaxed text-slate-500">{step.detail}</div>
                   <div className="rounded-lg border border-amber-500/10 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-300/80">
                     <span className="font-bold">Pro tip:</span> {step.tip}
                   </div>
@@ -351,21 +351,21 @@ export function OutreachTab() {
             Every objection is a buying signal in disguise. They're talking to you — that's already a win.
           </div>
           {OBJECTIONS.map((o, i) => (
-            <div key={i} className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
+            <div key={i} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="mb-2 flex items-start gap-2">
                 <span className="mt-0.5 text-red-400">Q:</span>
                 <div className="text-sm font-bold text-red-400">"{o.q}"</div>
               </div>
               <div className="mb-3 flex items-start gap-2">
                 <span className="mt-0.5 text-emerald-400">A:</span>
-                <div className="text-xs leading-relaxed text-zinc-300">{o.a}</div>
+                <div className="text-xs leading-relaxed text-slate-700">{o.a}</div>
               </div>
               <button
                 onClick={() => copy(`obj-${i}`, o.a)}
                 className={`rounded-lg border px-3 py-1.5 text-[11px] font-semibold ${
                   cp === `obj-${i}`
                     ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
-                    : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:bg-zinc-800'
+                    : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-100'
                 }`}
               >
                 {cp === `obj-${i}` ? 'Copied!' : 'Copy response'}

@@ -31,10 +31,10 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col">
       <div className="mb-6 shrink-0">
-        <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-100">
+        <h1 className="mb-1 text-2xl font-bold tracking-tight text-slate-900">
           Sales Pipeline
         </h1>
-        <p className="text-xs font-mono text-zinc-500">
+        <p className="text-xs font-mono text-slate-400">
           Drag-and-drop coming soon. Click a lead to view details.
         </p>
       </div>
@@ -47,10 +47,10 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
           return (
             <div
               key={st.k}
-              className="flex w-72 shrink-0 flex-col rounded-xl border border-zinc-800/60 bg-zinc-900/20"
+              className="flex w-72 shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50"
             >
               <div
-                className="flex items-center justify-between border-b border-zinc-800/60 p-3"
+                className="flex items-center justify-between border-b border-slate-200 p-3"
                 style={{ borderTop: `3px solid ${st.dot}` }}
               >
                 <div className="flex items-center gap-2">
@@ -58,11 +58,11 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
                     className="h-2 w-2 rounded-full"
                     style={{ background: st.dot }}
                   />
-                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
                     {st.label}
                   </span>
                 </div>
-                <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-mono text-zinc-400">
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-mono text-slate-500">
                   {columnLeads.length}
                 </span>
               </div>
@@ -77,13 +77,13 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
                       <div
                         key={lead.id}
                         onClick={() => onLeadClick(lead.id)}
-                        className="cursor-pointer rounded-lg border border-zinc-800/80 bg-zinc-900/80 p-3 transition-all hover:border-zinc-700 hover:shadow-lg hover:shadow-black/20"
+                        className="cursor-pointer rounded-lg border border-slate-200 bg-white p-3 transition-all hover:border-slate-300 hover:shadow-lg hover:shadow-black/20"
                       >
-                        <div className="mb-2 font-bold text-zinc-100 text-sm line-clamp-1">
+                        <div className="mb-2 font-bold text-slate-900 text-sm line-clamp-1">
                           {lead.co}
                         </div>
                         
-                        <div className="mb-2 flex flex-col gap-1.5 text-[11px] text-zinc-500">
+                        <div className="mb-2 flex flex-col gap-1.5 text-[11px] text-slate-400">
                           <div className="flex items-center gap-1.5">
                             <User size={12} />
                             <span className="line-clamp-1">{lead.pm || lead.who || 'No contact'}</span>
@@ -120,7 +120,7 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
                     );
                   })}
                   {columnLeads.length === 0 && (
-                    <div className="py-8 text-center text-xs italic text-zinc-600">
+                    <div className="py-8 text-center text-xs italic text-slate-300">
                       No leads
                     </div>
                   )}

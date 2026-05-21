@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Mail, Copy, Globe, Search, Briefcase, ClipboardList, Microscope, Sparkles, Send } from 'lucide-react';
+import { Phone, Mail, Copy, Globe, Search, Briefcase, ClipboardList, Microscope, Sparkles, Send, Zap } from 'lucide-react';
 import type { Lead, AiMode } from '../../types';
 
 interface LeadCardActionsProps {
@@ -14,9 +14,10 @@ interface LeadCardActionsProps {
   handleAI: (lead: Lead, mode: AiMode) => void;
   showEmail: boolean;
   setShowEmail: (show: boolean) => void;
+  onQueueOutreach?: (lead: Lead) => void;
 }
 
-export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy, qs, handleAI, showEmail, setShowEmail }) => {
+export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy, qs, handleAI, showEmail, setShowEmail, onQueueOutreach }) => {
   return (
     <>
       <div className="flex flex-wrap gap-2 py-3">
@@ -63,12 +64,12 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2 border-t border-zinc-800/50 py-3">
+      <div className="flex flex-wrap gap-2 border-t border-slate-200 py-3">
         <a
           href={qs.google(lead.co)}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-700"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200"
         >
           <Search size={14} /> Google
         </a>
@@ -115,6 +116,19 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
         >
           <Send size={14} /> {showEmail ? 'Close Email' : 'Quick Email'}
         </button>
+
+        {onQueueOutreach && lead.status === 'new' && lead.em && (
+          <button
+            onClick={() => onQueueOutreach(lead)}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+              (lead as any).queued_for_outreach
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                : 'border-violet-500/20 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20'
+            }`}
+          >
+            <Zap size={14} /> {(lead as any).queued_for_outreach ? 'Queued' : 'Queue Outreach'}
+          </button>
+        )}
       </div>
     </>
   );

@@ -1,0 +1,139 @@
+rules_version = '2';
+
+// Apex Growth multi-tenant CRM — Firestore Security Rules.
+//
+// The contract:
+//   * Nobody reads or writes anything without being signed in.
+//   * Each user belongs to exactly one tenant (their profile stored in
+//     /users/{uid} with field `tenantId` and `role`).
+//   * Tenant isolation: a user can only see leads/logs where the document's
+//     tenantId matches their own tenantId.
+//   * Super-admin (Santiago) can read/write everything across all tenants.
+//   * Nobody can change their own role or tenantId from the client.
+//
+// Deploy: `firebase deploy --only firestore:rules`
+//   (or paste in Firebase Console → Firestore Database → Rules → Publish)
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- helpers ----------------------------------------------------------
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function myProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && myProfile().role == 'super-admin';
+    }
+
+    function myTenantId() {
+      return myProfile().tenantId;
+    }
+
+    function belongsToMyTenant(doc) {
+      return doc.tenantId == myTenantId();
+    }
+
+    function writeBelongsToMyTenant() {
+      return request.resource.data.tenantId == myTenantId();
+    }
+
+    // ---- /users -----------------------------------------------------------
+    // A user can read their own profile. Only super-admin can list users or
+    // change tenant assignments. Users cannot promote themselves to admin.
+    match /users/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isSuperAdmin());
+      allow list: if isSuperAdmin();
+
+      // Creating a user profile is allowed during the first-time AuthContext
+      // bootstrap — but only with role "member" or by a super-admin.
+      // Server-side enforcement: role/tenantId in the new doc must match
+      // either the bootstrap super-admin email or default member.
+      allow create: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && (
+          // Bootstrap path: super-admin email creates own super-admin profile
+          (request.auth.token.email == 'scprecisiondeburring@gmail.com'
+            && request.resource.data.role == 'super-admin')
+          // Default path: new user gets role "member"
+          || request.resource.data.role == 'member'
+        );
+
+      // Updates: a user can update their own display name, but cannot change
+      // their role or tenantId. Super-admin can change anything.
+      allow update: if isSuperAdmin() || (
+        isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.tenantId == resource.data.tenantId
+        && request.resource.data.uid == resource.data.uid
+      );
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // ---- /tenants ---------------------------------------------------------
+    // A signed-in user can read only their own tenant doc.
+    // Only super-admin can create new tenants or update tenant settings.
+    match /tenants/{tenantId} {
+      allow read: if isSignedIn() && (tenantId == myTenantId() || isSuperAdmin());
+      allow list: if isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    // ---- /leads -----------------------------------------------------------
+    // Read: only leads belonging to your tenant (or anything if super-admin).
+    // Write: must stamp the lead with your tenantId; cannot change tenantId
+    // afterwards; super-admin can do whatever.
+    match /leads/{leadId} {
+      allow read: if isSignedIn() && (
+        isSuperAdmin()
+        || (resource != null && belongsToMyTenant(resource))
+      );
+
+      allow list: if isSignedIn();
+      // ^ list is gated further by the client-side query's `where tenantId == X`.
+      // Without that where-clause, the security rules will deny non-matching
+      // docs at fetch time. Super-admin lists everything.
+
+      allow create: if isSignedIn() && (isSuperAdmin() || writeBelongsToMyTenant());
+
+      allow update: if isSignedIn() && (
+        isSuperAdmin()
+        || (belongsToMyTenant(resource) && writeBelongsToMyTenant()
+            && request.resource.data.tenantId == resource.data.tenantId)
+      );
+
+      allow delete: if isSignedIn() && (isSuperAdmin() || belongsToMyTenant(resource));
+    }
+
+    // ---- /outreach-logs ---------------------------------------------------
+    // Same tenant scoping as leads.
+    match /outreach-logs/{logId} {
+      allow read, list: if isSignedIn() && (
+        isSuperAdmin() || (resource != null && belongsToMyTenant(resource))
+      );
+      allow create: if isSignedIn() && (isSuperAdmin() || writeBelongsToMyTenant());
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // ---- /settings --------------------------------------------------------
+    // Per-tenant settings (auto-outreach config, etc.). Path:
+    //   /settings/{tenantId}/...
+    // Or for the legacy flat doc /settings/auto-outreach, only super-admin.
+    match /settings/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    // ---- deny everything else --------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

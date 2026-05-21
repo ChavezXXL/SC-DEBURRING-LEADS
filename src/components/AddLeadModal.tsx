@@ -22,55 +22,55 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
       onClick={() => setShowAddLead(false)}
     >
       <div
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl shadow-black md:p-8"
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-black md:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-6 flex items-start justify-between">
           <div>
-            <div className="mb-1 text-lg font-bold text-zinc-100">Add New Lead</div>
-            <div className="text-xs font-mono text-zinc-500">
+            <div className="mb-1 text-lg font-bold text-slate-900">Add New Lead</div>
+            <div className="text-xs font-mono text-slate-400">
               Manually enter a new company into the database.
             </div>
           </div>
 
-          <button onClick={() => setShowAddLead(false)} className="text-zinc-500 transition-colors hover:text-zinc-300">
+          <button onClick={() => setShowAddLead(false)} className="text-slate-400 transition-colors hover:text-slate-700">
             <X size={24} />
           </button>
         </div>
 
         <div className="mb-6 grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Company Name *
             </label>
             <input
               value={newLeadForm.co ?? ''}
               onChange={(e) => setNewLeadForm({ ...newLeadForm, co: e.target.value })}
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
               placeholder="Acme Aerospace"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               City
             </label>
             <input
               value={newLeadForm.city ?? ''}
               onChange={(e) => setNewLeadForm({ ...newLeadForm, city: e.target.value })}
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
               placeholder="Burbank"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Region
             </label>
             <select
               value={newLeadForm.r ?? 'Other'}
               onChange={(e) => setNewLeadForm({ ...newLeadForm, r: e.target.value })}
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
             >
               {REGIONS
                 .filter((r) => r !== 'All Regions')
@@ -83,91 +83,91 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               General Contact
             </label>
             <input
               value={newLeadForm.who ?? ''}
               onChange={(e) => setNewLeadForm({ ...newLeadForm, who: e.target.value })}
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
               placeholder="John Doe"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Contact Role
             </label>
             <input
               value={newLeadForm.role ?? ''}
               onChange={(e) => setNewLeadForm({ ...newLeadForm, role: e.target.value })}
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
               placeholder="Owner / GM"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Purchasing Manager
             </label>
             <input
               value={newLeadForm.pm ?? ''}
               onChange={(e) => setNewLeadForm({ ...newLeadForm, pm: e.target.value })}
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
               placeholder="Jane Smith"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               PM Title
             </label>
             <input
               value={newLeadForm.pm_title ?? ''}
               onChange={(e) => setNewLeadForm({ ...newLeadForm, pm_title: e.target.value })}
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
               placeholder="Purchasing Manager"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Phone
             </label>
             <input
               value={newLeadForm.ph ?? ''}
               onChange={(e) => setNewLeadForm({ ...newLeadForm, ph: e.target.value })}
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
               placeholder="(818) 555-1234"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Email
             </label>
             <input
               value={newLeadForm.em ?? ''}
               onChange={(e) => setNewLeadForm({ ...newLeadForm, em: e.target.value })}
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
               placeholder="buyer@company.com"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Website
             </label>
             <input
               value={newLeadForm.web ?? ''}
               onChange={(e) => setNewLeadForm({ ...newLeadForm, web: e.target.value })}
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
               placeholder="https://company.com"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Tier
             </label>
             <select
@@ -175,7 +175,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
               onChange={(e) =>
                 setNewLeadForm({ ...newLeadForm, t: Number(e.target.value) as 1 | 2 })
               }
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
             >
               <option value={1}>Tier 1 — Call Now</option>
               <option value={2}>Tier 2 — Target</option>
@@ -183,25 +183,25 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
           </div>
 
           <div className="col-span-2">
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Parts / Industry
             </label>
             <input
               value={newLeadForm.parts ?? ''}
               onChange={(e) => setNewLeadForm({ ...newLeadForm, parts: e.target.value })}
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
               placeholder="Aerospace components"
             />
           </div>
 
           <div className="col-span-2">
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-400">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Pitch Angle
             </label>
             <input
               value={newLeadForm.pitch ?? ''}
               onChange={(e) => setNewLeadForm({ ...newLeadForm, pitch: e.target.value })}
-              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-sm text-zinc-200 focus:border-orange-500/50 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
               placeholder="Why do they need deburring?"
             />
           </div>
@@ -210,7 +210,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
         <div className="flex justify-end gap-3">
           <button
             onClick={() => setShowAddLead(false)}
-            className="rounded-xl px-5 py-2.5 text-sm font-bold text-zinc-400 transition-colors hover:text-zinc-200"
+            className="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-500 transition-colors hover:text-slate-800"
           >
             Cancel
           </button>

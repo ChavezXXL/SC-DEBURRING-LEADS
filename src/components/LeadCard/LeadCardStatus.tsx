@@ -17,7 +17,7 @@ export const LeadCardStatus: React.FC<LeadCardStatusProps> = ({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-zinc-500">
+        <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400">
           Update Status
         </div>
         <button

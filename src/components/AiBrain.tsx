@@ -206,8 +206,8 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
             <Brain size={22} className="text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-100">AI Brain</h1>
-            <p className="text-xs font-mono text-zinc-500">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">AI Brain</h1>
+            <p className="text-xs font-mono text-slate-400">
               Smart insights · Duplicate cleanup · Priority ranking
             </p>
           </div>
@@ -223,14 +223,14 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
             className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${
               activeSection === s.id
                 ? 'border-orange-500/40 bg-orange-500/10 text-orange-300'
-                : 'border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700'
+                : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
             }`}
           >
             <s.icon size={15} />
             {s.label}
             {s.count !== null && s.count > 0 && (
               <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                activeSection === s.id ? 'bg-orange-500/20 text-orange-400' : 'bg-zinc-800 text-zinc-500'
+                activeSection === s.id ? 'bg-orange-500/20 text-orange-400' : 'bg-slate-100 text-slate-400'
               }`}>
                 {s.count}
               </span>
@@ -249,49 +249,49 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               {todaysPlan.hotLeads.length > 0 && (
-                <div className="rounded-lg border border-emerald-500/20 bg-zinc-950/50 p-4">
+                <div className="rounded-lg border border-emerald-500/20 bg-slate-50 p-4">
                   <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold font-mono uppercase tracking-widest text-emerald-400">
                     <Zap size={12} /> Hot — Close These
                   </div>
                   {todaysPlan.hotLeads.map(l => (
-                    <div key={l.id} onClick={() => onLeadClick(l.id)} className="cursor-pointer rounded px-2 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">
-                      <span className="font-semibold">{l.co}</span> <span className="text-zinc-500">· {l.pm || 'no contact'}</span>
+                    <div key={l.id} onClick={() => onLeadClick(l.id)} className="cursor-pointer rounded px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-100">
+                      <span className="font-semibold">{l.co}</span> <span className="text-slate-400">· {l.pm || 'no contact'}</span>
                     </div>
                   ))}
                 </div>
               )}
               {todaysPlan.callFirst.length > 0 && (
-                <div className="rounded-lg border border-orange-500/20 bg-zinc-950/50 p-4">
+                <div className="rounded-lg border border-orange-500/20 bg-slate-50 p-4">
                   <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold font-mono uppercase tracking-widest text-orange-400">
                     <PhoneCall size={12} /> Call First — T1 with Contacts
                   </div>
                   {todaysPlan.callFirst.map(l => (
-                    <div key={l.id} onClick={() => onLeadClick(l.id)} className="cursor-pointer rounded px-2 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">
+                    <div key={l.id} onClick={() => onLeadClick(l.id)} className="cursor-pointer rounded px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-100">
                       <span className="font-semibold">{l.co}</span> <span className="text-violet-400">· {l.pm}</span>
                     </div>
                   ))}
                 </div>
               )}
               {todaysPlan.followUp.length > 0 && (
-                <div className="rounded-lg border border-blue-500/20 bg-zinc-950/50 p-4">
+                <div className="rounded-lg border border-blue-500/20 bg-slate-50 p-4">
                   <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold font-mono uppercase tracking-widest text-blue-400">
                     <SendHorizonal size={12} /> Follow Up — In Pipeline
                   </div>
                   {todaysPlan.followUp.map(l => (
-                    <div key={l.id} onClick={() => onLeadClick(l.id)} className="cursor-pointer rounded px-2 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">
-                      <span className="font-semibold">{l.co}</span> <span className="text-zinc-500">· {l.status}</span>
+                    <div key={l.id} onClick={() => onLeadClick(l.id)} className="cursor-pointer rounded px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-100">
+                      <span className="font-semibold">{l.co}</span> <span className="text-slate-400">· {l.status}</span>
                     </div>
                   ))}
                 </div>
               )}
               {todaysPlan.needEmail.length > 0 && (
-                <div className="rounded-lg border border-violet-500/20 bg-zinc-950/50 p-4">
+                <div className="rounded-lg border border-violet-500/20 bg-slate-50 p-4">
                   <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold font-mono uppercase tracking-widest text-violet-400">
                     <Mail size={12} /> Research — Need Emails
                   </div>
                   {todaysPlan.needEmail.map(l => (
-                    <div key={l.id} onClick={() => onLeadClick(l.id)} className="cursor-pointer rounded px-2 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800">
-                      <span className="font-semibold">{l.co}</span> <span className="text-zinc-500">· has website, no email</span>
+                    <div key={l.id} onClick={() => onLeadClick(l.id)} className="cursor-pointer rounded px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-100">
+                      <span className="font-semibold">{l.co}</span> <span className="text-slate-400">· has website, no email</span>
                     </div>
                   ))}
                 </div>
@@ -299,7 +299,7 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
             </div>
             {todaysPlan.hotLeads.length === 0 && todaysPlan.callFirst.length === 0 &&
              todaysPlan.followUp.length === 0 && todaysPlan.needEmail.length === 0 && (
-              <div className="text-center text-xs text-zinc-500 py-4">
+              <div className="text-center text-xs text-slate-400 py-4">
                 Start by researching Tier 1 leads with the Deep Research tab
               </div>
             )}
@@ -308,17 +308,17 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {[
-              { label: 'Total Leads', value: stats.total, color: 'text-zinc-100' },
+              { label: 'Total Leads', value: stats.total, color: 'text-slate-900' },
               { label: 'Tier 1', value: stats.t1, color: 'text-orange-400' },
               { label: 'Hot Leads', value: stats.hot, color: 'text-emerald-400' },
               { label: 'Clients', value: stats.clients, color: 'text-amber-400' },
               { label: 'Has Email', value: stats.withEmail, color: 'text-blue-400' },
               { label: 'Named PM', value: stats.withPM, color: 'text-violet-400' },
-              { label: 'Untouched', value: stats.untouched, color: 'text-zinc-400' },
+              { label: 'Untouched', value: stats.untouched, color: 'text-slate-500' },
               { label: 'Dead', value: stats.dead, color: 'text-red-400' },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
-                <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">{s.label}</div>
+              <div key={s.label} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-slate-400">{s.label}</div>
                 <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
               </div>
             ))}
@@ -326,7 +326,7 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
 
           {/* Quick Alerts */}
           <div className="space-y-3">
-            <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-zinc-500">
+            <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400">
               Alerts & Recommendations
             </div>
 
@@ -355,20 +355,20 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
                 detail="Interested or quote-sent leads need fast follow-up" />
             )}
 
-            <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
-              <div className="mb-2 text-xs font-bold text-zinc-100">Pipeline Health</div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-2 text-xs font-bold text-slate-900">Pipeline Health</div>
               <div className="flex gap-1 rounded-lg overflow-hidden h-3">
                 {stats.clients > 0 && <div style={{ width: `${(stats.clients / stats.total) * 100}%` }} className="bg-amber-500" title="Clients" />}
                 {stats.hot > 0 && <div style={{ width: `${(stats.hot / stats.total) * 100}%` }} className="bg-emerald-500" title="Hot" />}
                 {stats.contacted > 0 && <div style={{ width: `${((stats.contacted - stats.hot) / stats.total) * 100}%` }} className="bg-blue-500" title="In Contact" />}
-                {stats.untouched > 0 && <div style={{ width: `${(stats.untouched / stats.total) * 100}%` }} className="bg-zinc-700" title="Untouched" />}
+                {stats.untouched > 0 && <div style={{ width: `${(stats.untouched / stats.total) * 100}%` }} className="bg-slate-200" title="Untouched" />}
                 {stats.dead > 0 && <div style={{ width: `${(stats.dead / stats.total) * 100}%` }} className="bg-red-500/50" title="Dead" />}
               </div>
-              <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-zinc-500">
+              <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-slate-400">
                 <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> Clients</span>
                 <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Hot</span>
                 <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> In Contact</span>
-                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-zinc-700" /> Untouched</span>
+                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-slate-200" /> Untouched</span>
                 <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500/50" /> Dead</span>
               </div>
             </div>
@@ -382,7 +382,7 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
           {duplicates.length === 0 ? (
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
               <div className="text-emerald-400 text-sm font-bold">No duplicates found</div>
-              <div className="text-xs text-zinc-500 mt-1">Your database is clean</div>
+              <div className="text-xs text-slate-400 mt-1">Your database is clean</div>
             </div>
           ) : (
             <>
@@ -390,16 +390,16 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
                 Found {duplicates.length} group{duplicates.length > 1 ? 's' : ''} of similar companies. Review and remove duplicates to keep your database clean.
               </div>
               {duplicates.map((group, idx) => (
-                <div key={group[0]?.id || idx} id={`dup-group-${idx}`} className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4">
+                <div key={group[0]?.id || idx} id={`dup-group-${idx}`} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <div className="mb-3 flex items-center gap-2 text-xs font-bold text-amber-400">
                     <Merge size={14} /> Duplicate Group {idx + 1} — "{group[0]?.co}"
                   </div>
                   <div className="space-y-2">
                     {group.map((lead) => (
-                      <div key={lead.id} className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                      <div key={lead.id} className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3">
                         <div className="flex-1 cursor-pointer" onClick={() => onLeadClick(lead.id)}>
-                          <div className="text-sm font-bold text-zinc-200">{lead.co}</div>
-                          <div className="text-[11px] text-zinc-500">
+                          <div className="text-sm font-bold text-slate-800">{lead.co}</div>
+                          <div className="text-[11px] text-slate-400">
                             {lead.city} · {lead.status} · {lead.pm || lead.who || 'No contact'}
                             {lead.em ? ` · ${lead.em}` : ''}
                           </div>
@@ -431,29 +431,29 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
             <div
               key={item.lead.id}
               onClick={() => onLeadClick(item.lead.id)}
-              className="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-3 transition-colors hover:border-zinc-700"
+              className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 transition-colors hover:border-slate-300"
             >
               <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
                 idx < 3 ? 'bg-orange-500/20 text-orange-400' :
-                idx < 10 ? 'bg-zinc-800 text-zinc-300' :
-                'bg-zinc-900 text-zinc-500'
+                idx < 10 ? 'bg-slate-100 text-slate-700' :
+                'bg-white text-slate-400'
               }`}>
                 #{idx + 1}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-zinc-200 truncate">{item.lead.co}</span>
+                  <span className="text-sm font-bold text-slate-800 truncate">{item.lead.co}</span>
                   {item.lead.t === 1 && <span className="rounded bg-orange-500/20 px-1.5 py-0.5 text-[9px] font-bold text-orange-400">T1</span>}
                   {item.lead.pm && <span className="rounded bg-violet-500/20 px-1.5 py-0.5 text-[9px] font-bold text-violet-400">PM</span>}
                 </div>
-                <div className="text-[11px] text-zinc-500">
+                <div className="text-[11px] text-slate-400">
                   {item.reasons.join(' · ')} — {item.lead.city}
                 </div>
               </div>
               <div className={`text-sm font-bold ${
                 item.score >= 60 ? 'text-emerald-400' :
                 item.score >= 40 ? 'text-amber-400' :
-                'text-zinc-500'
+                'text-slate-400'
               }`}>
                 {item.score}
               </div>
@@ -471,17 +471,17 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
           {staleLeads.length === 0 ? (
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
               <div className="text-emerald-400 text-sm font-bold">No stale leads</div>
-              <div className="text-xs text-zinc-500 mt-1">All active leads have notes</div>
+              <div className="text-xs text-slate-400 mt-1">All active leads have notes</div>
             </div>
           ) : (
             staleLeads.map((lead) => (
-              <div key={lead.id} className="flex items-center justify-between rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-3">
+              <div key={lead.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3">
                 <div className="flex-1 cursor-pointer" onClick={() => onLeadClick(lead.id)}>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-zinc-200">{lead.co}</span>
-                    <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[9px] font-bold text-zinc-400">{lead.status}</span>
+                    <span className="text-sm font-bold text-slate-800">{lead.co}</span>
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">{lead.status}</span>
                   </div>
-                  <div className="text-[11px] text-zinc-500">{lead.city} · {lead.pm || lead.who || 'No contact'}</div>
+                  <div className="text-[11px] text-slate-400">{lead.city} · {lead.pm || lead.who || 'No contact'}</div>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -514,20 +514,20 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
           {needsResearch.length === 0 ? (
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
               <div className="text-emerald-400 text-sm font-bold">All leads have been researched!</div>
-              <div className="text-xs text-zinc-500 mt-1">Or skipped because they have no website</div>
+              <div className="text-xs text-slate-400 mt-1">Or skipped because they have no website</div>
             </div>
           ) : (
             <>
-              <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-slate-400">
                 {needsResearch.filter(n => n.hasWeb).length} with website · {needsResearch.filter(n => !n.hasWeb).length} no website (skip)
               </div>
               {needsResearch.map(({ lead, hasWeb, missing }) => (
                 <div key={lead.id} className={`flex items-center justify-between rounded-xl border p-3 ${
-                  hasWeb ? 'border-zinc-800/60 bg-zinc-900/40' : 'border-zinc-800/30 bg-zinc-900/20 opacity-50'
+                  hasWeb ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-slate-50 opacity-50'
                 }`}>
                   <div className="flex-1 cursor-pointer" onClick={() => onLeadClick(lead.id)}>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-zinc-200">{lead.co}</span>
+                      <span className="text-sm font-bold text-slate-800">{lead.co}</span>
                       {lead.t === 1 && <span className="rounded bg-orange-500/20 px-1.5 py-0.5 text-[9px] font-bold text-orange-400">T1</span>}
                       {!hasWeb && (
                         <span className="flex items-center gap-1 rounded bg-red-500/10 px-1.5 py-0.5 text-[9px] font-bold text-red-400">
@@ -565,7 +565,7 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
                     ) : (
                       <button
                         onClick={() => setSkippedIds(prev => new Set([...prev, lead.id]))}
-                        className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-[11px] font-medium text-zinc-500 hover:bg-zinc-700"
+                        className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-100 px-3 py-1.5 text-[11px] font-medium text-slate-400 hover:bg-slate-200"
                       >
                         <SkipForward size={12} /> Skip
                       </button>
@@ -585,13 +585,13 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
             Leads missing 2+ key fields. Tier 1 leads shown first — use Research Contact to fill in gaps.
           </div>
           {missingInfo.slice(0, 30).map(({ lead, gaps }) => (
-            <div key={lead.id} className="flex items-center justify-between rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-3">
+            <div key={lead.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3">
               <div className="flex-1 cursor-pointer" onClick={() => onLeadClick(lead.id)}>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-zinc-200">{lead.co}</span>
+                  <span className="text-sm font-bold text-slate-800">{lead.co}</span>
                   {lead.t === 1 && <span className="rounded bg-orange-500/20 px-1.5 py-0.5 text-[9px] font-bold text-orange-400">T1</span>}
                 </div>
-                <div className="text-[11px] text-zinc-500">{lead.city}</div>
+                <div className="text-[11px] text-slate-400">{lead.city}</div>
               </div>
               <div className="flex flex-wrap gap-1">
                 {gaps.map((g) => (

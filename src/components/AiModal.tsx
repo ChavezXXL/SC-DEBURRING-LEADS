@@ -86,7 +86,7 @@ export const AiModal: React.FC<AiModalProps> = ({
       onClick={() => setAiModal(null)}
     >
       <div
-        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl shadow-black md:p-8"
+        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-black md:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-6 flex items-start justify-between">
@@ -102,12 +102,12 @@ export const AiModal: React.FC<AiModalProps> = ({
                 </>
               )}
             </div>
-            <div className="text-xs font-mono text-zinc-500">
+            <div className="text-xs font-mono text-slate-400">
               {aiModal.lead.co} · {aiModal.lead.pm || aiModal.lead.who} · {aiModal.lead.city}
             </div>
           </div>
 
-          <button onClick={() => setAiModal(null)} className="text-zinc-500 transition-colors hover:text-zinc-300">
+          <button onClick={() => setAiModal(null)} className="text-slate-400 transition-colors hover:text-slate-700">
             <X size={24} />
           </button>
         </div>
@@ -115,14 +115,14 @@ export const AiModal: React.FC<AiModalProps> = ({
         {aiLoading ? (
           <div className="flex flex-col items-center justify-center gap-4 py-16">
             <Loader2 size={32} className="animate-spin text-orange-500" />
-            <div className="text-xs font-mono text-zinc-500">
+            <div className="text-xs font-mono text-slate-400">
               {aiModal.mode === 'pitch' ? 'Generating personalized pitch...' : 'Researching contact info...'}
             </div>
           </div>
         ) : (
           <>
             {/* Rendered markdown instead of raw pre */}
-            <div className="mb-5 rounded-xl border border-zinc-800 bg-zinc-950 p-5 text-xs leading-relaxed text-zinc-300">
+            <div className="mb-5 rounded-xl border border-slate-200 bg-white p-5 text-xs leading-relaxed text-slate-700">
               {renderMarkdown(aiText)}
             </div>
 
@@ -135,26 +135,26 @@ export const AiModal: React.FC<AiModalProps> = ({
                 <div className="mb-3 space-y-1 text-xs">
                   {parsedContact.pm && (
                     <div className="flex gap-2">
-                      <span className="text-zinc-500 w-16">Name:</span>
-                      <span className="text-zinc-200 font-medium">{parsedContact.pm}</span>
+                      <span className="text-slate-400 w-16">Name:</span>
+                      <span className="text-slate-800 font-medium">{parsedContact.pm}</span>
                     </div>
                   )}
                   {parsedContact.pm_title && (
                     <div className="flex gap-2">
-                      <span className="text-zinc-500 w-16">Title:</span>
-                      <span className="text-zinc-200 font-medium">{parsedContact.pm_title}</span>
+                      <span className="text-slate-400 w-16">Title:</span>
+                      <span className="text-slate-800 font-medium">{parsedContact.pm_title}</span>
                     </div>
                   )}
                   {parsedContact.em && (
                     <div className="flex gap-2">
-                      <span className="text-zinc-500 w-16">Email:</span>
+                      <span className="text-slate-400 w-16">Email:</span>
                       <span className="text-violet-400 font-medium">{parsedContact.em}</span>
                     </div>
                   )}
                   {parsedContact.ph && (
                     <div className="flex gap-2">
-                      <span className="text-zinc-500 w-16">Phone:</span>
-                      <span className="text-zinc-200 font-medium">{parsedContact.ph}</span>
+                      <span className="text-slate-400 w-16">Phone:</span>
+                      <span className="text-slate-800 font-medium">{parsedContact.ph}</span>
                     </div>
                   )}
                 </div>
