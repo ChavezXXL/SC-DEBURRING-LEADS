@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from './AuthContext';
-import { Login } from '../components/Login';
+import { Login } from './Login';
 
 /**
  * AuthGate — wraps the app. When VITE_REQUIRE_AUTH is "true", users must

@@ -30,17 +30,17 @@ import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, writeBatch, deleteDoc, deleteField, query, where } from 'firebase/firestore';
 import { useAuth } from './auth/AuthContext';
 
-import { Sidebar } from './components/Sidebar';
-import { OutreachTab } from './components/OutreachTab';
-import { LeadCard } from './components/LeadCard';
-import { AddLeadModal } from './components/AddLeadModal';
-import { AiModal } from './components/AiModal';
-import { AiFinderModal } from './components/AiFinderModal';
-import { DeleteModal } from './components/DeleteModal';
-import { FancyLogo } from './components/FancyLogo';
-import { BoltChat } from './components/BoltChat';
-import { AiBrain } from './components/AiBrain';
-import { AutoOutreach } from './components/AutoOutreach';
+import { Sidebar } from './shell/Sidebar';
+import { OutreachTab } from './tabs/OutreachTab';
+import { LeadCard } from './leads/LeadCard';
+import { AddLeadModal } from './leads/AddLeadModal';
+import { AiModal } from './modals/AiModal';
+import { AiFinderModal } from './modals/AiFinderModal';
+import { DeleteModal } from './modals/DeleteModal';
+import { FancyLogo } from './shell/FancyLogo';
+import { BoltChat } from './modals/BoltChat';
+import { AiBrain } from './tabs/AiBrain';
+import { AutoOutreach } from './tabs/AutoOutreach';
 import { AdminPanel } from './admin/AdminPanel';
 
 const safeRaw = Array.isArray(RAW) ? RAW : [];
@@ -134,7 +134,7 @@ function handleFirestoreError(error: any, operationType: OperationType, path: st
   throw error;
 }
 
-import { PipelineTab } from './components/PipelineTab';
+import { PipelineTab } from './tabs/PipelineTab';
 
 export default function App() {
   // Multi-tenant scoping. When auth is enabled, tenantId comes from the

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Loader2, Lock, Mail } from 'lucide-react';
-import { useAuth } from '../auth/AuthContext';
-import { FancyLogo } from './FancyLogo';
+import { useAuth } from './AuthContext';
+import { FancyLogo } from '../shell/FancyLogo';
 
 /**
  * Login screen.

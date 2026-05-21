@@ -13,7 +13,7 @@ import {
 import type { TenantStats } from '../types';
 import { useAdminApi } from './useAdminApi';
 import { TenantDetailDrawer } from './TenantDetailDrawer';
-import { CreateAccountModal } from '../components/CreateAccountModal';
+import { CreateAccountModal } from '../modals/CreateAccountModal';
 
 /**
  * Admin Panel — visible only when the logged-in user is `super-admin`.
