@@ -1,0 +1,309 @@
+import React, { useEffect, useState } from 'react';
+import {
+  Settings as SettingsIcon,
+  Check,
+  AlertCircle,
+  Loader2,
+  KeyRound,
+} from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
+import { auth } from '../firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
+
+/**
+ * Settings tab — visible to tenant owners + super-admin.
+ *
+ * Owner can change:
+ *   - Business display name
+ *   - Brand primary color
+ *   - Logo URL (paste any https URL — Imgur, Cloudflare R2, etc.)
+ *   - Their own password (sends a Firebase reset email)
+ *
+ * Read-only:
+ *   - Tenant slug (id)
+ *   - Plan badge
+ *   - Created date
+ */
+export function SettingsTab() {
+  const { tenant, profile, user } = useAuth();
+  const [name, setName] = useState(tenant?.name || '');
+  const [primaryColor, setPrimaryColor] = useState(tenant?.primaryColor || '#2563eb');
+  const [logoUrl, setLogoUrl] = useState(tenant?.logoUrl || '');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  // Password reset state
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwSent, setPwSent] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setName(tenant?.name || '');
+    setPrimaryColor(tenant?.primaryColor || '#2563eb');
+    setLogoUrl(tenant?.logoUrl || '');
+  }, [tenant?.id, tenant?.name, tenant?.primaryColor, tenant?.logoUrl]);
+
+  if (!tenant) {
+    return (
+      <div className="mx-auto max-w-3xl py-16 text-center text-sm text-slate-400">
+        No tenant loaded.
+      </div>
+    );
+  }
+
+  const onSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSaved(false);
+    if (!user) {
+      setError('Not signed in.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const idToken = await user.getIdToken();
+      const resp = await fetch('/api/tenant/update-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idToken,
+          tenantId: tenant.id,
+          name,
+          primaryColor,
+          logoUrl,
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        setError(data?.error || `Save failed (${resp.status})`);
+      } else {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2200);
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Network error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onResetPassword = async () => {
+    if (!profile?.email) return;
+    setPwError(null);
+    setPwSent(false);
+    setPwBusy(true);
+    try {
+      await sendPasswordResetEmail(auth, profile.email);
+      setPwSent(true);
+    } catch (e: any) {
+      setPwError(e?.message || 'Could not send reset email');
+    } finally {
+      setPwBusy(false);
+    }
+  };
+
+  const readOnlyByRole = profile?.role === 'member';
+
+  return (
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-8 flex items-center gap-2">
+        <SettingsIcon size={20} className="text-blue-600" />
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Settings</h1>
+      </div>
+
+      {/* Read-only stats */}
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <ReadOnlyCard label="Tenant slug" value={tenant.id} mono />
+        <ReadOnlyCard
+          label="Plan"
+          value={(tenant.plan || 'trial').toUpperCase()}
+          accentClass={
+            tenant.plan === 'paid'
+              ? 'text-emerald-600'
+              : tenant.plan === 'internal'
+                ? 'text-slate-700'
+                : 'text-amber-600'
+          }
+        />
+        <ReadOnlyCard
+          label="Created"
+          value={
+            tenant.createdAt
+              ? new Date(tenant.createdAt).toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })
+              : '—'
+          }
+        />
+      </div>
+
+      {/* Editable form */}
+      <form
+        onSubmit={onSave}
+        className="rounded-2xl bg-white ring-1 ring-slate-200 p-6 space-y-5"
+      >
+        <div>
+          <div className="mb-1 text-[10px] uppercase tracking-widest text-slate-400 font-medium">
+            Business
+          </div>
+          <div className="h-px bg-slate-100" />
+        </div>
+
+        <label className="block">
+          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Business name
+          </span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={readOnlyByRole}
+            className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition disabled:opacity-50"
+          />
+          <span className="mt-1 block text-[10px] text-slate-400">
+            Shows in the sidebar header and your browser tab title.
+          </span>
+        </label>
+
+        <label className="block">
+          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Brand primary color
+          </span>
+          <div className="mt-1 flex items-center gap-3">
+            <input
+              type="color"
+              value={primaryColor}
+              onChange={(e) => setPrimaryColor(e.target.value)}
+              disabled={readOnlyByRole}
+              className="h-10 w-14 cursor-pointer rounded-xl border border-slate-200 bg-slate-50 disabled:opacity-50"
+            />
+            <input
+              type="text"
+              value={primaryColor}
+              onChange={(e) => setPrimaryColor(e.target.value)}
+              disabled={readOnlyByRole}
+              placeholder="#2563eb"
+              className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-mono text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 disabled:opacity-50"
+            />
+            <div
+              className="h-10 w-10 rounded-xl ring-1 ring-slate-200"
+              style={{ background: primaryColor }}
+              title="Preview"
+            />
+          </div>
+          <span className="mt-1 block text-[10px] text-slate-400">
+            Shows as the accent stripe in the sidebar and a few UI highlights.
+          </span>
+        </label>
+
+        <label className="block">
+          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Logo URL (optional)
+          </span>
+          <input
+            type="url"
+            value={logoUrl}
+            onChange={(e) => setLogoUrl(e.target.value)}
+            disabled={readOnlyByRole}
+            placeholder="https://example.com/logo.png"
+            className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition disabled:opacity-50"
+          />
+          <span className="mt-1 block text-[10px] text-slate-400">
+            Paste any public image URL. Replaces the default badge in the sidebar.
+          </span>
+        </label>
+
+        {error && (
+          <div className="flex items-start gap-2 rounded-xl bg-red-50 ring-1 ring-red-200 px-3 py-2 text-xs text-red-700">
+            <AlertCircle size={14} className="mt-0.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={busy || readOnlyByRole}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 active:scale-[0.99] transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {busy ? <Loader2 size={14} className="animate-spin" /> : null}
+            {busy ? 'Saving…' : 'Save changes'}
+          </button>
+          {saved && (
+            <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+              <Check size={14} />
+              Saved
+            </span>
+          )}
+          {readOnlyByRole && (
+            <span className="text-xs text-slate-400">
+              Only the tenant owner can change these.
+            </span>
+          )}
+        </div>
+      </form>
+
+      {/* Password reset */}
+      <div className="mt-6 rounded-2xl bg-white ring-1 ring-slate-200 p-6">
+        <div className="mb-4 text-[10px] uppercase tracking-widest text-slate-400 font-medium">
+          Account
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-slate-900">{profile?.email}</div>
+            <div className="mt-0.5 text-[10px] uppercase tracking-wider text-slate-400">
+              {profile?.role}
+            </div>
+          </div>
+          <button
+            onClick={onResetPassword}
+            disabled={pwBusy}
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-200 transition disabled:opacity-50"
+          >
+            {pwBusy ? <Loader2 size={12} className="animate-spin" /> : <KeyRound size={12} />}
+            {pwBusy ? 'Sending…' : 'Send password reset email'}
+          </button>
+        </div>
+        {pwSent && (
+          <div className="mt-3 flex items-start gap-2 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 px-3 py-2 text-xs text-emerald-800">
+            <Check size={14} className="mt-0.5 shrink-0" />
+            <span>Reset email sent to {profile?.email}. Check your inbox.</span>
+          </div>
+        )}
+        {pwError && (
+          <div className="mt-3 flex items-start gap-2 rounded-xl bg-red-50 ring-1 ring-red-200 px-3 py-2 text-xs text-red-700">
+            <AlertCircle size={14} className="mt-0.5 shrink-0" />
+            <span>{pwError}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReadOnlyCard({
+  label,
+  value,
+  mono,
+  accentClass,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  accentClass?: string;
+}) {
+  return (
+    <div className="rounded-2xl bg-white ring-1 ring-slate-200 px-4 py-3">
+      <div className="text-[10px] uppercase tracking-widest text-slate-400 font-medium">
+        {label}
+      </div>
+      <div
+        className={`mt-1 text-sm ${mono ? 'font-mono' : ''} ${accentClass || 'text-slate-900'}`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}

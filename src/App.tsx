@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { Menu, X, Loader2 } from 'lucide-react';
 
 import type { Lead, AiMode, TabKey } from './types';
@@ -17,13 +17,18 @@ import { FancyLogo } from './shell/FancyLogo';
 import { OutreachTab } from './tabs/OutreachTab';
 import { PipelineTab } from './tabs/PipelineTab';
 import { AutoOutreach } from './tabs/AutoOutreach';
-import { AiBrain } from './tabs/AiBrain';
+// Heavy tabs are code-split so the initial bundle only loads what most users need.
+const AiBrain = lazy(() => import('./tabs/AiBrain').then((m) => ({ default: m.AiBrain })));
+const AdminPanel = lazy(() =>
+  import('./admin/AdminPanel').then((m) => ({ default: m.AdminPanel })),
+);
+const SettingsTab = lazy(() =>
+  import('./settings/SettingsTab').then((m) => ({ default: m.SettingsTab })),
+);
 
 import { AiModal } from './modals/AiModal';
 import { DeleteModal } from './modals/DeleteModal';
 import { BoltChat } from './modals/BoltChat';
-
-import { AdminPanel } from './admin/AdminPanel';
 
 const EMPTY_LEAD_FORM: Partial<Lead> = {
   co: '',
@@ -266,15 +271,27 @@ export default function App() {
         {tab === 'autopilot' && <AutoOutreach leads={visibleLeads} />}
         {tab === 'pipeline' && <PipelineTab leads={visibleLeads} onLeadClick={jumpToLead} />}
         {tab === 'brain' && (
-          <AiBrain
-            leads={visibleLeads}
-            onLeadClick={jumpToLead}
-            onDeleteLead={(id, co) => setDeleteModal({ id, co })}
-            setStatus={crud.setStatus}
-            handleAI={handleAI}
-          />
+          <Suspense fallback={<TabSpinner />}>
+            <AiBrain
+              leads={visibleLeads}
+              onLeadClick={jumpToLead}
+              onDeleteLead={(id, co) => setDeleteModal({ id, co })}
+              setStatus={crud.setStatus}
+              handleAI={handleAI}
+            />
+          </Suspense>
         )}
-        {tab === 'admin' && profile?.role === 'super-admin' && <AdminPanel />}
+        {tab === 'admin' && profile?.role === 'super-admin' && (
+          <Suspense fallback={<TabSpinner />}>
+            <AdminPanel />
+          </Suspense>
+        )}
+        {tab === 'settings' &&
+          (profile?.role === 'owner' || profile?.role === 'super-admin') && (
+            <Suspense fallback={<TabSpinner />}>
+              <SettingsTab />
+            </Suspense>
+          )}
       </main>
 
       {deleteModal && (
@@ -308,6 +325,14 @@ export default function App() {
       )}
 
       <BoltChat leads={visibleLeads} onAddLead={crud.addLeadFromBolt} />
+    </div>
+  );
+}
+
+function TabSpinner() {
+  return (
+    <div className="mx-auto max-w-5xl py-20 flex justify-center">
+      <Loader2 className="animate-spin text-slate-400" size={20} />
     </div>
   );
 }

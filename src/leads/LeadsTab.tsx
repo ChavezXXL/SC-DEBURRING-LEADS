@@ -222,9 +222,32 @@ export function LeadsTab({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="py-20 text-center text-sm text-slate-400">
-          No leads match your filters.
-        </div>
+        visibleLeads.length === 0 ? (
+          // Brand-new account — no leads at all yet. Welcoming onboarding state.
+          <div className="rounded-2xl bg-white ring-1 ring-slate-200/70 py-16 px-8 text-center">
+            <div className="text-2xl">👋</div>
+            <h2 className="mt-4 text-lg font-semibold text-slate-900">
+              Welcome to your CRM
+            </h2>
+            <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+              Your account is fresh — no leads yet. Click <strong>+ Add Lead</strong>{' '}
+              above to enter your first one, or use the AI assistant in the bottom right
+              to find leads in your area.
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <button
+                onClick={onAddLeadClick}
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 active:scale-[0.99]"
+              >
+                + Add your first lead
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="py-20 text-center text-sm text-slate-400">
+            No leads match your filters.
+          </div>
+        )
       ) : (
         <div className="flex flex-col gap-3">
           {filtered.map((lead) => (

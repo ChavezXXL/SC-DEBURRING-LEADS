@@ -9,6 +9,7 @@ import {
   Zap,
   LogOut,
   Shield,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import type { Lead, TabKey, Tenant, UserProfile } from '../types';
 import { FancyLogo } from './FancyLogo';
@@ -96,10 +97,27 @@ export function Sidebar({
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >
+      {/* Tenant accent bar — narrow vertical stripe in their primary color */}
+      <div
+        className="absolute left-0 top-0 h-full w-1"
+        style={{ background: 'var(--tenant-primary)' }}
+        aria-hidden
+      />
       <div>
         {/* Brand */}
         <div className="mb-7 hidden items-center gap-3 md:flex">
-          <FancyLogo className="h-10 w-10" />
+          {tenant?.logoUrl ? (
+            <img
+              src={tenant.logoUrl}
+              alt={`${tenant.name} logo`}
+              className="h-10 w-10 rounded-xl object-cover ring-1 ring-slate-200"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            <FancyLogo className="h-10 w-10" />
+          )}
           <div>
             <div className="text-sm font-semibold tracking-tight text-slate-900">
               {tenant?.name || 'SC Deburring'}
@@ -117,6 +135,8 @@ export function Sidebar({
           {navItem('pipeline', 'Pipeline', Kanban)}
           {navItem('brain', 'AI Brain', Brain)}
           {navItem('autopilot', 'Autopilot', Zap)}
+          {(profile?.role === 'owner' || profile?.role === 'super-admin') &&
+            navItem('settings', 'Settings', SettingsIcon)}
           {profile?.role === 'super-admin' && navItem('admin', 'Admin', Shield)}
         </nav>
 

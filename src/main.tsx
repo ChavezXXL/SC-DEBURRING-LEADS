@@ -5,6 +5,7 @@ import './index.css';
 import { registerSW } from 'virtual:pwa-register';
 import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
+import { TenantTheme } from './auth/TenantTheme';
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -17,9 +18,11 @@ const updateSW = registerSW({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
-      <AuthGate>
-        <App />
-      </AuthGate>
+      <TenantTheme>
+        <AuthGate>
+          <App />
+        </AuthGate>
+      </TenantTheme>
     </AuthProvider>
   </StrictMode>,
 );

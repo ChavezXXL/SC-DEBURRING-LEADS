@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut as fbSignOut,
   User as FirebaseUser,
 } from 'firebase/auth';
@@ -30,6 +31,7 @@ interface AuthCtx {
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   // Super-admin only: create a new tenant + first user for it.
   createTenantAccount: (args: {
     tenantId: string;
@@ -146,6 +148,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fbSignOut(auth);
   };
 
+  const resetPassword = async (email: string) => {
+    setError(null);
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+    } catch (e: any) {
+      const code = e?.code || '';
+      let msg = 'Could not send reset email.';
+      if (code.includes('user-not-found')) msg = 'No account for that email.';
+      else if (code.includes('invalid-email')) msg = 'That email looks invalid.';
+      else if (code.includes('too-many-requests'))
+        msg = 'Too many requests. Wait a minute.';
+      else if (e?.message) msg = e.message;
+      setError(msg);
+      throw e;
+    }
+  };
+
   const createTenantAccount: AuthCtx['createTenantAccount'] = async (args) => {
     if (profile?.role !== 'super-admin') {
       throw new Error('Only the super-admin can create new accounts.');
@@ -181,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error,
     signIn,
     signOut,
+    resetPassword,
     createTenantAccount,
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
