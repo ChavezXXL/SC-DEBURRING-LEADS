@@ -6,7 +6,11 @@ import { getAuth } from "firebase/auth";
 const _fk = ['QUl6YVN5QWJ5eFdH', 'bFlQWWpVVmZYNmVa', 'MU9yNnRkeHRTRHNVSlhn'];
 
 const firebaseConfig = {
-  apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY || atob(_fk.join('')),
+  // Use the known-good key directly. On the Cloudflare deploy, the
+  // VITE_FIREBASE_API_KEY env var was set to an invalid value, which overrode
+  // this and broke ALL auth ("auth/api-key-not-valid" — no login, no reset).
+  // This is a public Firebase web API key (designed to ship in the client).
+  apiKey: atob(_fk.join('')),
   authDomain: "sc-deburring-leads.firebaseapp.com",
   projectId: "sc-deburring-leads",
   storageBucket: "sc-deburring-leads.firebasestorage.app",
