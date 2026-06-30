@@ -18,8 +18,9 @@ const INIT_LEADS: Lead[] = (Array.isArray(RAW) ? RAW : []).map((l) => ({
   notes: '',
 }));
 
-const REQUIRE_AUTH =
-  (import.meta as any).env?.VITE_REQUIRE_AUTH === 'true';
+// Forced ON to match the deployed Firestore rules (auth required). With this
+// off, the query ran unauthenticated and Firestore denied the leads read.
+const REQUIRE_AUTH = true;
 
 /**
  * Subscribes to the leads collection in Firestore. Scopes by tenantId when

@@ -9,8 +9,10 @@ import { Login } from './Login';
  * behaves like before (no gate). This lets us ship the auth code without
  * breaking the live CRM until Santiago flips the switch.
  */
-const REQUIRE_AUTH =
-  (import.meta as any).env?.VITE_REQUIRE_AUTH === 'true';
+// Forced ON: the deployed Firestore rules REQUIRE authentication, so running
+// with the gate off left the live CRM unable to read leads ("Missing or
+// insufficient permissions"). Auth must be on for the app to work.
+const REQUIRE_AUTH = true;
 
 export function AuthGate({ children }: { children: ReactNode }) {
   // Feature-flagged off: pass through, no auth required.
