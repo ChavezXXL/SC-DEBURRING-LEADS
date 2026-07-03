@@ -1,0 +1,424 @@
+import React, { useMemo } from 'react';
+import { Phone, PhoneCall, MailCheck, MailPlus, MessagesSquare } from 'lucide-react';
+import type { Lead } from '../types';
+import { isDueFollowUp, isHiringSignal } from '../leads/useLeadFilters';
+import { buildGmailUrl } from '../outreach/templates';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Notes flagged "call only" belong on the call list even without a hiring mention. */
+const CALL_ONLY_RE = /call only/i;
+
+/** lastContactedAt as epoch ms — missing/invalid sorts as 0 (oldest). */
+function contactedAtMs(l: Lead): number {
+  if (!l.lastContactedAt) return 0;
+  const t = new Date(l.lastContactedAt).getTime();
+  return Number.isNaN(t) ? 0 : t;
+}
+
+/** Gmail search scoped to this lead — bumps get replied IN thread, never as a fresh cold email. */
+function threadSearchUrl(em: string): string {
+  return `https://mail.google.com/mail/u/0/#search/${encodeURIComponent('to:' + em)}`;
+}
+
+interface TodayTabProps {
+  /** Live tenant leads — App's single useLeads subscription, passed down. */
+  leads: Lead[];
+  logCall: (lead: Lead) => void | Promise<void>;
+  markEmailed: (lead: Lead) => void | Promise<void>;
+  /** Jump to the full card on the Leads tab. */
+  onLeadClick: (id: string) => void;
+}
+
+/**
+ * The "Today" command center — the daily execution list, derived entirely
+ * from the live leads array (no extra Firestore listener):
+ *   1. Calls to make   — hiring-signal shops + the 2 coldest past clients
+ *   2. Bumps due       — emailed, went quiet; reply in the existing thread
+ *   3. Ready to send   — untouched new leads with an email on file
+ */
+export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabProps) {
+  const now = Date.now();
+
+  const { stats, hotCalls, checkIns, bumps, ready } = useMemo(() => {
+    const tierFirst = (a: Lead, b: Lead) =>
+      a.t !== b.t ? a.t - b.t : (a.co || '').localeCompare(b.co || '');
+
+    return {
+      stats: {
+        total: leads.length,
+        fresh: leads.filter((l) => l.status === 'new').length,
+        emailed: leads.filter((l) => l.status === 'emailed').length,
+        warm: leads.filter((l) => l.status === 'interested' || l.status === 'quote').length,
+        clients: leads.filter((l) => l.status === 'client').length,
+        bumpsDue: leads.filter((l) => isDueFollowUp(l)).length,
+      },
+      hotCalls: leads
+        .filter(
+          (l) =>
+            (isHiringSignal(l) || CALL_ONLY_RE.test(l.notes || '')) &&
+            (l.status === 'new' || l.status === 'called'),
+        )
+        .sort(tierFirst),
+      checkIns: leads
+        .filter((l) => l.status === 'client')
+        .sort((a, b) => contactedAtMs(a) - contactedAtMs(b))
+        .slice(0, 2),
+      bumps: leads
+        .filter((l) => isDueFollowUp(l))
+        .sort((a, b) => contactedAtMs(a) - contactedAtMs(b)),
+      ready: leads
+        .filter((l) => !!l.em?.trim() && l.status === 'new' && (l.touchCount || 0) === 0)
+        .sort(tierFirst)
+        .slice(0, 10),
+    };
+  }, [leads]);
+
+  const dateLine = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const daysSince = (l: Lead) => Math.max(0, Math.floor((now - contactedAtMs(l)) / DAY_MS));
+
+  if (leads.length === 0) {
+    return (
+      <div className="mx-auto max-w-5xl">
+        <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-900">Today</h1>
+        <p className="mb-6 text-xs text-slate-500">{dateLine}</p>
+        <div className="rounded-2xl bg-white ring-1 ring-slate-200/70 px-8 py-16 text-center text-sm text-slate-500">
+          No leads in this workspace yet. Add leads on the Leads tab and the day's work builds
+          itself here.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-5xl">
+      <div className="mb-6">
+        <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-900">Today</h1>
+        <p className="text-xs text-slate-500">
+          {dateLine} · calls first, then bumps, then new sends.
+        </p>
+      </div>
+
+      {/* Stat chips */}
+      <div className="mb-6 flex flex-wrap items-center gap-2 tabular-nums">
+        <StatChip label="Total leads" value={stats.total} />
+        <StatChip label="New" value={stats.fresh} />
+        <StatChip label="Emailed" value={stats.emailed} />
+        <StatChip label="Interested+Quote" value={stats.warm} />
+        <StatChip label="Clients" value={stats.clients} />
+        <StatChip label="Bumps due" value={stats.bumpsDue} highlight={stats.bumpsDue > 0} />
+      </div>
+
+      {/* CALLS TO MAKE */}
+      <Section title="Calls to make">
+        <GroupLabel label="Hot (hiring signals)" count={hotCalls.length} tone="orange" />
+        {hotCalls.length === 0 ? (
+          <EmptyLine text="No hiring-signal shops to call. Scan the job boards and tag new ones." />
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {hotCalls.map((lead) => (
+              <div
+                key={lead.id}
+                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <CoButton lead={lead} onLeadClick={onLeadClick} />
+                    <TierPill t={lead.t} />
+                  </div>
+                  <div className="mt-0.5 text-xs text-slate-400">{lead.city}</div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {lead.ph && <BigPhone ph={lead.ph} />}
+                  <LogCallButton lead={lead} logCall={logCall} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-5">
+          <GroupLabel label="Check-ins (past clients)" count={checkIns.length} tone="amber" />
+        </div>
+        {checkIns.length === 0 ? (
+          <EmptyLine text="No past clients on the books yet." />
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {checkIns.map((lead) => (
+              <div
+                key={lead.id}
+                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <CoButton lead={lead} onLeadClick={onLeadClick} />
+                  <div className="mt-0.5 text-xs text-slate-400">
+                    {lead.city}
+                    {' · '}
+                    {contactedAtMs(lead) === 0
+                      ? 'no contact logged'
+                      : `${daysSince(lead)}d since contact`}
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {lead.ph && <BigPhone ph={lead.ph} />}
+                  {lead.em && (
+                    <a
+                      href={buildGmailUrl(lead)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-600 transition-colors hover:bg-sky-500/20"
+                      title="Open a pre-written check-in draft in Gmail"
+                    >
+                      <MailPlus size={14} /> Check in
+                    </a>
+                  )}
+                  <LogCallButton lead={lead} logCall={logCall} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+
+      {/* BUMPS DUE */}
+      <Section
+        title="Bumps due"
+        hint="Emailed, went quiet. Reply in the existing thread — never start a new cold email."
+      >
+        {bumps.length === 0 ? (
+          <EmptyLine text="Nothing due. Put the time into new outreach." />
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {bumps.map((lead) => (
+              <div
+                key={lead.id}
+                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <CoButton lead={lead} onLeadClick={onLeadClick} />
+                  <div className="mt-0.5 truncate text-xs text-slate-400">
+                    {lead.em}
+                    {' · '}
+                    <span className="font-medium text-violet-600">
+                      {daysSince(lead)}d since contact
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <a
+                    href={threadSearchUrl(lead.em)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-600 transition-colors hover:bg-violet-500/20"
+                    title="Find the existing Gmail thread and reply there"
+                  >
+                    <MessagesSquare size={14} /> Open thread
+                  </a>
+                  <MarkEmailedButton lead={lead} markEmailed={markEmailed} title="Log the bump after you send it" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+
+      {/* READY TO SEND */}
+      <Section
+        title="Ready to send"
+        hint="Untouched new leads with an email on file — tier 1 first, ten max."
+      >
+        {ready.length === 0 ? (
+          <EmptyLine text="No untouched leads with an email on file. Time to prospect." />
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {ready.map((lead) => (
+              <div
+                key={lead.id}
+                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <CoButton lead={lead} onLeadClick={onLeadClick} />
+                    <TierPill t={lead.t} />
+                  </div>
+                  <div className="mt-0.5 truncate text-xs text-slate-400">
+                    {lead.city}
+                    {lead.city && lead.em ? ' · ' : ''}
+                    {lead.em}
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <a
+                    href={buildGmailUrl(lead)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-600 transition-colors hover:bg-sky-500/20"
+                    title="Open a pre-written cold intro draft in Gmail"
+                  >
+                    <MailPlus size={14} /> Draft email
+                  </a>
+                  <MarkEmailedButton lead={lead} markEmailed={markEmailed} title="Log the send — sets last contacted, bumps touch count, stamps notes" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+    </div>
+  );
+}
+
+// ---- small building blocks -------------------------------------------------
+
+function StatChip({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: number;
+  highlight?: boolean;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs ring-1 ${
+        highlight
+          ? 'bg-violet-50 text-violet-700 ring-violet-200'
+          : 'bg-white text-slate-500 ring-slate-200/70'
+      }`}
+    >
+      {label}
+      <span className={`font-semibold ${highlight ? 'text-violet-800' : 'text-slate-900'}`}>
+        {value}
+      </span>
+    </span>
+  );
+}
+
+function Section({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mb-6 rounded-2xl bg-white ring-1 ring-slate-200/70 p-4 md:p-5">
+      <div
+        className={`text-[10px] font-medium uppercase tracking-widest text-slate-400 ${
+          hint ? 'mb-1' : 'mb-3'
+        }`}
+      >
+        {title}
+      </div>
+      {hint && <p className="mb-3 text-xs text-slate-500">{hint}</p>}
+      {children}
+    </section>
+  );
+}
+
+function GroupLabel({
+  label,
+  count,
+  tone,
+}: {
+  label: string;
+  count: number;
+  tone: 'orange' | 'amber';
+}) {
+  const text = tone === 'orange' ? 'text-orange-700' : 'text-amber-700';
+  const pill = tone === 'orange' ? 'bg-orange-100 text-orange-700' : 'bg-amber-100 text-amber-700';
+  return (
+    <div className={`mb-1 flex items-center gap-2 text-xs font-semibold ${text}`}>
+      {label}
+      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${pill}`}>
+        {count}
+      </span>
+    </div>
+  );
+}
+
+function EmptyLine({ text }: { text: string }) {
+  return <p className="py-2 text-sm text-slate-400">{text}</p>;
+}
+
+function CoButton({ lead, onLeadClick }: { lead: Lead; onLeadClick: (id: string) => void }) {
+  return (
+    <button
+      onClick={() => onLeadClick(lead.id)}
+      className="block max-w-full truncate text-left text-sm font-semibold text-slate-900 transition-colors hover:text-blue-600"
+      title="Open the full card on the Leads tab"
+    >
+      {lead.co}
+    </button>
+  );
+}
+
+function TierPill({ t }: { t: 1 | 2 }) {
+  return (
+    <span
+      className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${
+        t === 1 ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
+      }`}
+    >
+      {t === 1 ? 'T1' : 'T2'}
+    </span>
+  );
+}
+
+/** Big tap-to-call target — the phone number IS the button. */
+function BigPhone({ ph }: { ph: string }) {
+  return (
+    <a
+      href={`tel:${ph}`}
+      className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-emerald-500/10 px-4 py-2 text-base font-semibold tabular-nums text-emerald-700 ring-1 ring-emerald-500/20 transition-colors hover:bg-emerald-500/20"
+    >
+      <Phone size={16} /> {ph}
+    </a>
+  );
+}
+
+function LogCallButton({
+  lead,
+  logCall,
+}: {
+  lead: Lead;
+  logCall: (lead: Lead) => void | Promise<void>;
+}) {
+  return (
+    <button
+      onClick={() => void logCall(lead)}
+      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-100"
+      title="Log a call touch — sets last contacted, bumps touch count, stamps notes"
+    >
+      <PhoneCall size={14} /> Log call
+    </button>
+  );
+}
+
+function MarkEmailedButton({
+  lead,
+  markEmailed,
+  title,
+}: {
+  lead: Lead;
+  markEmailed: (lead: Lead) => void | Promise<void>;
+  title: string;
+}) {
+  return (
+    <button
+      onClick={() => void markEmailed(lead)}
+      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-teal-500/20 bg-teal-500/10 px-3 py-1.5 text-xs font-medium text-teal-600 transition-colors hover:bg-teal-500/20"
+      title={title}
+    >
+      <MailCheck size={14} /> Mark emailed
+    </button>
+  );
+}

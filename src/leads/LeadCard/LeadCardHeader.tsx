@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronDown, ChevronUp, User, MapPin } from 'lucide-react';
 import type { Lead } from '../../types';
 import { STATUS } from '../../data';
+import { isHiringSignal } from '../useLeadFilters';
 
 interface LeadCardHeaderProps {
   lead: Lead;
@@ -37,6 +38,14 @@ export const LeadCardHeader: React.FC<LeadCardHeaderProps> = ({ lead, isOpen, se
           >
             {lead.t === 1 ? 'T1' : 'T2'}
           </span>
+          {isHiringSignal(lead) && (
+            <span
+              className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold tracking-wide text-amber-700 ring-1 ring-amber-300"
+              title="Notes show a hiring signal — they're overloaded on deburr/finishing right now"
+            >
+              HIRING
+            </span>
+          )}
           {hasPM && (
             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-semibold text-amber-700">
               PM

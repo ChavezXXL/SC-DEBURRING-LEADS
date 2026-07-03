@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   LayoutDashboard,
+  ListTodo,
   MessageSquare,
   Check,
   Sparkles,
@@ -119,6 +120,7 @@ export function Sidebar({
 
         {/* Nav */}
         <nav className="mb-8 space-y-1">
+          {navItem('today', 'Today', ListTodo)}
           {navItem('leads', 'Leads', LayoutDashboard, leads.length)}
           {navItem('outreach', 'Outreach', MessageSquare)}
           {navItem('pipeline', 'Pipeline', Kanban)}

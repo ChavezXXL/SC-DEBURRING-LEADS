@@ -14,6 +14,7 @@ import { AddLeadModal } from './leads/AddLeadModal';
 import { Sidebar } from './shell/Sidebar';
 import { FancyLogo } from './shell/FancyLogo';
 
+import { TodayTab } from './tabs/TodayTab';
 import { OutreachTab } from './tabs/OutreachTab';
 import { PipelineTab } from './tabs/PipelineTab';
 import { AutoOutreach } from './tabs/AutoOutreach';
@@ -88,7 +89,8 @@ export default function App() {
   const crud = useLeadCrud({ leads: visibleLeads, tenantId, markDeleted });
   const { state: filterState, setters: filterSetters, filtered } = useLeadFilters(visibleLeads);
 
-  const [tab, setTab] = useState<TabKey>('leads');
+  // "Today" is the money screen — the day starts on the execution list.
+  const [tab, setTab] = useState<TabKey>('today');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Card UI state (shared across LeadsTab/AI Brain/Pipeline jumps)
@@ -249,6 +251,15 @@ export default function App() {
           </div>
         )}
 
+        {tab === 'today' && (
+          <TodayTab
+            leads={visibleLeads}
+            logCall={crud.logCall}
+            markEmailed={crud.markEmailed}
+            onLeadClick={jumpToLead}
+          />
+        )}
+
         {tab === 'leads' && (
           <LeadsTab
             visibleLeads={visibleLeads}
@@ -269,6 +280,7 @@ export default function App() {
             setReminder={crud.setReminder}
             queueOutreach={crud.queueOutreach}
             markEmailed={crud.markEmailed}
+            logCall={crud.logCall}
             handleAI={handleAI}
             onDelete={(id, co) => setDeleteModal({ id, co })}
             onAddLeadClick={() => setShowAddLead(true)}

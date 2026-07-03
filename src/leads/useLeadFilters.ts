@@ -13,6 +13,14 @@ export function isDueFollowUp(l: Lead, now: number = Date.now()): boolean {
   return now - at >= FOLLOW_UP_AFTER_DAYS * DAY_MS && (l.touchCount || 0) < FOLLOW_UP_MAX_TOUCHES;
 }
 
+const HIRING_SIGNAL_RE = /hiring|deburr associate|deflash|finisher/i;
+
+/** "They're hiring deburr help" — notes carry a hiring signal, meaning the
+ * shop is overloaded right now and primed for an outsourcing pitch. */
+export function isHiringSignal(l: Lead): boolean {
+  return HIRING_SIGNAL_RE.test(l.notes || '');
+}
+
 export interface LeadFilterState {
   regF: string;
   stF: string;
@@ -22,6 +30,7 @@ export interface LeadFilterState {
   q: string;
   hot5: boolean;
   dueFollowUp: boolean;
+  hiringOnly: boolean;
 }
 
 export interface LeadFilterSetters {
@@ -33,6 +42,7 @@ export interface LeadFilterSetters {
   setQ: (v: string) => void;
   setHot5: (v: boolean) => void;
   setDueFollowUp: (v: boolean) => void;
+  setHiringOnly: (v: boolean) => void;
   /** Reset all filters to defaults (called by HOT 5 toggle + sidebar quick-jumps). */
   resetAll: () => void;
   /** Sidebar clicks on pipeline stat cards land here.
@@ -55,6 +65,7 @@ export function useLeadFilters(
   const [remindersOnly, setRemindersOnly] = useState(false);
   const [q, setQ] = useState('');
   const [dueFollowUp, setDueFollowUp] = useState(false);
+  const [hiringOnly, setHiringOnly] = useState(false);
 
   // HOT 5 auto-activates once per day so the morning opens to "what to do today"
   const [hot5, setHot5] = useState(() => {
@@ -82,6 +93,7 @@ export function useLeadFilters(
     setRemindersOnly(false);
     setQ('');
     setDueFollowUp(false);
+    setHiringOnly(false);
   };
 
   const applyPipelineFilter = (id: string) => {
@@ -89,6 +101,7 @@ export function useLeadFilters(
     setRemindersOnly(false);
     setHot5(false);
     setDueFollowUp(false);
+    setHiringOnly(false);
     if (id === 'total') {
       setStF('all');
       setTierF('all');
@@ -121,6 +134,7 @@ export function useLeadFilters(
     const list = visibleLeads.filter((l) => {
       if (regF !== 'All Regions' && l.r !== regF) return false;
       if (dueFollowUp && !isDueFollowUp(l, now)) return false;
+      if (hiringOnly && !isHiringSignal(l)) return false;
       if (stF === 'active') {
         if (['new', 'dead', 'client'].includes(l.status)) return false;
       } else if (stF !== 'all' && l.status !== stF) {
@@ -168,10 +182,10 @@ export function useLeadFilters(
     }
 
     return list;
-  }, [visibleLeads, regF, stF, tierF, pmOnly, remindersOnly, q, hot5, dueFollowUp]);
+  }, [visibleLeads, regF, stF, tierF, pmOnly, remindersOnly, q, hot5, dueFollowUp, hiringOnly]);
 
   return {
-    state: { regF, stF, tierF, pmOnly, remindersOnly, q, hot5, dueFollowUp },
+    state: { regF, stF, tierF, pmOnly, remindersOnly, q, hot5, dueFollowUp, hiringOnly },
     setters: {
       setRegF,
       setStF,
@@ -181,6 +195,7 @@ export function useLeadFilters(
       setQ,
       setHot5,
       setDueFollowUp,
+      setHiringOnly,
       resetAll,
       applyPipelineFilter,
     },

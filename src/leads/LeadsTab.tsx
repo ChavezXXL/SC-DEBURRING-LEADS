@@ -3,7 +3,7 @@ import { Search, X } from 'lucide-react';
 import type { Lead, LeadStatus, AiMode } from '../types';
 import { REGIONS, STATUS } from '../data';
 import { LeadCard } from './LeadCard';
-import { isDueFollowUp } from './useLeadFilters';
+import { isDueFollowUp, isHiringSignal } from './useLeadFilters';
 import type { LeadFilterState, LeadFilterSetters } from './useLeadFilters';
 
 interface LeadsTabProps {
@@ -33,6 +33,7 @@ interface LeadsTabProps {
   setReminder: (id: string, d: string | null) => void | Promise<void>;
   queueOutreach: (lead: Lead) => void | Promise<void>;
   markEmailed: (lead: Lead) => void | Promise<void>;
+  logCall: (lead: Lead) => void | Promise<void>;
 
   // Modal/AI handlers (from App)
   handleAI: (lead: Lead, mode: AiMode) => void;
@@ -65,11 +66,12 @@ export function LeadsTab({
   setReminder,
   queueOutreach,
   markEmailed,
+  logCall,
   handleAI,
   onDelete,
   onAddLeadClick,
 }: LeadsTabProps) {
-  const { regF, stF, tierF, pmOnly, remindersOnly, q, hot5, dueFollowUp } = filters;
+  const { regF, stF, tierF, pmOnly, remindersOnly, q, hot5, dueFollowUp, hiringOnly } = filters;
   const {
     setRegF,
     setStF,
@@ -79,6 +81,7 @@ export function LeadsTab({
     setQ,
     setHot5,
     setDueFollowUp,
+    setHiringOnly,
     resetAll,
   } = setters;
 
@@ -90,6 +93,12 @@ export function LeadsTab({
   // Live count for the "Due follow-up" chip — independent of active filters.
   const dueCount = useMemo(
     () => visibleLeads.filter((l) => isDueFollowUp(l)).length,
+    [visibleLeads],
+  );
+
+  // Live count for the "Hiring" chip — shops whose notes carry a hiring signal.
+  const hiringCount = useMemo(
+    () => visibleLeads.filter((l) => isHiringSignal(l)).length,
     [visibleLeads],
   );
 
@@ -198,7 +207,7 @@ export function LeadsTab({
             if (!hot5) resetAll();
             setHot5(!hot5);
           }}
-          className={`rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
+          className={`whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
             hot5
               ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/30'
               : 'bg-orange-50 text-orange-700 ring-1 ring-orange-200 hover:bg-orange-100'
@@ -213,7 +222,7 @@ export function LeadsTab({
             if (!dueFollowUp) setHot5(false); // HOT 5 only shows new leads — mutually exclusive
             setDueFollowUp(!dueFollowUp);
           }}
-          className={`rounded-xl px-3 py-2 text-xs font-medium transition-all ${
+          className={`whitespace-nowrap rounded-xl px-3 py-2 text-xs font-medium transition-all ${
             dueFollowUp
               ? 'bg-violet-100 text-violet-700 ring-1 ring-violet-200'
               : 'bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100'
@@ -231,8 +240,30 @@ export function LeadsTab({
         </button>
 
         <button
+          onClick={() => {
+            if (!hiringOnly) setHot5(false); // HOT 5 only shows its own top 5 — mutually exclusive
+            setHiringOnly(!hiringOnly);
+          }}
+          className={`whitespace-nowrap rounded-xl px-3 py-2 text-xs font-medium transition-all ${
+            hiringOnly
+              ? 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
+              : 'bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100'
+          }`}
+          title="Notes show a hiring signal — deburr/finisher openings mean they're overloaded right now"
+        >
+          Hiring
+          <span
+            className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+              hiringOnly ? 'bg-amber-200 text-amber-800' : 'bg-slate-200 text-slate-600'
+            }`}
+          >
+            {hiringCount}
+          </span>
+        </button>
+
+        <button
           onClick={() => setPmOnly(!pmOnly)}
-          className={`rounded-xl px-3 py-2 text-xs font-medium transition-all ${
+          className={`whitespace-nowrap rounded-xl px-3 py-2 text-xs font-medium transition-all ${
             pmOnly
               ? 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
               : 'bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100'
@@ -243,7 +274,7 @@ export function LeadsTab({
 
         <button
           onClick={() => setRemindersOnly(!remindersOnly)}
-          className={`rounded-xl px-3 py-2 text-xs font-medium transition-all ${
+          className={`whitespace-nowrap rounded-xl px-3 py-2 text-xs font-medium transition-all ${
             remindersOnly
               ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200'
               : 'bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100'
@@ -302,6 +333,7 @@ export function LeadsTab({
               qs={qs}
               onQueueOutreach={queueOutreach}
               onMarkEmailed={markEmailed}
+              onLogCall={logCall}
             />
           ))}
         </div>

@@ -60,7 +60,7 @@ export interface ObjectionDef {
   a: string;
 }
 
-export type TabKey = 'leads' | 'outreach' | 'pipeline' | 'brain' | 'autopilot' | 'admin' | 'settings';
+export type TabKey = 'today' | 'leads' | 'outreach' | 'pipeline' | 'brain' | 'autopilot' | 'admin' | 'settings';
 export type AiMode = 'pitch' | 'research';
 
 export type OutreachMode = 'all_new' | 'tier1' | 'tagged';

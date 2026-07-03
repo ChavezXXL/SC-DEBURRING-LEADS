@@ -34,8 +34,8 @@ interface UseLeadCrudArgs {
  *   - saved      flashes true for ~2s after every successful write
  *   - appError   user-visible error string (null when clean)
  *   - handlers   { addLead, findLeads, setStatus, updateLead, saveNote,
- *                  setReminder, addLeadFromBolt, markEmailed, queueOutreach,
- *                  deleteLead }
+ *                  setReminder, addLeadFromBolt, markEmailed, logCall,
+ *                  queueOutreach, deleteLead }
  */
 export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
   const [saved, setSaved] = useState(false);
@@ -265,6 +265,28 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     }
   };
 
+  /** One-click "I called them" — bumps touch tracking, stamps the notes,
+   * and only ever upgrades status (new → called; never downgrades an
+   * emailed/interested/client lead back to called). */
+  const logCall = async (lead: Lead) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const stamp = `[${today}] Called (logged from app).`;
+    const fields: Partial<Lead> = {
+      lastContactedAt: new Date().toISOString(),
+      touchCount: (lead.touchCount || 0) + 1,
+      notes: lead.notes ? `${lead.notes}\n${stamp}` : stamp,
+    };
+    if (lead.status === 'new') {
+      fields.status = 'called';
+    }
+    try {
+      await setDoc(doc(db, 'leads', lead.id), fields, { merge: true });
+      flashSaved();
+    } catch (e: any) {
+      surface(e, OperationType.UPDATE, `leads/${lead.id}`);
+    }
+  };
+
   const queueOutreach = async (lead: Lead) => {
     try {
       const current = (lead as any).queued_for_outreach;
@@ -303,6 +325,7 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     setReminder,
     addLeadFromBolt,
     markEmailed,
+    logCall,
     queueOutreach,
     deleteLead,
   };

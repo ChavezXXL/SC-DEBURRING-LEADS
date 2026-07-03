@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Mail, MailCheck, MailPlus, Copy, Globe, Search, Briefcase, ClipboardList, Microscope, Sparkles, Send, Zap } from 'lucide-react';
+import { Phone, PhoneCall, Mail, MailCheck, MailPlus, Copy, Globe, Search, Briefcase, ClipboardList, Microscope, Sparkles, Send, Zap } from 'lucide-react';
 import type { Lead, AiMode } from '../../types';
 import { buildGmailUrl, isWarmLead } from '../../outreach/templates';
 
@@ -17,9 +17,10 @@ interface LeadCardActionsProps {
   setShowEmail: (show: boolean) => void;
   onQueueOutreach?: (lead: Lead) => void;
   onMarkEmailed?: (lead: Lead) => void;
+  onLogCall?: (lead: Lead) => void;
 }
 
-export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy, qs, handleAI, showEmail, setShowEmail, onQueueOutreach, onMarkEmailed }) => {
+export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy, qs, handleAI, showEmail, setShowEmail, onQueueOutreach, onMarkEmailed, onLogCall }) => {
   // buildGmailUrl picks the template from status — warm statuses (client,
   // visited, interested, quote) can never get the cold pitch.
   const warm = isWarmLead(lead);
@@ -33,6 +34,16 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
           >
             <Phone size={14} /> {lead.ph}
           </a>
+        )}
+
+        {onLogCall && (
+          <button
+            onClick={() => onLogCall(lead)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20"
+            title="Log a call touch — sets last contacted, bumps touch count, stamps notes"
+          >
+            <PhoneCall size={14} /> Log call
+          </button>
         )}
 
         {lead.em && (

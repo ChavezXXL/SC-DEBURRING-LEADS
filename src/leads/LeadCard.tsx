@@ -29,6 +29,7 @@ interface LeadCardProps {
   setReminder: (id: string, reminderDate: string | null) => void;
   onQueueOutreach?: (lead: Lead) => void;
   onMarkEmailed?: (lead: Lead) => void;
+  onLogCall?: (lead: Lead) => void;
 }
 
 export const LeadCard: React.FC<LeadCardProps> = ({
@@ -49,6 +50,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
   setReminder,
   onQueueOutreach,
   onMarkEmailed,
+  onLogCall,
 }) => {
   const isDead = lead.status === 'dead';
   const isOpen = openId === lead.id;
@@ -75,6 +77,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({
             setShowEmail={setShowEmail}
             onQueueOutreach={onQueueOutreach}
             onMarkEmailed={onMarkEmailed}
+            onLogCall={onLogCall}
           />
           {showEmail && (
             <QuickEmail
