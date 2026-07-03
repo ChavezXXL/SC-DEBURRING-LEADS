@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Lead } from '../types';
 
+const FOLLOW_UP_AFTER_DAYS = 4;
+const FOLLOW_UP_MAX_TOUCHES = 3;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** "Emailed, went quiet" — emailed ≥4 days ago with fewer than 3 touches. */
+export function isDueFollowUp(l: Lead, now: number = Date.now()): boolean {
+  if (l.status !== 'emailed' || !l.lastContactedAt) return false;
+  const at = new Date(l.lastContactedAt).getTime();
+  if (Number.isNaN(at)) return false;
+  return now - at >= FOLLOW_UP_AFTER_DAYS * DAY_MS && (l.touchCount || 0) < FOLLOW_UP_MAX_TOUCHES;
+}
+
 export interface LeadFilterState {
   regF: string;
   stF: string;
@@ -9,6 +21,7 @@ export interface LeadFilterState {
   remindersOnly: boolean;
   q: string;
   hot5: boolean;
+  dueFollowUp: boolean;
 }
 
 export interface LeadFilterSetters {
@@ -19,6 +32,7 @@ export interface LeadFilterSetters {
   setRemindersOnly: (v: boolean) => void;
   setQ: (v: string) => void;
   setHot5: (v: boolean) => void;
+  setDueFollowUp: (v: boolean) => void;
   /** Reset all filters to defaults (called by HOT 5 toggle + sidebar quick-jumps). */
   resetAll: () => void;
   /** Sidebar clicks on pipeline stat cards land here.
@@ -40,6 +54,7 @@ export function useLeadFilters(
   const [pmOnly, setPmOnly] = useState(false);
   const [remindersOnly, setRemindersOnly] = useState(false);
   const [q, setQ] = useState('');
+  const [dueFollowUp, setDueFollowUp] = useState(false);
 
   // HOT 5 auto-activates once per day so the morning opens to "what to do today"
   const [hot5, setHot5] = useState(() => {
@@ -66,12 +81,14 @@ export function useLeadFilters(
     setPmOnly(false);
     setRemindersOnly(false);
     setQ('');
+    setDueFollowUp(false);
   };
 
   const applyPipelineFilter = (id: string) => {
     setQ('');
     setRemindersOnly(false);
     setHot5(false);
+    setDueFollowUp(false);
     if (id === 'total') {
       setStF('all');
       setTierF('all');
@@ -100,8 +117,10 @@ export function useLeadFilters(
   };
 
   const filtered = useMemo(() => {
+    const now = Date.now();
     const list = visibleLeads.filter((l) => {
       if (regF !== 'All Regions' && l.r !== regF) return false;
+      if (dueFollowUp && !isDueFollowUp(l, now)) return false;
       if (stF === 'active') {
         if (['new', 'dead', 'client'].includes(l.status)) return false;
       } else if (stF !== 'all' && l.status !== stF) {
@@ -149,10 +168,10 @@ export function useLeadFilters(
     }
 
     return list;
-  }, [visibleLeads, regF, stF, tierF, pmOnly, remindersOnly, q, hot5]);
+  }, [visibleLeads, regF, stF, tierF, pmOnly, remindersOnly, q, hot5, dueFollowUp]);
 
   return {
-    state: { regF, stF, tierF, pmOnly, remindersOnly, q, hot5 },
+    state: { regF, stF, tierF, pmOnly, remindersOnly, q, hot5, dueFollowUp },
     setters: {
       setRegF,
       setStF,
@@ -161,6 +180,7 @@ export function useLeadFilters(
       setRemindersOnly,
       setQ,
       setHot5,
+      setDueFollowUp,
       resetAll,
       applyPipelineFilter,
     },

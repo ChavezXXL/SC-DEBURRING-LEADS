@@ -1,6 +1,7 @@
 import React from 'react';
-import { Phone, Mail, Copy, Globe, Search, Briefcase, ClipboardList, Microscope, Sparkles, Send, Zap } from 'lucide-react';
+import { Phone, Mail, MailCheck, MailPlus, Copy, Globe, Search, Briefcase, ClipboardList, Microscope, Sparkles, Send, Zap } from 'lucide-react';
 import type { Lead, AiMode } from '../../types';
+import { buildGmailUrl, isWarmLead } from '../../outreach/templates';
 
 interface LeadCardActionsProps {
   lead: Lead;
@@ -15,9 +16,13 @@ interface LeadCardActionsProps {
   showEmail: boolean;
   setShowEmail: (show: boolean) => void;
   onQueueOutreach?: (lead: Lead) => void;
+  onMarkEmailed?: (lead: Lead) => void;
 }
 
-export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy, qs, handleAI, showEmail, setShowEmail, onQueueOutreach }) => {
+export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy, qs, handleAI, showEmail, setShowEmail, onQueueOutreach, onMarkEmailed }) => {
+  // buildGmailUrl picks the template from status — warm statuses (client,
+  // visited, interested, quote) can never get the cold pitch.
+  const warm = isWarmLead(lead);
   return (
     <>
       <div className="flex flex-wrap gap-2 py-3">
@@ -49,6 +54,32 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
             >
               <Copy size={14} /> {cp === `em_${lead.id}` ? 'Copied!' : 'Copy Email'}
             </button>
+
+            <a
+              href={buildGmailUrl(lead)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-500 transition-colors hover:bg-sky-500/20"
+              title={warm ? 'Open a pre-written check-in draft in Gmail' : 'Open a pre-written cold intro draft in Gmail'}
+            >
+              <MailPlus size={14} /> {warm ? 'Check in' : 'Draft email'}
+            </a>
+
+            {onMarkEmailed && (
+              <button
+                onClick={() => onMarkEmailed(lead)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-teal-500/20 bg-teal-500/10 px-3 py-1.5 text-xs font-medium text-teal-600 transition-colors hover:bg-teal-500/20"
+                title="Log an email touch — sets last contacted, bumps touch count, stamps notes"
+              >
+                <MailCheck size={14} /> Mark emailed
+              </button>
+            )}
+
+            {lead.status === 'client' && (
+              <span className="inline-flex items-center self-center rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold tracking-wide text-amber-700 ring-1 ring-amber-300">
+                CLIENT
+              </span>
+            )}
           </>
         )}
 

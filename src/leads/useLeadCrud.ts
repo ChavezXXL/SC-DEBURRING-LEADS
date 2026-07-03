@@ -34,7 +34,8 @@ interface UseLeadCrudArgs {
  *   - saved      flashes true for ~2s after every successful write
  *   - appError   user-visible error string (null when clean)
  *   - handlers   { addLead, findLeads, setStatus, updateLead, saveNote,
- *                  setReminder, addLeadFromBolt, queueOutreach, deleteLead }
+ *                  setReminder, addLeadFromBolt, markEmailed, queueOutreach,
+ *                  deleteLead }
  */
 export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
   const [saved, setSaved] = useState(false);
@@ -56,9 +57,18 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
 
   const tenantStamp = tenantId ? { tenantId } : {};
 
+  /** Creates must carry a tenantId — untagged leads are invisible to every
+   * tenant-scoped query (this bug already happened once). */
+  const requireTenant = (): boolean => {
+    if (tenantId) return true;
+    setAppError('No workspace loaded — refresh and sign in again before adding leads.');
+    return false;
+  };
+
   /** Create a brand-new lead from the Add Lead modal form. */
   const addLead = async (form: Partial<Lead>): Promise<boolean> => {
     if (!form.co?.trim()) return false;
+    if (!requireTenant()) return false;
     const id =
       form.co.toLowerCase().replace(/[^a-z0-9]+/g, '-') +
       '-' +
@@ -96,6 +106,7 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
   /** Gemini-generated batch insert. Returns number written or throws. */
   const findLeads = async (q: string): Promise<number> => {
     if (!q.trim()) return 0;
+    if (!requireTenant()) return 0;
     let newLeads: Partial<Lead>[];
     try {
       newLeads = await findNewLeads(q);
@@ -205,6 +216,7 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
   };
 
   const addLeadFromBolt = async (lead: Lead) => {
+    if (!requireTenant()) return;
     try {
       const fullLead: Lead = {
         ...lead,
@@ -229,6 +241,27 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
       flashSaved();
     } catch (e: any) {
       surface(e, OperationType.CREATE, `leads/${lead.id}`);
+    }
+  };
+
+  /** One-click "I emailed them" — bumps touch tracking, stamps the notes,
+   * and only ever upgrades status (new/called/voicemail → emailed). */
+  const markEmailed = async (lead: Lead) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const stamp = `[${today}] Emailed (marked from app).`;
+    const fields: Partial<Lead> = {
+      lastContactedAt: new Date().toISOString(),
+      touchCount: (lead.touchCount || 0) + 1,
+      notes: lead.notes ? `${lead.notes}\n${stamp}` : stamp,
+    };
+    if (['new', 'called', 'voicemail'].includes(lead.status)) {
+      fields.status = 'emailed';
+    }
+    try {
+      await setDoc(doc(db, 'leads', lead.id), fields, { merge: true });
+      flashSaved();
+    } catch (e: any) {
+      surface(e, OperationType.UPDATE, `leads/${lead.id}`);
     }
   };
 
@@ -269,6 +302,7 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     saveNote,
     setReminder,
     addLeadFromBolt,
+    markEmailed,
     queueOutreach,
     deleteLead,
   };

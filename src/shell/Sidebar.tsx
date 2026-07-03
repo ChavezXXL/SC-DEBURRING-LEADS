@@ -104,26 +104,15 @@ export function Sidebar({
         aria-hidden
       />
       <div>
-        {/* Brand */}
+        {/* Brand — platform mark + name, tenant account beneath */}
         <div className="mb-7 hidden items-center gap-3 md:flex">
-          {tenant?.logoUrl ? (
-            <img
-              src={tenant.logoUrl}
-              alt={`${tenant.name} logo`}
-              className="h-10 w-10 rounded-xl object-cover ring-1 ring-slate-200"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
-              }}
-            />
-          ) : (
-            <FancyLogo className="h-10 w-10" />
-          )}
-          <div>
+          <FancyLogo className="h-10 w-10 ring-1 ring-slate-200" />
+          <div className="min-w-0">
             <div className="text-sm font-semibold tracking-tight text-slate-900">
-              {tenant?.name || 'SC Deburring'}
+              Apex Growth
             </div>
-            <div className="mt-0.5 text-[10px] uppercase tracking-widest text-slate-400">
-              CRM
+            <div className="mt-1 inline-flex max-w-full items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+              <span className="truncate">{tenant?.name || 'SC Deburring'}</span>
             </div>
           </div>
         </div>

@@ -80,7 +80,9 @@ const qs = {
  */
 export default function App() {
   const { tenant, profile, signOut } = useAuth();
-  const tenantId = tenant?.id;
+  // Prefer the tenant doc, but fall back to the profile's tenantId so lead
+  // writes are always tenant-stamped even if the tenant doc failed to load.
+  const tenantId = tenant?.id ?? profile?.tenantId;
 
   const { visibleLeads, loading, dbError, markDeleted } = useLeads(tenantId);
   const crud = useLeadCrud({ leads: visibleLeads, tenantId, markDeleted });
@@ -184,8 +186,13 @@ export default function App() {
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-xl ring-1 ring-slate-200/70 z-40 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <FancyLogo className="h-8 w-8" />
-          <div className="text-sm font-semibold tracking-tight text-slate-900">
-            {tenant?.name || 'SC Deburring'}
+          <div className="min-w-0">
+            <div className="text-sm font-semibold tracking-tight text-slate-900">
+              Apex Growth
+            </div>
+            <div className="truncate text-[10px] text-slate-400">
+              {tenant?.name || 'SC Deburring'}
+            </div>
           </div>
         </div>
         <button
@@ -261,6 +268,7 @@ export default function App() {
             saveNote={handleSaveNote}
             setReminder={crud.setReminder}
             queueOutreach={crud.queueOutreach}
+            markEmailed={crud.markEmailed}
             handleAI={handleAI}
             onDelete={(id, co) => setDeleteModal({ id, co })}
             onAddLeadClick={() => setShowAddLead(true)}

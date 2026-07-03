@@ -3,6 +3,7 @@ import { Search, X } from 'lucide-react';
 import type { Lead, LeadStatus, AiMode } from '../types';
 import { REGIONS, STATUS } from '../data';
 import { LeadCard } from './LeadCard';
+import { isDueFollowUp } from './useLeadFilters';
 import type { LeadFilterState, LeadFilterSetters } from './useLeadFilters';
 
 interface LeadsTabProps {
@@ -31,6 +32,7 @@ interface LeadsTabProps {
   saveNote: (id: string, notes: string) => void | Promise<void>;
   setReminder: (id: string, d: string | null) => void | Promise<void>;
   queueOutreach: (lead: Lead) => void | Promise<void>;
+  markEmailed: (lead: Lead) => void | Promise<void>;
 
   // Modal/AI handlers (from App)
   handleAI: (lead: Lead, mode: AiMode) => void;
@@ -62,11 +64,12 @@ export function LeadsTab({
   saveNote,
   setReminder,
   queueOutreach,
+  markEmailed,
   handleAI,
   onDelete,
   onAddLeadClick,
 }: LeadsTabProps) {
-  const { regF, stF, tierF, pmOnly, remindersOnly, q, hot5 } = filters;
+  const { regF, stF, tierF, pmOnly, remindersOnly, q, hot5, dueFollowUp } = filters;
   const {
     setRegF,
     setStF,
@@ -75,11 +78,18 @@ export function LeadsTab({
     setRemindersOnly,
     setQ,
     setHot5,
+    setDueFollowUp,
     resetAll,
   } = setters;
 
   const namedPMs = useMemo(
     () => visibleLeads.filter((l) => !!l.pm).length,
+    [visibleLeads],
+  );
+
+  // Live count for the "Due follow-up" chip — independent of active filters.
+  const dueCount = useMemo(
+    () => visibleLeads.filter((l) => isDueFollowUp(l)).length,
     [visibleLeads],
   );
 
@@ -199,6 +209,28 @@ export function LeadsTab({
         </button>
 
         <button
+          onClick={() => {
+            if (!dueFollowUp) setHot5(false); // HOT 5 only shows new leads — mutually exclusive
+            setDueFollowUp(!dueFollowUp);
+          }}
+          className={`rounded-xl px-3 py-2 text-xs font-medium transition-all ${
+            dueFollowUp
+              ? 'bg-violet-100 text-violet-700 ring-1 ring-violet-200'
+              : 'bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100'
+          }`}
+          title="Emailed 4+ days ago, fewer than 3 touches, no reply — time to follow up"
+        >
+          Due follow-up
+          <span
+            className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+              dueFollowUp ? 'bg-violet-200 text-violet-800' : 'bg-slate-200 text-slate-600'
+            }`}
+          >
+            {dueCount}
+          </span>
+        </button>
+
+        <button
           onClick={() => setPmOnly(!pmOnly)}
           className={`rounded-xl px-3 py-2 text-xs font-medium transition-all ${
             pmOnly
@@ -269,6 +301,7 @@ export function LeadsTab({
               copy={copy}
               qs={qs}
               onQueueOutreach={queueOutreach}
+              onMarkEmailed={markEmailed}
             />
           ))}
         </div>

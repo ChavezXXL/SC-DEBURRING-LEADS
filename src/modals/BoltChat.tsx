@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Zap, X, Send, Loader2, Trash2, Bot, Plus, Check, Search } from 'lucide-react';
 import { chatWithBolt, findNewLeads } from '../services/gemini';
+import { useAuth } from '../auth/AuthContext';
 import type { Lead } from '../types';
 
 interface Message {
@@ -18,6 +19,7 @@ interface BoltChatProps {
 }
 
 export function BoltChat({ leads, onAddLead }: BoltChatProps) {
+  const { tenant } = useAuth();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -402,7 +404,7 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
               </button>
             </div>
             <div className="mt-1.5 text-center text-[10px] font-mono text-slate-300">
-              {searching ? 'Searching for companies...' : 'Powered by Gemini AI · SC Precision Deburring'}
+              {searching ? 'Searching for companies...' : `Powered by Gemini AI · ${tenant?.name || 'SC Deburring'}`}
             </div>
           </div>
         </div>

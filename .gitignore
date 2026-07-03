@@ -10,3 +10,8 @@ coverage/
 # Cloudflare Wrangler local state
 .wrangler
 .dev.vars
+
+# Firebase service-account keys — NEVER commit these
+serviceAccount.json
+*service-account*.json
+*-firebase-adminsdk-*.json

@@ -1,1 +1,4 @@
 @import "tailwindcss";
+/* Node-only CLI scripts — no Tailwind classes, and their embedded Windows
+   paths (e.g. \c46d0a...) parse as invalid CSS escapes and crash the build. */
+@source not "../scripts";

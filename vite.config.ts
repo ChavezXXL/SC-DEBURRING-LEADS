@@ -13,22 +13,22 @@ export default defineConfig(({mode}) => {
       VitePWA({
         registerType: 'autoUpdate',
         manifest: {
-          name: 'SC Deburring Leads',
-          short_name: 'SC Leads',
-          description: 'Aerospace Lead Database & Prospecting Tool',
+          name: 'Apex Growth CRM',
+          short_name: 'Apex CRM',
+          description: 'Sales CRM by Apex Growth',
           theme_color: '#09090b',
           background_color: '#09090b',
           display: 'standalone',
           icons: [
             {
-              src: '/icon-192.svg',
+              src: '/icon-192.png',
               sizes: '192x192',
-              type: 'image/svg+xml'
+              type: 'image/png'
             },
             {
-              src: '/icon-512.svg',
+              src: '/icon-512.png',
               sizes: '512x512',
-              type: 'image/svg+xml'
+              type: 'image/png'
             }
           ]
         }
