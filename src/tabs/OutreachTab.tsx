@@ -76,13 +76,13 @@ export function OutreachTab() {
   }, [filteredScripts]);
 
   const cadence = [
-    { day: 'Day 0', action: 'Cold Call + Voicemail', icon: Phone, color: 'text-emerald-400', detail: 'Call the main number. Ask for purchasing or operations by name if you have it. Use the call script. If you hit voicemail, leave a quick 20-second message — you\'re local, you do aerospace deburring, and you\'d love to earn a test job.', tip: 'Call Tue-Thu between 8-10am or 2-4pm. Monday mornings are chaos and Friday afternoons nobody picks up.' },
-    { day: 'Day 1', action: 'Send Intro Email', icon: Mail, color: 'text-blue-400', detail: 'Hit them with the "Direct to Named Contact" email. Drop their company name, what they make, and why you\'re reaching out. Make it feel like you actually looked them up — because you did.', tip: 'Keep the subject under 6 words and the whole email under 80. Nobody reads long cold emails.' },
-    { day: 'Day 3', action: 'LinkedIn Connect + DM', icon: Briefcase, color: 'text-violet-400', detail: 'Find the PM or owner on LinkedIn. Send a connect request with a personalized note. Once they accept, hit them with the LinkedIn DM script. Mention you sent an email.', tip: 'The connect note matters — "Hi [Name], reaching out about deburring for [Company]" beats a blank request every time.' },
-    { day: 'Day 5', action: 'Text Message', icon: MessageSquare, color: 'text-amber-400', detail: 'If you have their cell, send a short text. Two sentences max. "Hey [Name], this is Santiago from SC Deburring — sent you an email about deburring overflow. Worth a quick chat?"', tip: 'Texts have a 98% open rate. But only text a direct mobile number — never blast the front desk line.' },
-    { day: 'Day 8', action: 'Second Call + Follow-Up Email', icon: Phone, color: 'text-emerald-400', detail: 'Call again. "Hi, I reached out last week about deburring support — just wanted to follow up quick." After the call, send the 48-hour follow-up email.', tip: '80% of salespeople quit after one call. The second call is where the magic happens. Don\'t be the guy who gives up.' },
-    { day: 'Day 12', action: 'Send Proof', icon: Target, color: 'text-orange-400', detail: 'Send something real — "We just turned 500 brackets for a shop in Chatsworth in under a week" or a photo of your work. No fluff, just proof that you deliver.', tip: 'Name a real company or real numbers. "We work with aerospace shops" means nothing. "We turned 800 parts for Crissair last month" means everything.' },
-    { day: 'Day 14', action: 'Breakup Email', icon: Clock, color: 'text-red-400', detail: 'Send the breakup template. Close the loop. Something about this — the "I\'m going to stop bugging you" angle — makes people respond more than any other email.', tip: 'This gets the highest reply rate of anything you\'ll send. 30%+ in B2B. Seriously, don\'t skip it.' },
+    { day: 'Day 0', action: 'Cold Call + Voicemail', icon: Phone, color: 'text-emerald-600', detail: 'Call the main number. Ask for purchasing or operations by name if you have it. Use the call script. If you hit voicemail, leave a quick 20-second message — you\'re local, you do aerospace deburring, and you\'d love to earn a test job.', tip: 'Call Tue-Thu between 8-10am or 2-4pm. Monday mornings are chaos and Friday afternoons nobody picks up.' },
+    { day: 'Day 1', action: 'Send Intro Email', icon: Mail, color: 'text-blue-600', detail: 'Hit them with the "Direct to Named Contact" email. Drop their company name, what they make, and why you\'re reaching out. Make it feel like you actually looked them up — because you did.', tip: 'Keep the subject under 6 words and the whole email under 80. Nobody reads long cold emails.' },
+    { day: 'Day 3', action: 'LinkedIn Connect + DM', icon: Briefcase, color: 'text-violet-600', detail: 'Find the PM or owner on LinkedIn. Send a connect request with a personalized note. Once they accept, hit them with the LinkedIn DM script. Mention you sent an email.', tip: 'The connect note matters — "Hi [Name], reaching out about deburring for [Company]" beats a blank request every time.' },
+    { day: 'Day 5', action: 'Text Message', icon: MessageSquare, color: 'text-amber-600', detail: 'If you have their cell, send a short text. Two sentences max. "Hey [Name], this is Santiago from SC Deburring — sent you an email about deburring overflow. Worth a quick chat?"', tip: 'Texts have a 98% open rate. But only text a direct mobile number — never blast the front desk line.' },
+    { day: 'Day 8', action: 'Second Call + Follow-Up Email', icon: Phone, color: 'text-emerald-600', detail: 'Call again. "Hi, I reached out last week about deburring support — just wanted to follow up quick." After the call, send the 48-hour follow-up email.', tip: '80% of salespeople quit after one call. The second call is where the magic happens. Don\'t be the guy who gives up.' },
+    { day: 'Day 12', action: 'Send Proof', icon: Target, color: 'text-orange-600', detail: 'Send something real — "We just turned 500 brackets for a shop in Chatsworth in under a week" or a photo of your work. No fluff, just proof that you deliver.', tip: 'Name a real company or real numbers. "We work with aerospace shops" means nothing. "We turned 800 parts for Crissair last month" means everything.' },
+    { day: 'Day 14', action: 'Breakup Email', icon: Clock, color: 'text-red-600', detail: 'Send the breakup template. Close the loop. Something about this — the "I\'m going to stop bugging you" angle — makes people respond more than any other email.', tip: 'This gets the highest reply rate of anything you\'ll send. 30%+ in B2B. Seriously, don\'t skip it.' },
   ];
 
   const views = [
@@ -95,18 +95,18 @@ export function OutreachTab() {
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6">
-        <h1 className="mb-1 text-2xl font-bold tracking-tight text-slate-900">
-          Outreach Command Center
+        <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-900">
+          Outreach
         </h1>
-        <p className="text-xs font-mono text-slate-400">Email composer · Scripts · 14-day cadence · Objection handling</p>
+        <p className="text-xs text-slate-500">What you say to a shop — composer, scripts, 14-day cadence, objection handling.</p>
       </div>
 
       {/* Core Opener */}
       <div className="mb-6 rounded-2xl border border-orange-500/20 bg-orange-500/5 p-5">
-        <div className="mb-2 text-[10px] font-bold font-mono uppercase tracking-widest text-orange-500">
+        <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-orange-700">
           Memorize this — your 10-second pitch
         </div>
-        <div className="text-lg font-light italic leading-relaxed text-amber-100/90">
+        <div className="text-lg font-light italic leading-relaxed text-slate-800">
           "We're SC Precision Deburring in Pacoima — 35 years aerospace deburring. We take
           deburring off machinists' plates so your CNCs stay running. Can I earn a test job?"
         </div>
@@ -120,8 +120,8 @@ export function OutreachTab() {
             onClick={() => setActiveView(v.id)}
             className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-colors ${
               activeView === v.id
-                ? 'border-orange-500/40 bg-orange-500/10 text-orange-300'
-                : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
+                ? 'border-orange-500/40 bg-orange-500/10 text-orange-700'
+                : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700'
             }`}
           >
             <v.icon size={14} /> {v.label}
@@ -133,8 +133,8 @@ export function OutreachTab() {
       {activeView === 'email' && (
         <div className="space-y-4">
           {/* Recipient Info */}
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-            <div className="mb-4 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400">
+          <div className="rounded-2xl bg-white ring-1 ring-slate-200/70 p-5">
+            <div className="mb-4 text-[10px] font-medium uppercase tracking-widest text-slate-400">
               Recipient Info — fill in to personalize all templates
             </div>
             <div className="grid gap-3 md:grid-cols-2">
@@ -144,7 +144,7 @@ export function OutreachTab() {
                   value={emailTo}
                   onChange={(e) => setEmailTo(e.target.value)}
                   placeholder="buyer@company.com"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 transition focus:border-orange-500/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-orange-500/40"
                 />
               </div>
               <div>
@@ -153,7 +153,7 @@ export function OutreachTab() {
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
                   placeholder="Bridget, Mike, etc."
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 transition focus:border-orange-500/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-orange-500/40"
                 />
               </div>
               <div>
@@ -162,7 +162,7 @@ export function OutreachTab() {
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   placeholder="Vescio Manufacturing"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 transition focus:border-orange-500/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-orange-500/40"
                 />
               </div>
               <div>
@@ -171,15 +171,15 @@ export function OutreachTab() {
                   value={partsType}
                   onChange={(e) => setPartsType(e.target.value)}
                   placeholder="aerospace brackets, engine mounts"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 transition focus:border-orange-500/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-orange-500/40"
                 />
               </div>
             </div>
           </div>
 
           {/* Template Picker */}
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-            <div className="mb-4 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400">
+          <div className="rounded-2xl bg-white ring-1 ring-slate-200/70 p-5">
+            <div className="mb-4 text-[10px] font-medium uppercase tracking-widest text-slate-400">
               Pick a template
             </div>
             <div className="flex flex-wrap gap-2">
@@ -189,8 +189,8 @@ export function OutreachTab() {
                   onClick={() => setSelectedTemplateId(s.id)}
                   className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                     selectedTemplateId === s.id
-                      ? 'border-orange-500/30 bg-orange-500/10 text-orange-400'
-                      : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                      ? 'border-orange-500/30 bg-orange-500/10 text-orange-700'
+                      : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:text-slate-700'
                   }`}
                 >
                   {s.title}
@@ -201,7 +201,7 @@ export function OutreachTab() {
 
           {/* Email Preview + Actions */}
           <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5">
-            <div className="mb-4 text-[10px] font-bold font-mono uppercase tracking-widest text-blue-400">
+            <div className="mb-4 text-[10px] font-semibold uppercase tracking-widest text-blue-700">
               Email Preview — edit before sending
             </div>
             <div className="space-y-3">
@@ -210,7 +210,7 @@ export function OutreachTab() {
                 <input
                   value={emailSubject}
                   onChange={(e) => setEmailSubject(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-500/50 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 transition focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/40"
                 />
               </div>
               <div>
@@ -219,7 +219,7 @@ export function OutreachTab() {
                   value={emailBody}
                   onChange={(e) => setEmailBody(e.target.value)}
                   rows={10}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs leading-relaxed text-slate-700 focus:border-blue-500/50 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-xs leading-relaxed text-slate-700 transition focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/40"
                 />
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
@@ -239,7 +239,7 @@ export function OutreachTab() {
                   onClick={() => copy('email-draft', `Subject: ${emailSubject}\n\n${emailBody}`)}
                   className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
                     cp === 'email-draft'
-                      ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+                      ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700'
                       : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
@@ -248,7 +248,7 @@ export function OutreachTab() {
                 </button>
               </div>
               {!emailTo.trim() && (
-                <div className="text-[11px] text-amber-500/70">Enter a recipient email above to enable Gmail</div>
+                <div className="text-[11px] text-amber-700">Enter a recipient email above to enable Gmail</div>
               )}
             </div>
           </div>
@@ -263,10 +263,10 @@ export function OutreachTab() {
               <button
                 key={channel}
                 onClick={() => setChannelFilter(channel)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${
+                className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                   channelFilter === channel
-                    ? 'border-orange-500/40 bg-orange-500/10 text-orange-300'
-                    : 'border-slate-200 bg-slate-50 text-slate-500'
+                    ? 'border-orange-500/40 bg-orange-500/10 text-orange-700'
+                    : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700'
                 }`}
               >
                 {channel}
@@ -276,35 +276,35 @@ export function OutreachTab() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search scripts..."
-              className="min-w-[180px] flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 focus:border-orange-500/50 focus:outline-none"
+              className="min-w-[180px] flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 transition focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/40"
             />
           </div>
 
           {scriptsByCategory.map(({ cat, items }) => (
             <div key={cat} className="mb-8">
-              <div className="mb-3 flex items-center gap-2 border-b border-slate-200 pb-2 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400">
-                {items[0].icon} {cat} <span className="text-slate-300">({items.length})</span>
+              <div className="mb-3 flex items-center gap-2 border-b border-slate-200 pb-2 text-[10px] font-medium uppercase tracking-widest text-slate-400">
+                {items[0].icon} {cat} <span className="text-slate-400">({items.length})</span>
               </div>
               <div className={`grid gap-3 ${items.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                 {items.map((sc) => (
-                  <div key={sc.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div key={sc.id} className="rounded-xl bg-white ring-1 ring-slate-200/70 p-4">
                     <div className="mb-3 flex items-start justify-between gap-3">
                       <div>
-                        <div className="text-sm font-bold text-slate-900">{sc.title}</div>
+                        <div className="text-sm font-semibold text-slate-900">{sc.title}</div>
                         <div className="text-[11px] italic text-slate-400">Use: {sc.use}</div>
                       </div>
                       <button
                         onClick={() => copy(sc.id, applyTokens(sc.body))}
                         className={`shrink-0 rounded-lg border px-3 py-1.5 text-[11px] font-semibold transition-colors ${
                           cp === sc.id
-                            ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
-                            : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-100'
+                            ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700'
+                            : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700'
                         }`}
                       >
                         {cp === sc.id ? 'Copied!' : 'Copy'}
                       </button>
                     </div>
-                    <pre className="whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-3 font-mono text-[11px] leading-relaxed text-slate-500">
+                    <pre className="whitespace-pre-wrap rounded-lg bg-slate-50 ring-1 ring-slate-200/70 p-3 font-mono text-[11px] leading-relaxed text-slate-600">
                       {applyTokens(sc.body)}
                     </pre>
                   </div>
@@ -318,24 +318,24 @@ export function OutreachTab() {
       {/* 14-DAY CADENCE */}
       {activeView === 'cadence' && (
         <div className="space-y-3">
-          <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4 text-xs text-orange-300">
+          <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4 text-xs text-orange-700">
             Follow this 14-day sequence for every new lead. Most deals close after 5-7 touches — don't stop at 2.
           </div>
           {cadence.map((step, idx) => (
-            <div key={step.day} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div key={step.day} className="rounded-xl bg-white ring-1 ring-slate-200/70 p-4">
               <div className="flex items-start gap-3">
-                <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white ${step.color}`}>
+                <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-50 ring-1 ring-slate-200/70 ${step.color}`}>
                   <step.icon size={16} />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <div className="text-xs font-mono uppercase tracking-wider text-orange-400">{step.day}</div>
-                    <div className="text-[10px] text-slate-300">Step {idx + 1} / {cadence.length}</div>
+                    <div className="text-xs font-medium uppercase tracking-wider text-orange-600">{step.day}</div>
+                    <div className="text-[10px] tabular-nums text-slate-400">Step {idx + 1} / {cadence.length}</div>
                   </div>
-                  <div className="mb-1 text-sm font-bold text-slate-900">{step.action}</div>
+                  <div className="mb-1 text-sm font-semibold text-slate-900">{step.action}</div>
                   <div className="mb-2 text-xs leading-relaxed text-slate-500">{step.detail}</div>
-                  <div className="rounded-lg border border-amber-500/10 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-300/80">
-                    <span className="font-bold">Pro tip:</span> {step.tip}
+                  <div className="rounded-lg border border-amber-500/10 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-800">
+                    <span className="font-semibold">Pro tip:</span> {step.tip}
                   </div>
                 </div>
               </div>
@@ -347,25 +347,25 @@ export function OutreachTab() {
       {/* OBJECTION HANDLING */}
       {activeView === 'objections' && (
         <div className="space-y-3">
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-xs text-red-300">
+          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-xs text-red-700">
             Every objection is a buying signal in disguise. They're talking to you — that's already a win.
           </div>
           {OBJECTIONS.map((o, i) => (
-            <div key={i} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div key={i} className="rounded-xl bg-white ring-1 ring-slate-200/70 p-4">
               <div className="mb-2 flex items-start gap-2">
-                <span className="mt-0.5 text-red-400">Q:</span>
-                <div className="text-sm font-bold text-red-400">"{o.q}"</div>
+                <span className="mt-0.5 text-red-600">Q:</span>
+                <div className="text-sm font-semibold text-red-600">"{o.q}"</div>
               </div>
               <div className="mb-3 flex items-start gap-2">
-                <span className="mt-0.5 text-emerald-400">A:</span>
+                <span className="mt-0.5 text-emerald-600">A:</span>
                 <div className="text-xs leading-relaxed text-slate-700">{o.a}</div>
               </div>
               <button
                 onClick={() => copy(`obj-${i}`, o.a)}
-                className={`rounded-lg border px-3 py-1.5 text-[11px] font-semibold ${
+                className={`rounded-lg border px-3 py-1.5 text-[11px] font-semibold transition-colors ${
                   cp === `obj-${i}`
-                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
-                    : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-100'
+                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700'
+                    : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700'
                 }`}
               >
                 {cp === `obj-${i}` ? 'Copied!' : 'Copy response'}

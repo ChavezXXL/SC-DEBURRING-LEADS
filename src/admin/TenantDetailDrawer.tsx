@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   Loader2,
@@ -33,6 +33,16 @@ export function TenantDetailDrawer({ tenant, onClose, onChanged }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState('');
+
+  // Esc closes the drawer (only while open).
+  useEffect(() => {
+    if (!tenant) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [tenant, onClose]);
 
   if (!tenant) return null;
 

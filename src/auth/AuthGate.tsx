@@ -21,9 +21,20 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
 
   if (loading) {
+    // Dark, brand-matched loading screen — same graphite ground as the Login
+    // front door so there's no white flash between them. Once authed, the
+    // light app takes over.
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#08090C]">
+        <div className="flex flex-col items-center gap-5">
+          <img
+            src="/icon-512.png"
+            alt="Apex Growth"
+            className="h-20 w-20 select-none object-cover [mask-image:radial-gradient(circle_at_50%_50%,black_58%,transparent_82%)]"
+            draggable={false}
+          />
+          <Loader2 className="w-5 h-5 text-orange-500 animate-spin" />
+        </div>
       </div>
     );
   }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Sparkles, Loader2, Search } from 'lucide-react';
 
 interface AiFinderModalProps {
@@ -16,13 +16,22 @@ export const AiFinderModal: React.FC<AiFinderModalProps> = ({
   aiFinderLoading,
   handleFindLeads,
 }) => {
+  // Esc closes the dialog.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowAiFinder(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [setShowAiFinder]);
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
       onClick={() => setShowAiFinder(false)}
     >
       <div
-        className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-black md:p-8"
+        className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/20 md:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-6 flex items-start justify-between">
@@ -35,8 +44,12 @@ export const AiFinderModal: React.FC<AiFinderModalProps> = ({
             </div>
           </div>
 
-          <button onClick={() => setShowAiFinder(false)} className="text-slate-400 transition-colors hover:text-slate-700">
-            <X size={24} />
+          <button
+            onClick={() => setShowAiFinder(false)}
+            className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Close"
+          >
+            <X size={22} />
           </button>
         </div>
 

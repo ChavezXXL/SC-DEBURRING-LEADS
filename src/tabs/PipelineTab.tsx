@@ -6,9 +6,11 @@ import { Calendar, MapPin, User } from 'lucide-react';
 interface PipelineTabProps {
   leads: Lead[];
   onLeadClick: (id: string) => void;
+  /** Move a lead to another stage (from useLeadCrud). */
+  setStatus: (id: string, st: LeadStatus) => void | Promise<void>;
 }
 
-export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
+export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps) {
   // Group leads by status
   const leadsByStatus: Record<LeadStatus, Lead[]> = {
     new: [],
@@ -32,10 +34,10 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
     <div className="flex h-[calc(100vh-8rem)] flex-col">
       <div className="mb-6 shrink-0">
         <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-900">
-          Sales Pipeline
+          Pipeline
         </h1>
-        <p className="text-xs font-mono text-slate-400">
-          Drag-and-drop coming soon. Click a lead to view details.
+        <p className="text-xs text-slate-500">
+          Where each deal stands. Click a card to open it — use its stage menu to move it.
         </p>
       </div>
 
@@ -47,7 +49,7 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
           return (
             <div
               key={st.k}
-              className="flex w-72 shrink-0 flex-col rounded-xl border border-slate-200 bg-slate-50"
+              className="flex w-72 shrink-0 flex-col rounded-xl bg-slate-100/70 ring-1 ring-slate-200/70"
             >
               <div
                 className="flex items-center justify-between border-b border-slate-200 p-3"
@@ -58,11 +60,11 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
                     className="h-2 w-2 rounded-full"
                     style={{ background: st.dot }}
                   />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-700">
                     {st.label}
                   </span>
                 </div>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-mono text-slate-500">
+                <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-medium tabular-nums text-slate-500 ring-1 ring-slate-200/70">
                   {columnLeads.length}
                 </span>
               </div>
@@ -77,12 +79,12 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
                       <div
                         key={lead.id}
                         onClick={() => onLeadClick(lead.id)}
-                        className="cursor-pointer rounded-lg border border-slate-200 bg-white p-3 transition-all hover:border-slate-300 hover:shadow-md hover:shadow-slate-900/5"
+                        className="cursor-pointer rounded-xl bg-white p-3 ring-1 ring-slate-200/70 transition-all hover:shadow-md hover:shadow-slate-900/5 hover:ring-slate-300"
                       >
-                        <div className="mb-2 font-bold text-slate-900 text-sm line-clamp-1">
+                        <div className="mb-2 text-sm font-semibold text-slate-900 line-clamp-1">
                           {lead.co}
                         </div>
-                        
+
                         <div className="mb-2 flex flex-col gap-1.5 text-[11px] text-slate-400">
                           <div className="flex items-center gap-1.5">
                             <User size={12} />
@@ -96,25 +98,41 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
 
                         <div className="flex items-center justify-between mt-3">
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[9px] font-bold font-mono ${
+                            className={`rounded-full px-2 py-0.5 text-[9px] font-semibold ${
                               lead.t === 1
-                                ? 'bg-orange-500/10 text-orange-600'
-                                : 'bg-blue-500/10 text-blue-600'
+                                ? 'bg-orange-100 text-orange-700'
+                                : 'bg-blue-100 text-blue-700'
                             }`}
                           >
                             {lead.t === 1 ? 'T1' : 'T2'}
                           </span>
 
                           {lead.reminderDate && (
-                            <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold font-mono ${
-                              isReminderPast ? 'bg-red-500/10 text-red-600' :
-                              isReminderToday ? 'bg-orange-500/10 text-orange-600' :
-                              'bg-blue-500/10 text-blue-600'
+                            <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold tabular-nums ${
+                              isReminderPast ? 'bg-red-100 text-red-700' :
+                              isReminderToday ? 'bg-orange-100 text-orange-700' :
+                              'bg-blue-100 text-blue-700'
                             }`}>
                               <Calendar size={10} />
                               {new Date(lead.reminderDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                             </span>
                           )}
+                        </div>
+
+                        {/* Stage menu — the working replacement for drag-and-drop. */}
+                        <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+                          <select
+                            value={lead.status}
+                            onChange={(e) => void setStatus(lead.id, e.target.value as LeadStatus)}
+                            title="Move this lead to another stage"
+                            className="w-full cursor-pointer rounded-lg bg-slate-50 px-2 py-1.5 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                          >
+                            {STATUS.map((s) => (
+                              <option key={s.k} value={s.k}>
+                                {s.label}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                     );

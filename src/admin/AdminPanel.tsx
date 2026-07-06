@@ -74,7 +74,7 @@ export function AdminPanel() {
   return (
     <div className="mx-auto max-w-6xl">
       {/* Header */}
-      <div className="mb-8 flex items-end justify-between">
+      <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <div className="mb-1 flex items-center gap-2">
             <Shield size={20} className="text-blue-600" />
@@ -83,7 +83,7 @@ export function AdminPanel() {
             </h1>
           </div>
           <p className="text-xs text-slate-500">
-            Manage every tenant on the platform. Create accounts, disable, change plans, delete.
+            Every tenant on the platform — create accounts, change plans, disable, delete.
           </p>
         </div>
         <button
@@ -168,7 +168,8 @@ export function AdminPanel() {
             {q ? 'No tenants match your search.' : 'No tenants yet. Click "New client account" to create the first one.'}
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-[10px] uppercase tracking-widest text-slate-400">
                 <th className="px-4 py-3 text-left font-medium">Business</th>
@@ -219,6 +220,7 @@ export function AdminPanel() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

@@ -300,7 +300,9 @@ export default function App() {
 
         {tab === 'outreach' && <OutreachTab />}
         {tab === 'autopilot' && <AutoOutreach leads={visibleLeads} />}
-        {tab === 'pipeline' && <PipelineTab leads={visibleLeads} onLeadClick={jumpToLead} />}
+        {tab === 'pipeline' && (
+          <PipelineTab leads={visibleLeads} onLeadClick={jumpToLead} setStatus={crud.setStatus} />
+        )}
         {tab === 'brain' && (
           <Suspense fallback={<TabSpinner />}>
             <AiBrain

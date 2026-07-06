@@ -107,9 +107,14 @@ export function SettingsTab() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-8 flex items-center gap-2">
-        <SettingsIcon size={20} className="text-blue-600" />
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Settings</h1>
+      <div className="mb-6">
+        <div className="mb-1 flex items-center gap-2">
+          <SettingsIcon size={20} className="text-blue-600" />
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Settings</h1>
+        </div>
+        <p className="text-xs text-slate-500">
+          Your workspace — business name, brand color, logo, and your account.
+        </p>
       </div>
 
       {/* Read-only stats */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Loader2, X, Check, AlertCircle, Copy } from 'lucide-react';
 import { auth } from '../firebase';
 
@@ -22,8 +22,6 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
   const [success, setSuccess] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  if (!open) return null;
-
   const resetForm = () => {
     setTenantName('');
     setTenantSlug('');
@@ -33,6 +31,24 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
     setSuccess(null);
     setCopied(false);
   };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  // Esc closes the dialog (only while open).
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  if (!open) return null;
 
   const handleNameChange = (v: string) => {
     setTenantName(v);
@@ -98,8 +114,14 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white ring-1 ring-slate-200 shadow-xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+      onClick={handleClose}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl bg-white ring-1 ring-slate-200 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-start justify-between px-6 pt-5 pb-3 border-b border-slate-100">
           <div>
             <h2 className="text-base font-semibold text-slate-900">Create client account</h2>
@@ -108,11 +130,9 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
             </p>
           </div>
           <button
-            onClick={() => {
-              resetForm();
-              onClose();
-            }}
+            onClick={handleClose}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+            aria-label="Close"
           >
             <X size={18} />
           </button>
@@ -150,10 +170,7 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
                 Create another
               </button>
               <button
-                onClick={() => {
-                  resetForm();
-                  onClose();
-                }}
+                onClick={handleClose}
                 className="flex-1 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition"
               >
                 Done

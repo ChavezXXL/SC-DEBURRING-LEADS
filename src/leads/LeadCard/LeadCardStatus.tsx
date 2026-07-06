@@ -22,7 +22,7 @@ export const LeadCardStatus: React.FC<LeadCardStatusProps> = ({
         </div>
         <button
           onClick={() => setDeleteModal({ id: lead.id, co: lead.co })}
-          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold font-mono uppercase tracking-widest text-red-500/70 transition-colors hover:bg-red-500/10 hover:text-red-400"
+          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold font-mono uppercase tracking-widest text-red-500/70 transition-colors hover:bg-red-500/10 hover:text-red-600"
         >
           <Trash2 size={12} />
           Delete Lead

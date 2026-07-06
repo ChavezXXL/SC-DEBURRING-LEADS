@@ -47,6 +47,16 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
     }
   }, [open]);
 
+  // Esc closes the chat panel — same behavior as every other overlay.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
   // Detect if user wants to find new companies
   const isFindRequest = (msg: string) => {
     const lower = msg.toLowerCase();
@@ -236,7 +246,7 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
 
       {/* Chat Panel */}
       {open && (
-        <div className="fixed bottom-0 right-0 z-50 flex h-[600px] w-full flex-col border-l border-t border-slate-200 bg-white shadow-2xl sm:bottom-6 sm:right-6 sm:h-[560px] sm:w-[420px] sm:rounded-2xl sm:border">
+        <div className="fixed bottom-0 right-0 z-50 flex h-[min(600px,90dvh)] w-full flex-col border-l border-t border-slate-200 bg-white shadow-2xl sm:bottom-6 sm:right-6 sm:h-[560px] sm:w-[420px] sm:rounded-2xl sm:border">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <div className="flex items-center gap-2.5">
@@ -283,7 +293,7 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
                     className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed ${
                       msg.role === 'user'
                         ? 'bg-orange-500 text-white'
-                        : 'border border-slate-200 bg-white/60 text-slate-700'
+                        : 'bg-slate-50 text-slate-700 ring-1 ring-slate-200/70'
                     }`}
                   >
                     <pre className="whitespace-pre-wrap font-sans">{msg.text}</pre>
@@ -313,7 +323,7 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
                             disabled={isAdded}
                             className={`ml-2 flex h-7 shrink-0 items-center gap-1 rounded-lg px-2.5 text-[11px] font-bold transition-all ${
                               isAdded
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20'
                                 : 'bg-orange-500 text-white hover:bg-orange-400'
                             }`}
                           >
@@ -339,7 +349,7 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-orange-500/10">
                   <Bot size={13} className="text-orange-500" />
                 </div>
-                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white/60 px-3.5 py-2.5 text-[13px] text-slate-400">
+                <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-3.5 py-2.5 text-[13px] text-slate-500 ring-1 ring-slate-200/70">
                   <Loader2 size={14} className="animate-spin" />
                   Thinking...
                 </div>
@@ -365,19 +375,19 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
                   }).catch(() => {}).finally(() => setLoading(false));
                 }, 50);
               }}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-500 transition-colors hover:border-orange-500/30 hover:text-orange-400"
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-500 transition-colors hover:border-orange-500/30 hover:text-orange-600"
             >
               <Search size={10} className="mr-1 inline" />Find leads
             </button>
             <button
               onClick={() => { setInput('Write a cold email for '); inputRef.current?.focus(); }}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-500 transition-colors hover:border-orange-500/30 hover:text-orange-400"
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-500 transition-colors hover:border-orange-500/30 hover:text-orange-600"
             >
               Email draft
             </button>
             <button
               onClick={() => { setInput("What's my pipeline looking like?"); }}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-500 transition-colors hover:border-orange-500/30 hover:text-orange-400"
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-500 transition-colors hover:border-orange-500/30 hover:text-orange-600"
             >
               Pipeline stats
             </button>
@@ -403,7 +413,7 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
                 <Send size={13} />
               </button>
             </div>
-            <div className="mt-1.5 text-center text-[10px] font-mono text-slate-300">
+            <div className="mt-1.5 text-center text-[10px] text-slate-400">
               {searching ? 'Searching for companies...' : `Powered by Gemini AI · ${tenant?.name || 'SC Deburring'}`}
             </div>
           </div>

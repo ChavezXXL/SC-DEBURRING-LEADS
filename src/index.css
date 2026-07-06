@@ -2,3 +2,28 @@
 /* Node-only CLI scripts — no Tailwind classes, and their embedded Windows
    paths (e.g. \c46d0a...) parse as invalid CSS escapes and crash the build. */
 @source not "../scripts";
+
+/* Apex front door: slow molten highlight that sweeps across the chrome
+   divider on the login screen. Always used with `motion-safe:` so
+   reduced-motion users just see the static line. */
+@theme {
+  --animate-apex-sheen: apex-sheen 6s ease-in-out infinite;
+
+  @keyframes apex-sheen {
+    0% {
+      transform: translateX(-120%);
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    46% {
+      opacity: 1;
+    }
+    60%,
+    100% {
+      transform: translateX(430%);
+      opacity: 0;
+    }
+  }
+}
