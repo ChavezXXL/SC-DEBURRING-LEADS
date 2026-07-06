@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface DeleteModalProps {
   deleteModal: { id: string; co: string };
@@ -11,9 +11,24 @@ export const DeleteModal: React.FC<DeleteModalProps> = ({
   setDeleteModal,
   handleDeleteLead,
 }) => {
+  // Esc closes the dialog — expected of any modal in a polished app.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDeleteModal(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [setDeleteModal]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+      onClick={() => setDeleteModal(null)}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/20"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="mb-2 text-xl font-bold text-slate-900">Delete Lead</h2>
         <p className="mb-6 text-sm text-slate-500">
           Are you sure you want to delete the lead for <span className="font-bold text-slate-800">{deleteModal.co}</span>? This action cannot be undone.

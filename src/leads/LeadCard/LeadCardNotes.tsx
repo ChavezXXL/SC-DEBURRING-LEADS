@@ -33,7 +33,7 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
               setEditId(lead.id);
               setDraft(lead.notes || '');
             }}
-            className="rounded px-2 py-0.5 text-[10px] font-mono text-slate-300 transition-colors hover:bg-slate-100 hover:text-slate-500"
+            className="rounded px-2 py-0.5 text-[10px] font-mono text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
           >
             Edit
           </button>
@@ -52,7 +52,7 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
           <div className="flex gap-2">
             <button
               onClick={() => saveNote(lead.id, draft)}
-              className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20"
+              className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-500/20"
             >
               Save
             </button>
@@ -75,7 +75,7 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
           className={`min-h-[44px] rounded-lg border border-slate-200 bg-white p-4 text-xs leading-relaxed transition-colors ${
             lead.notes
               ? 'text-slate-700'
-              : 'cursor-text italic text-slate-300 hover:border-slate-300'
+              : 'cursor-text italic text-slate-400 hover:border-slate-300'
           }`}
         >
           {lead.notes ? renderMarkdown(lead.notes) : 'Click to add notes...'}

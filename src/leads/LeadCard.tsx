@@ -32,7 +32,7 @@ interface LeadCardProps {
   onLogCall?: (lead: Lead) => void;
 }
 
-export const LeadCard: React.FC<LeadCardProps> = ({
+const LeadCardComponent: React.FC<LeadCardProps> = ({
   lead,
   openId,
   setOpenId,
@@ -103,3 +103,21 @@ export const LeadCard: React.FC<LeadCardProps> = ({
     </div>
   );
 };
+
+/**
+ * With ~275 leads live, an un-memoized card list re-rendered every card on
+ * every keystroke/filter toggle — the main source of scroll + typing jank.
+ * This comparator skips re-rendering a card unless something it actually shows
+ * changed: its own lead data, whether it's the open card, or (only while open)
+ * the shared edit/copy state. Parent callbacks are stabilized in App.tsx.
+ */
+export const LeadCard = React.memo(LeadCardComponent, (prev, next) => {
+  if (prev.lead !== next.lead) return false;
+  const wasOpen = prev.openId === prev.lead.id;
+  const isOpen = next.openId === next.lead.id;
+  if (wasOpen !== isOpen) return false;
+  // The open card (only ever one) always re-renders so it gets fresh callbacks
+  // and edit/copy state. Collapsed cards — the other ~274 — skip the churn from
+  // typing in search, filter toggles, and unrelated status flashes.
+  return !isOpen;
+});

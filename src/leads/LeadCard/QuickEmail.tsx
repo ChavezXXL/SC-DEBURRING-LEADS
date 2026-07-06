@@ -44,6 +44,9 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
     [selectedId]
   );
 
+  // Re-fill only when the template or the lead *identity* changes — NOT on
+  // every Firestore snapshot (the parent hands a fresh `lead` object each time),
+  // which used to wipe the user's in-progress subject/body while composing.
   useEffect(() => {
     if (selectedScript) {
       const filled = fillTemplate(selectedScript.body, lead);
@@ -51,7 +54,8 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
       setSubject(parsed.subject);
       setBody(parsed.body);
     }
-  }, [selectedId, lead]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, lead.id]);
 
   const handleAiDraft = async () => {
     setAiLoading(true);
@@ -88,7 +92,7 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
   return (
     <div className="mt-3 rounded-xl border border-orange-500/20 bg-white p-4">
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-bold text-orange-400">
+        <div className="flex items-center gap-2 text-sm font-bold text-orange-600">
           <Mail size={15} /> Quick Email
         </div>
         <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
@@ -108,7 +112,7 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
               onClick={() => { setSelectedId(s.id); setShowPicker(false); }}
               className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium transition-colors ${
                 selectedId === s.id
-                  ? 'border-orange-500/30 bg-orange-500/10 text-orange-400'
+                  ? 'border-orange-500/30 bg-orange-500/10 text-orange-600'
                   : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
               }`}
             >
@@ -118,7 +122,7 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
           <button
             onClick={handleAiDraft}
             disabled={aiLoading}
-            className="flex items-center gap-1 rounded-lg border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[11px] font-medium text-violet-400 transition-colors hover:bg-violet-500/20 disabled:opacity-50"
+            className="flex items-center gap-1 rounded-lg border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[11px] font-medium text-violet-600 transition-colors hover:bg-violet-500/20 disabled:opacity-50"
           >
             {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
             AI Draft
@@ -136,7 +140,7 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
           className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
         />
         {!toEmail && (
-          <div className="mt-1 text-[10px] text-amber-500/70">
+          <div className="mt-1 text-[10px] text-amber-600">
             No email on file — use Research Contact to find one
           </div>
         )}
@@ -187,7 +191,7 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
           onClick={copyAll}
           className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
             copied
-              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700'
               : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
           }`}
         >

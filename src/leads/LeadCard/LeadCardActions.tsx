@@ -30,7 +30,7 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
         {lead.ph && (
           <a
             href={`tel:${lead.ph}`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-500/20"
           >
             <Phone size={14} /> {lead.ph}
           </a>
@@ -50,7 +50,7 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
           <>
             <a
               href={`mailto:${lead.em}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-400 transition-colors hover:bg-blue-500/20"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-500/20"
             >
               <Mail size={14} /> Email
             </a>
@@ -59,8 +59,8 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
               onClick={() => copy(`em_${lead.id}`, lead.em)}
               className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
                 cp === `em_${lead.id}`
-                  ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
-                  : 'border-indigo-500/20 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20'
+                  ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700'
+                  : 'border-indigo-500/20 bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20'
               }`}
             >
               <Copy size={14} /> {cp === `em_${lead.id}` ? 'Copied!' : 'Copy Email'}
@@ -70,7 +70,7 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
               href={buildGmailUrl(lead)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-500 transition-colors hover:bg-sky-500/20"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-600 transition-colors hover:bg-sky-500/20"
               title={warm ? 'Open a pre-written check-in draft in Gmail' : 'Open a pre-written cold intro draft in Gmail'}
             >
               <MailPlus size={14} /> {warm ? 'Check in' : 'Draft email'}
@@ -99,7 +99,7 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
             href={lead.web}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-400 transition-colors hover:bg-violet-500/20"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-600 transition-colors hover:bg-violet-500/20"
           >
             <Globe size={14} /> Site
           </a>
@@ -120,7 +120,7 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
           href={qs.linkedin(lead.co)}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-400 transition-colors hover:bg-blue-500/20"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-500/20"
         >
           <Briefcase size={14} /> LinkedIn
         </a>
@@ -129,14 +129,14 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
           href={qs.indeed(lead.city)}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-500 transition-colors hover:bg-amber-500/20"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/20"
         >
           <ClipboardList size={14} /> Indeed
         </a>
 
         <button
           onClick={() => handleAI(lead, 'research')}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-400 transition-colors hover:bg-rose-500/20"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-500/20"
         >
           <Microscope size={14} /> Research Contact
         </button>
@@ -152,7 +152,7 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
           onClick={() => setShowEmail(!showEmail)}
           className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
             showEmail
-              ? 'border-orange-500/40 bg-orange-500/20 text-orange-400'
+              ? 'border-orange-500/40 bg-orange-500/20 text-orange-700'
               : 'border-orange-500/30 bg-orange-500 text-white hover:bg-orange-400'
           }`}
         >
@@ -164,8 +164,8 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
             onClick={() => onQueueOutreach(lead)}
             className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
               (lead as any).queued_for_outreach
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                : 'border-violet-500/20 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20'
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700'
+                : 'border-violet-500/20 bg-violet-500/10 text-violet-600 hover:bg-violet-500/20'
             }`}
           >
             <Zap size={14} /> {(lead as any).queued_for_outreach ? 'Queued' : 'Queue Outreach'}

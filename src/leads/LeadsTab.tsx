@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import type { Lead, LeadStatus, AiMode } from '../types';
 import { REGIONS, STATUS } from '../data';
@@ -85,6 +85,24 @@ export function LeadsTab({
     resetAll,
   } = setters;
 
+  // Debounced search: the input stays instant (local state) while the heavy
+  // re-filter + re-render of ~275 cards only fires after typing settles.
+  const [qInput, setQInput] = useState(q);
+  const debRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep the box in sync when q is cleared/changed elsewhere (reset, sidebar).
+  useEffect(() => {
+    setQInput(q);
+  }, [q]);
+
+  useEffect(() => {
+    if (qInput === q) return;
+    debRef.current = setTimeout(() => setQ(qInput), 180);
+    return () => {
+      if (debRef.current) clearTimeout(debRef.current);
+    };
+  }, [qInput]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const namedPMs = useMemo(
     () => visibleLeads.filter((l) => !!l.pm).length,
     [visibleLeads],
@@ -153,15 +171,19 @@ export function LeadsTab({
         <div className="relative min-w-[200px] flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
+            value={qInput}
+            onChange={(e) => setQInput(e.target.value)}
             placeholder="Search company, contact, city, parts..."
             className="w-full rounded-xl bg-slate-50 py-2 pl-9 pr-8 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-slate-200 transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
           />
-          {q && (
+          {qInput && (
             <button
-              onClick={() => setQ('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              onClick={() => {
+                setQInput('');
+                setQ('');
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              aria-label="Clear search"
             >
               <X size={16} />
             </button>
@@ -307,8 +329,18 @@ export function LeadsTab({
             </div>
           </div>
         ) : (
-          <div className="py-20 text-center text-sm text-slate-400">
-            No leads match your filters.
+          <div className="rounded-2xl bg-white ring-1 ring-slate-200/70 py-16 px-8 text-center">
+            <div className="text-2xl">🔍</div>
+            <p className="mt-3 text-sm text-slate-500">No leads match your filters.</p>
+            <button
+              onClick={() => {
+                resetAll();
+                setHot5(false);
+              }}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-xs font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-200"
+            >
+              Clear all filters
+            </button>
           </div>
         )
       ) : (

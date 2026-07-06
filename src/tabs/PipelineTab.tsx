@@ -31,7 +31,7 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col">
       <div className="mb-6 shrink-0">
-        <h1 className="mb-1 text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-900">
           Sales Pipeline
         </h1>
         <p className="text-xs font-mono text-slate-400">
@@ -77,7 +77,7 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
                       <div
                         key={lead.id}
                         onClick={() => onLeadClick(lead.id)}
-                        className="cursor-pointer rounded-lg border border-slate-200 bg-white p-3 transition-all hover:border-slate-300 hover:shadow-lg hover:shadow-black/20"
+                        className="cursor-pointer rounded-lg border border-slate-200 bg-white p-3 transition-all hover:border-slate-300 hover:shadow-md hover:shadow-slate-900/5"
                       >
                         <div className="mb-2 font-bold text-slate-900 text-sm line-clamp-1">
                           {lead.co}
@@ -98,8 +98,8 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
                           <span
                             className={`rounded-full px-2 py-0.5 text-[9px] font-bold font-mono ${
                               lead.t === 1
-                                ? 'bg-orange-500/10 text-orange-500'
-                                : 'bg-blue-500/10 text-blue-400'
+                                ? 'bg-orange-500/10 text-orange-600'
+                                : 'bg-blue-500/10 text-blue-600'
                             }`}
                           >
                             {lead.t === 1 ? 'T1' : 'T2'}
@@ -107,9 +107,9 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
 
                           {lead.reminderDate && (
                             <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold font-mono ${
-                              isReminderPast ? 'bg-red-500/10 text-red-500' : 
-                              isReminderToday ? 'bg-orange-500/10 text-orange-500' : 
-                              'bg-blue-500/10 text-blue-400'
+                              isReminderPast ? 'bg-red-500/10 text-red-600' :
+                              isReminderToday ? 'bg-orange-500/10 text-orange-600' :
+                              'bg-blue-500/10 text-blue-600'
                             }`}>
                               <Calendar size={10} />
                               {new Date(lead.reminderDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
@@ -120,7 +120,7 @@ export function PipelineTab({ leads, onLeadClick }: PipelineTabProps) {
                     );
                   })}
                   {columnLeads.length === 0 && (
-                    <div className="py-8 text-center text-xs italic text-slate-300">
+                    <div className="py-8 text-center text-xs italic text-slate-400">
                       No leads
                     </div>
                   )}

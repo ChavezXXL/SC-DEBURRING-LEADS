@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useState } from 'react';
 import { Menu, X, Loader2 } from 'lucide-react';
 
 import type { Lead, AiMode, TabKey } from './types';
@@ -109,7 +109,9 @@ export default function App() {
 
   // ---- handlers ----------------------------------------------------------
 
-  const copy = async (id: string, text: string) => {
+  // Stable across renders so React.memo'd LeadCards don't re-render on
+  // every parent update (typing in search, status flashes, etc.).
+  const copy = useCallback(async (id: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCp(id);
@@ -117,9 +119,9 @@ export default function App() {
     } catch (err) {
       console.error('Clipboard copy failed:', err);
     }
-  };
+  }, []);
 
-  const handleAI = async (lead: Lead, mode: AiMode) => {
+  const handleAI = useCallback(async (lead: Lead, mode: AiMode) => {
     setAiModal({ lead, mode });
     setAiLoading(true);
     setAiText('');
@@ -131,7 +133,7 @@ export default function App() {
     } finally {
       setAiLoading(false);
     }
-  };
+  }, []);
 
   const handleAddLead = async () => {
     const ok = await crud.addLead(newLeadForm);
@@ -141,12 +143,12 @@ export default function App() {
     }
   };
 
-  const handleSaveNote = async (id: string, notes: string) => {
+  const handleSaveNote = useCallback(async (id: string, notes: string) => {
     await crud.saveNote(id, notes);
     setEditId(null);
-  };
+  }, [crud]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     const scrollEl = document.querySelector('main');
     const scrollPos = scrollEl?.scrollTop || 0;
     await crud.deleteLead(id);
@@ -155,10 +157,10 @@ export default function App() {
     requestAnimationFrame(() => {
       if (scrollEl) scrollEl.scrollTop = scrollPos;
     });
-  };
+  }, [crud, openId]);
 
   /** Cross-tab "show me this lead" — switch to Leads, open the card, scroll to it. */
-  const jumpToLead = (id: string) => {
+  const jumpToLead = useCallback((id: string) => {
     setTab('leads');
     filterSetters.resetAll();
     filterSetters.setHot5(false);
@@ -167,7 +169,7 @@ export default function App() {
       const el = document.getElementById(`lead-${id}`);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
-  };
+  }, [filterSetters]);
 
   // ---- early loading guard ------------------------------------------------
 
@@ -204,6 +206,15 @@ export default function App() {
           {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
+
+      {/* Mobile scrim — tap outside the drawer to close it. */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-slate-900/30 backdrop-blur-sm md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden
+        />
+      )}
 
       <Sidebar
         mobileMenuOpen={mobileMenuOpen}

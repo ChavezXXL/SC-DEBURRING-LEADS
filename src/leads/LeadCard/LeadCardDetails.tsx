@@ -15,7 +15,7 @@ export const LeadCardDetails: React.FC<LeadCardDetailsProps> = ({ lead }) => {
           <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-400">
             Purchasing Manager
           </div>
-          <div className="text-xs font-semibold text-violet-400">
+          <div className="text-xs font-semibold text-violet-700">
             {lead.pm} — {lead.pm_title}
           </div>
         </div>
@@ -44,7 +44,7 @@ export const LeadCardDetails: React.FC<LeadCardDetailsProps> = ({ lead }) => {
           <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-400">
             Email Address
           </div>
-          <div className="text-xs font-semibold text-violet-400">{lead.em}</div>
+          <div className="text-xs font-semibold text-violet-700">{lead.em}</div>
         </div>
       )}
 
@@ -59,7 +59,7 @@ export const LeadCardDetails: React.FC<LeadCardDetailsProps> = ({ lead }) => {
         <div className="mb-1 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400">
           Pitch Angle
         </div>
-        <div className="text-xs leading-relaxed text-amber-500">{lead.pitch}</div>
+        <div className="text-xs leading-relaxed text-amber-700">{lead.pitch}</div>
       </div>
     </div>
   );

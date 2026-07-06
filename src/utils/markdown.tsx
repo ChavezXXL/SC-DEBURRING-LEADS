@@ -62,7 +62,7 @@ export function renderMarkdown(text: string): React.ReactNode {
       if (first.type === 'link') {
         const m = first.match;
         parts.push(
-          <a key={key++} href={m[2]} target="_blank" rel="noreferrer" className="text-orange-400 underline hover:text-orange-300">
+          <a key={key++} href={m[2]} target="_blank" rel="noreferrer" className="text-orange-600 underline hover:text-orange-500">
             {m[1]}
           </a>
         );
@@ -74,7 +74,7 @@ export function renderMarkdown(text: string): React.ReactNode {
         parts.push(<em key={key++} className="italic text-slate-500">{m[1] || m[2]}</em>);
       } else if (first.type === 'code') {
         const m = first.match;
-        parts.push(<code key={key++} className="rounded bg-slate-100 px-1 py-0.5 text-orange-300">{m[1]}</code>);
+        parts.push(<code key={key++} className="rounded bg-slate-100 px-1 py-0.5 text-orange-600">{m[1]}</code>);
       }
 
       remaining = remaining.substring(idx + first.match[0].length);
@@ -90,7 +90,7 @@ export function renderMarkdown(text: string): React.ReactNode {
     if (line.startsWith('### ')) {
       flushList();
       elements.push(
-        <h4 key={i} className="mt-3 mb-1 text-xs font-bold text-orange-400 uppercase tracking-wide">
+        <h4 key={i} className="mt-3 mb-1 text-xs font-bold text-orange-600 uppercase tracking-wide">
           {formatInline(line.slice(4))}
         </h4>
       );

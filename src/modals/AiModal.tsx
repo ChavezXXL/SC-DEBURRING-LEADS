@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { X, Sparkles, Microscope, Loader2, UserPlus, Save } from 'lucide-react';
 import type { Lead, AiMode } from '../types';
 import { renderMarkdown } from '../utils/markdown';
@@ -80,13 +80,22 @@ export const AiModal: React.FC<AiModalProps> = ({
     return Object.keys(info).length > 0 ? info : null;
   }, [aiText, aiModal.mode]);
 
+  // Esc closes the dialog.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAiModal(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [setAiModal]);
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
       onClick={() => setAiModal(null)}
     >
       <div
-        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-black md:p-8"
+        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/20 md:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-6 flex items-start justify-between">
@@ -129,7 +138,7 @@ export const AiModal: React.FC<AiModalProps> = ({
             {/* Extracted contact info preview */}
             {parsedContact && updateLeadFields && (
               <div className="mb-4 rounded-xl border border-violet-500/20 bg-violet-500/5 p-4">
-                <div className="mb-2 flex items-center gap-2 text-xs font-bold text-violet-400">
+                <div className="mb-2 flex items-center gap-2 text-xs font-bold text-violet-700">
                   <UserPlus size={14} /> Found Contact Info — Save to Lead?
                 </div>
                 <div className="mb-3 space-y-1 text-xs">
@@ -148,7 +157,7 @@ export const AiModal: React.FC<AiModalProps> = ({
                   {parsedContact.em && (
                     <div className="flex gap-2">
                       <span className="text-slate-400 w-16">Email:</span>
-                      <span className="text-violet-400 font-medium">{parsedContact.em}</span>
+                      <span className="text-violet-700 font-medium">{parsedContact.em}</span>
                     </div>
                   )}
                   {parsedContact.ph && (
@@ -181,8 +190,8 @@ export const AiModal: React.FC<AiModalProps> = ({
                 onClick={() => copy('ai', aiText)}
                 className={`flex-1 rounded-xl border py-2.5 text-sm font-bold transition-all ${
                   cp === 'ai'
-                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                    : 'border-orange-500/30 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20'
+                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700'
+                    : 'border-orange-500/30 bg-orange-500/10 text-orange-600 hover:bg-orange-500/20'
                 }`}
               >
                 {cp === 'ai' ? 'Copied!' : 'Copy to Clipboard'}
@@ -199,7 +208,7 @@ export const AiModal: React.FC<AiModalProps> = ({
                   );
                   setAiModal(null);
                 }}
-                className="flex-1 rounded-xl border border-blue-500/30 bg-blue-500/10 py-2.5 text-sm font-bold text-blue-400 transition-all hover:bg-blue-500/20"
+                className="flex-1 rounded-xl border border-blue-500/30 bg-blue-500/10 py-2.5 text-sm font-bold text-blue-600 transition-all hover:bg-blue-500/20"
               >
                 Save to Notes Only
               </button>

@@ -18,6 +18,27 @@ const INIT_LEADS: Lead[] = (Array.isArray(RAW) ? RAW : []).map((l) => ({
   notes: '',
 }));
 
+/**
+ * Firestore hands us brand-new lead objects on every snapshot — even for docs
+ * that didn't change. That churns object identity and forces all ~275 memoized
+ * LeadCards to re-render on any single update. Reuse the previous object for any
+ * lead whose serialized content is identical, so only genuinely-changed cards
+ * get a new reference (and thus re-render).
+ */
+function reconcileLeadIdentity(prev: Lead[], next: Lead[]): Lead[] {
+  if (prev.length === 0) return next;
+  const prevById = new Map(prev.map((l) => [l.id, l]));
+  let changed = prev.length !== next.length;
+  const merged = next.map((lead) => {
+    const old = prevById.get(lead.id);
+    if (old && JSON.stringify(old) === JSON.stringify(lead)) return old;
+    changed = true;
+    return lead;
+  });
+  // Nothing changed at all — keep the previous array reference too.
+  return changed ? merged : prev;
+}
+
 // Forced ON to match the deployed Firestore rules (auth required). With this
 // off, the query ran unauthenticated and Firestore denied the leads read.
 const REQUIRE_AUTH = true;
@@ -82,7 +103,7 @@ export function useLeads(tenantId: string | undefined) {
               console.warn('Could not write init leads to DB:', e);
             }
           } else {
-            setLeads(dbLeads);
+            setLeads((prev) => reconcileLeadIdentity(prev, dbLeads));
             if (!localStorage.getItem('sc_leads_seeded')) {
               localStorage.setItem('sc_leads_seeded', '1');
             }

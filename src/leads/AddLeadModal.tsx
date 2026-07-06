@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { Lead } from '../types';
 import { REGIONS } from '../data';
@@ -16,13 +16,22 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
   setShowAddLead,
   handleAddLead,
 }) => {
+  // Esc closes the dialog.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowAddLead(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [setShowAddLead]);
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
       onClick={() => setShowAddLead(false)}
     >
       <div
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-black md:p-8"
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/20 md:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-6 flex items-start justify-between">
@@ -38,16 +47,20 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
           </button>
         </div>
 
-        <div className="mb-6 grid grid-cols-2 gap-4">
-          <div className="col-span-2">
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
             <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Company Name *
             </label>
             <input
               value={newLeadForm.co ?? ''}
               onChange={(e) => setNewLeadForm({ ...newLeadForm, co: e.target.value })}
-              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newLeadForm.co?.trim()) handleAddLead();
+              }}
+              className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/40"
               placeholder="Acme Aerospace"
+              autoFocus
             />
           </div>
 
@@ -182,7 +195,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
             </select>
           </div>
 
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Parts / Industry
             </label>
@@ -194,7 +207,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
             />
           </div>
 
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
               Pitch Angle
             </label>
