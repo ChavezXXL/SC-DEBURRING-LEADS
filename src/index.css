@@ -46,6 +46,18 @@
   --animate-drawer-in: drawer-in 0.24s ease-out;
   --animate-panel-in: panel-in 0.16s ease-out;
   --animate-fade-in: fade-in 0.15s ease-out;
+  /* Loading-skeleton shimmer — sweeps a soft highlight across placeholder
+     bars while a code-split chunk loads. motion-safe only. */
+  --animate-skeleton-sweep: skeleton-sweep 1.4s ease-in-out infinite;
+
+  @keyframes skeleton-sweep {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
 
   @keyframes toast-in {
     from {

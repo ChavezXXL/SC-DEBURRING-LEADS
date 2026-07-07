@@ -7,12 +7,17 @@ import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
 import { TenantTheme } from './auth/TenantTheme';
 import { ToastProvider } from './ui/Toast';
+import { showRefreshPrompt } from './shell/pwaUpdate';
 
+// Service worker registration. The heavy lifting for build freshness happens in
+// vite.config.ts (autoUpdate + skipWaiting/clientsClaim/cleanupOutdatedCaches):
+// a new deploy's SW activates on the next load with no manual cache-clear. This
+// callback only covers a tab that's ALREADY open when a deploy lands — it shows
+// a small dark "Refresh" toast instead of a blocking confirm(), so nobody loses
+// a half-typed note to a surprise reload.
 const updateSW = registerSW({
   onNeedRefresh() {
-    if (confirm('New content available. Reload?')) {
-      updateSW(true);
-    }
+    showRefreshPrompt(() => updateSW(true));
   },
 });
 

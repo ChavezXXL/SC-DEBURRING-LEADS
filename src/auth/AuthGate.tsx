@@ -30,6 +30,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
           <img
             src="/icon-512.png"
             alt="Apex Growth"
+            width={512}
+            height={512}
+            decoding="async"
             className="h-20 w-20 select-none object-cover [mask-image:radial-gradient(circle_at_50%_50%,black_58%,transparent_82%)]"
             draggable={false}
           />

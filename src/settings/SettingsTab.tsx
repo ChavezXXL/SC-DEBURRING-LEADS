@@ -8,10 +8,12 @@ import {
   KeyRound,
   Loader2,
   Lock,
+  Smartphone,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { apiFetch, isNotConfigured, ApiError } from '../services/api';
 import { ServerSetupCallout } from '../ui/ServerSetupCallout';
+import { useInstallPrompt } from '../shell/useInstallPrompt';
 import { useToast } from '../ui/Toast';
 import { COLD_TEMPLATE, WARM_TEMPLATE, type OutreachTemplate } from '../outreach/templates';
 import { downloadLeadsCsv } from '../leads/leadsCsv';
@@ -36,6 +38,9 @@ interface SettingsTabProps {
 export function SettingsTab({ leads }: SettingsTabProps) {
   const { tenant, profile, user, resetPassword } = useAuth();
   const toast = useToast();
+  // Native "Install app" affordance — only renders where the browser offered
+  // an install prompt (Chrome/Edge/Android) and the app isn't already installed.
+  const { canInstall, promptInstall } = useInstallPrompt();
   const [name, setName] = useState(tenant?.name || '');
   const [primaryColor, setPrimaryColor] = useState(tenant?.primaryColor || '#2563eb');
   const [logoUrl, setLogoUrl] = useState(tenant?.logoUrl || '');
@@ -175,6 +180,23 @@ export function SettingsTab({ leads }: SettingsTabProps) {
           }
         />
       </div>
+
+      {/* INSTALL APP — only shown when the browser offers a native install and
+          the app isn't already running standalone. */}
+      {canInstall && (
+        <Section
+          title="Install app"
+          hint="Add Apex CRM to your home screen or desktop — opens in its own window, launches faster, and works offline for the leads you've already loaded."
+        >
+          <button
+            onClick={promptInstall}
+            className="inline-flex items-center gap-2 rounded-xl bg-apex-accent px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-950/50 hover:brightness-110 active:scale-[0.99] transition"
+          >
+            <Smartphone size={14} />
+            Install app
+          </button>
+        </Section>
+      )}
 
       {/* 1 · WORKSPACE */}
       <form onSubmit={onSave}>

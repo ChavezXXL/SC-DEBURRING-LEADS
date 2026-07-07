@@ -7,6 +7,9 @@ export function FancyLogo({ className = '' }: { className?: string }) {
     <img
       src="/icon-192.png"
       alt="Apex Growth"
+      width={192}
+      height={192}
+      decoding="async"
       className={`shrink-0 rounded-xl object-cover ${className}`}
     />
   );

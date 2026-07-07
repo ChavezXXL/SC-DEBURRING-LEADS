@@ -71,6 +71,9 @@ export function Login() {
             src="/icon-512.png"
             alt=""
             aria-hidden
+            width={512}
+            height={512}
+            decoding="async"
             className="h-28 w-28 select-none object-cover [mask-image:radial-gradient(circle_at_50%_50%,black_58%,transparent_82%)]"
             draggable={false}
           />

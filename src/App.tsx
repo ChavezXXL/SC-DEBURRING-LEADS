@@ -13,15 +13,22 @@ import { useLeadSort } from './leads/useLeadSort';
 import { useLeadSelection } from './leads/useLeadSelection';
 import { downloadLeadsCsv } from './leads/leadsCsv';
 import { LeadsTab } from './leads/LeadsTab';
-import { AddLeadModal } from './leads/AddLeadModal';
 
 import { Sidebar } from './shell/Sidebar';
 import { FancyLogo } from './shell/FancyLogo';
+import { TabSkeleton } from './shell/TabSkeleton';
 
 import { TodayTab } from './tabs/TodayTab';
-import { OutreachTab } from './tabs/OutreachTab';
-import { PipelineTab } from './tabs/PipelineTab';
-// Heavy tabs are code-split so the initial bundle only loads what most users need.
+
+// Code-splitting: only Today + Leads (the two most-used screens) ship in the
+// entry chunk. Everything else is a separate chunk fetched on first open, so
+// the initial download is smaller and Firebase-heavy screens don't block boot.
+const OutreachTab = lazy(() =>
+  import('./tabs/OutreachTab').then((m) => ({ default: m.OutreachTab })),
+);
+const PipelineTab = lazy(() =>
+  import('./tabs/PipelineTab').then((m) => ({ default: m.PipelineTab })),
+);
 const AdminPanel = lazy(() =>
   import('./admin/AdminPanel').then((m) => ({ default: m.AdminPanel })),
 );
@@ -29,8 +36,16 @@ const SettingsTab = lazy(() =>
   import('./settings/SettingsTab').then((m) => ({ default: m.SettingsTab })),
 );
 
+// Modals are gated behind boolean state and only mount when opened, so lazy
+// import is free of open/close complexity — the chunk arrives before paint.
+const AddLeadModal = lazy(() =>
+  import('./leads/AddLeadModal').then((m) => ({ default: m.AddLeadModal })),
+);
+const BulkDeleteModal = lazy(() =>
+  import('./modals/BulkDeleteModal').then((m) => ({ default: m.BulkDeleteModal })),
+);
+
 import { DeleteModal } from './modals/DeleteModal';
-import { BulkDeleteModal } from './modals/BulkDeleteModal';
 
 const EMPTY_LEAD_FORM: Partial<Lead> = {
   co: '',
@@ -386,18 +401,24 @@ export default function App() {
           />
         )}
 
-        {tab === 'outreach' && <OutreachTab />}
+        {tab === 'outreach' && (
+          <Suspense fallback={<TabSkeleton />}>
+            <OutreachTab />
+          </Suspense>
+        )}
         {tab === 'pipeline' && (
-          <PipelineTab leads={visibleLeads} onLeadClick={jumpToLead} setStatus={handleSetStatus} />
+          <Suspense fallback={<TabSkeleton />}>
+            <PipelineTab leads={visibleLeads} onLeadClick={jumpToLead} setStatus={handleSetStatus} />
+          </Suspense>
         )}
         {tab === 'admin' && profile?.role === 'super-admin' && (
-          <Suspense fallback={<TabSpinner />}>
+          <Suspense fallback={<TabSkeleton />}>
             <AdminPanel />
           </Suspense>
         )}
         {tab === 'settings' &&
           (profile?.role === 'owner' || profile?.role === 'super-admin') && (
-            <Suspense fallback={<TabSpinner />}>
+            <Suspense fallback={<TabSkeleton />}>
               <SettingsTab leads={visibleLeads} />
             </Suspense>
           )}
@@ -412,29 +433,25 @@ export default function App() {
       )}
 
       {bulkDeleteIds && (
-        <BulkDeleteModal
-          count={bulkDeleteIds.length}
-          onCancel={() => setBulkDeleteIds(null)}
-          onConfirm={handleBulkDeleteConfirm}
-        />
+        <Suspense fallback={null}>
+          <BulkDeleteModal
+            count={bulkDeleteIds.length}
+            onCancel={() => setBulkDeleteIds(null)}
+            onConfirm={handleBulkDeleteConfirm}
+          />
+        </Suspense>
       )}
 
       {showAddLead && (
-        <AddLeadModal
-          newLeadForm={newLeadForm}
-          setNewLeadForm={setNewLeadForm}
-          setShowAddLead={setShowAddLead}
-          handleAddLead={handleAddLead}
-        />
+        <Suspense fallback={null}>
+          <AddLeadModal
+            newLeadForm={newLeadForm}
+            setNewLeadForm={setNewLeadForm}
+            setShowAddLead={setShowAddLead}
+            handleAddLead={handleAddLead}
+          />
+        </Suspense>
       )}
-    </div>
-  );
-}
-
-function TabSpinner() {
-  return (
-    <div className="mx-auto max-w-5xl py-20 flex justify-center">
-      <Loader2 className="animate-spin text-slate-400" size={20} />
     </div>
   );
 }
