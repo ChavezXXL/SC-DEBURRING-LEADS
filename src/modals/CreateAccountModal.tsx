@@ -115,23 +115,23 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={handleClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white ring-1 ring-slate-200 shadow-xl"
+        className="w-full max-w-md rounded-2xl bg-apex-850 ring-1 ring-white/10 shadow-2xl shadow-black/60"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between px-6 pt-5 pb-3 border-b border-slate-100">
+        <div className="flex items-start justify-between px-6 pt-5 pb-3 border-b border-white/10">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Create client account</h2>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <h2 className="text-base font-semibold text-slate-100">Create client account</h2>
+            <p className="mt-0.5 text-xs text-slate-400">
               Spin up a new tenant. They get an empty CRM + welcome email.
             </p>
           </div>
           <button
             onClick={handleClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-slate-100 transition"
             aria-label="Close"
           >
             <X size={18} />
@@ -140,21 +140,21 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
 
         {success ? (
           <div className="px-6 py-6 space-y-4">
-            <div className="flex items-start gap-3 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 px-4 py-3">
-              <Check size={20} className="text-emerald-600 mt-0.5 shrink-0" />
-              <div className="text-sm text-emerald-800">{success}</div>
+            <div className="flex items-start gap-3 rounded-xl bg-emerald-500/10 ring-1 ring-emerald-500/30 px-4 py-3">
+              <Check size={20} className="text-emerald-400 mt-0.5 shrink-0" />
+              <div className="text-sm text-emerald-300">{success}</div>
             </div>
 
-            <div className="rounded-xl bg-slate-50 ring-1 ring-slate-200 p-4 text-sm space-y-1.5">
-              <div className="text-[10px] uppercase tracking-widest text-slate-400 font-medium mb-1">
+            <div className="rounded-xl bg-apex-800 ring-1 ring-white/10 p-4 text-sm space-y-1.5">
+              <div className="text-[10px] uppercase tracking-widest text-slate-500 font-medium mb-1">
                 Login details (also emailed)
               </div>
-              <div><span className="text-slate-500">URL:</span> <span className="text-slate-900 font-mono">{window.location.origin}</span></div>
-              <div><span className="text-slate-500">Email:</span> <span className="text-slate-900 font-mono">{ownerEmail}</span></div>
-              <div><span className="text-slate-500">Password:</span> <span className="text-slate-900 font-mono">{password}</span></div>
+              <div><span className="text-slate-400">URL:</span> <span className="text-slate-100 font-mono">{window.location.origin}</span></div>
+              <div><span className="text-slate-400">Email:</span> <span className="text-slate-100 font-mono">{ownerEmail}</span></div>
+              <div><span className="text-slate-400">Password:</span> <span className="text-slate-100 font-mono">{password}</span></div>
               <button
                 onClick={copyCredentials}
-                className="mt-2 inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800"
+                className="mt-2 inline-flex items-center gap-1.5 text-xs text-orange-400 hover:text-orange-300"
               >
                 <Copy size={12} /> {copied ? 'Copied!' : 'Copy all'}
               </button>
@@ -165,13 +165,13 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
                 onClick={() => {
                   resetForm();
                 }}
-                className="flex-1 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-200 transition"
+                className="flex-1 rounded-xl bg-apex-800 ring-1 ring-white/10 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-slate-100 transition"
               >
                 Create another
               </button>
               <button
                 onClick={handleClose}
-                className="flex-1 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition"
+                className="flex-1 rounded-xl bg-apex-accent px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-950/50 hover:brightness-110 transition"
               >
                 Done
               </button>
@@ -180,7 +180,7 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
         ) : (
           <form onSubmit={onSubmit} className="px-6 py-5 space-y-4">
             <label className="block">
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
                 Business name
               </span>
               <input
@@ -188,12 +188,12 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
                 onChange={(e) => handleNameChange(e.target.value)}
                 required
                 placeholder="Acme Machine Shop"
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-apex-800 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apex-accent/60 focus:border-apex-accent/60 transition"
               />
             </label>
 
             <label className="block">
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
                 Tenant slug (lowercase, unique)
               </span>
               <input
@@ -201,7 +201,7 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
                 onChange={(e) => setTenantSlug(slugify(e.target.value))}
                 required
                 placeholder="acme-machine"
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-mono text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-apex-800 px-3 py-2.5 text-sm font-mono text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apex-accent/60 focus:border-apex-accent/60 transition"
               />
               <span className="mt-1 block text-[10px] text-slate-400">
                 Used internally — they won't see it.
@@ -209,7 +209,7 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
             </label>
 
             <label className="block">
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
                 Owner email
               </span>
               <input
@@ -218,12 +218,12 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
                 onChange={(e) => setOwnerEmail(e.target.value)}
                 required
                 placeholder="owner@acmemachine.com"
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-apex-800 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-apex-accent/60 focus:border-apex-accent/60 transition"
               />
             </label>
 
             <label className="block">
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
                 Temp password
               </span>
               <div className="mt-1 flex gap-2">
@@ -232,12 +232,12 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-mono text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition"
+                  className="flex-1 rounded-xl border border-white/10 bg-apex-800 px-3 py-2.5 text-sm font-mono text-slate-100 focus:outline-none focus:ring-2 focus:ring-apex-accent/60 focus:border-apex-accent/60 transition"
                 />
                 <button
                   type="button"
                   onClick={() => setPassword(generatePassword())}
-                  className="rounded-xl bg-slate-100 px-3 text-xs font-medium text-slate-600 hover:bg-slate-200 transition"
+                  className="rounded-xl bg-white/10 px-3 text-xs font-medium text-slate-300 hover:bg-white/15 hover:text-slate-100 transition"
                 >
                   Generate
                 </button>
@@ -248,7 +248,7 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
             </label>
 
             {error && (
-              <div className="flex items-start gap-2 rounded-xl bg-red-50 ring-1 ring-red-200 px-3 py-2 text-xs text-red-700">
+              <div className="flex items-start gap-2 rounded-xl bg-red-500/10 ring-1 ring-red-500/30 px-3 py-2 text-xs text-red-300">
                 <AlertCircle size={14} className="mt-0.5 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -257,7 +257,7 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
             <button
               type="submit"
               disabled={busy}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 active:scale-[0.99] transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-apex-accent px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-950/50 hover:brightness-110 active:scale-[0.99] transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:brightness-100"
             >
               {busy ? <Loader2 size={14} className="animate-spin" /> : null}
               {busy ? 'Creating account…' : 'Create account + send welcome email'}

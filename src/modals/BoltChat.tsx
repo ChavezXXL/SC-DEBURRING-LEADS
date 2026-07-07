@@ -238,7 +238,7 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-orange-500 text-white shadow-lg shadow-orange-500/25 transition-all hover:scale-110 hover:bg-orange-400 hover:shadow-orange-500/40 active:scale-95"
+          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-apex-accent text-white shadow-lg shadow-orange-500/25 transition-all hover:scale-110 hover:brightness-110 hover:shadow-orange-500/40 active:scale-95"
         >
           <Zap size={24} fill="currentColor" />
         </button>
@@ -246,15 +246,15 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
 
       {/* Chat Panel */}
       {open && (
-        <div className="fixed bottom-0 right-0 z-50 flex h-[min(600px,90dvh)] w-full flex-col border-l border-t border-slate-200 bg-white shadow-2xl sm:bottom-6 sm:right-6 sm:h-[560px] sm:w-[420px] sm:rounded-2xl sm:border">
+        <div className="fixed bottom-0 right-0 z-50 flex h-[min(600px,90dvh)] w-full flex-col border-l border-t border-white/10 bg-apex-850 shadow-2xl shadow-black/60 sm:bottom-6 sm:right-6 sm:h-[560px] sm:w-[420px] sm:rounded-2xl sm:border">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/15">
-                <Zap size={16} className="text-orange-500" fill="currentColor" />
+                <Zap size={16} className="text-orange-400" fill="currentColor" />
               </div>
               <div>
-                <div className="text-sm font-bold text-slate-900">Bolt</div>
+                <div className="text-sm font-bold text-slate-100">Bolt</div>
                 <div className="text-[10px] font-mono text-slate-400">
                   AI Sales Assistant · {leads.length} leads loaded
                 </div>
@@ -263,14 +263,14 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
             <div className="flex items-center gap-1">
               <button
                 onClick={clearChat}
-                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
                 title="Clear chat"
               >
                 <Trash2 size={14} />
               </button>
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
               >
                 <X size={16} />
               </button>
@@ -286,14 +286,14 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
                 >
                   {msg.role === 'bolt' && (
                     <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-orange-500/10">
-                      <Bot size={13} className="text-orange-500" />
+                      <Bot size={13} className="text-orange-400" />
                     </div>
                   )}
                   <div
                     className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed ${
                       msg.role === 'user'
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-slate-50 text-slate-700 ring-1 ring-slate-200/70'
+                        ? 'bg-apex-accent text-white'
+                        : 'bg-apex-800 text-slate-300 ring-1 ring-white/10'
                     }`}
                   >
                     <pre className="whitespace-pre-wrap font-sans">{msg.text}</pre>
@@ -308,10 +308,10 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
                       return (
                         <div
                           key={fl.id}
-                          className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2"
+                          className="flex items-center justify-between rounded-lg border border-white/10 bg-apex-800 px-3 py-2"
                         >
                           <div className="min-w-0 flex-1">
-                            <div className="text-xs font-medium text-slate-800 truncate">
+                            <div className="text-xs font-medium text-slate-200 truncate">
                               {fl.co}
                             </div>
                             <div className="text-[10px] text-slate-400 truncate">
@@ -323,8 +323,8 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
                             disabled={isAdded}
                             className={`ml-2 flex h-7 shrink-0 items-center gap-1 rounded-lg px-2.5 text-[11px] font-bold transition-all ${
                               isAdded
-                                ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20'
-                                : 'bg-orange-500 text-white hover:bg-orange-400'
+                                ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+                                : 'bg-apex-accent text-white hover:brightness-110'
                             }`}
                           >
                             {isAdded ? (
@@ -347,9 +347,9 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
             {loading && (
               <div className="flex items-center gap-2.5">
                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-orange-500/10">
-                  <Bot size={13} className="text-orange-500" />
+                  <Bot size={13} className="text-orange-400" />
                 </div>
-                <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-3.5 py-2.5 text-[13px] text-slate-500 ring-1 ring-slate-200/70">
+                <div className="flex items-center gap-2 rounded-xl bg-apex-800 px-3.5 py-2.5 text-[13px] text-slate-400 ring-1 ring-white/10">
                   <Loader2 size={14} className="animate-spin" />
                   Thinking...
                 </div>
@@ -358,7 +358,7 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
           </div>
 
           {/* Quick Actions */}
-          <div className="flex gap-1.5 border-t border-slate-200 px-3 pt-2">
+          <div className="flex gap-1.5 border-t border-white/10 px-3 pt-2">
             <button
               onClick={() => {
                 setInput('Find machining leads in Orange County');
@@ -375,19 +375,19 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
                   }).catch(() => {}).finally(() => setLoading(false));
                 }, 50);
               }}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-500 transition-colors hover:border-orange-500/30 hover:text-orange-600"
+              className="rounded-lg border border-white/10 bg-apex-800 px-2.5 py-1 text-[10px] text-slate-400 transition-colors hover:border-orange-500/40 hover:text-orange-300"
             >
               <Search size={10} className="mr-1 inline" />Find leads
             </button>
             <button
               onClick={() => { setInput('Write a cold email for '); inputRef.current?.focus(); }}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-500 transition-colors hover:border-orange-500/30 hover:text-orange-600"
+              className="rounded-lg border border-white/10 bg-apex-800 px-2.5 py-1 text-[10px] text-slate-400 transition-colors hover:border-orange-500/40 hover:text-orange-300"
             >
               Email draft
             </button>
             <button
               onClick={() => { setInput("What's my pipeline looking like?"); }}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-500 transition-colors hover:border-orange-500/30 hover:text-orange-600"
+              className="rounded-lg border border-white/10 bg-apex-800 px-2.5 py-1 text-[10px] text-slate-400 transition-colors hover:border-orange-500/40 hover:text-orange-300"
             >
               Pipeline stats
             </button>
@@ -395,7 +395,7 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
 
           {/* Input */}
           <div className="border-t-0 p-3 pt-2">
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 focus-within:border-orange-500/50 focus-within:ring-1 focus-within:ring-orange-500/50">
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-apex-800 px-3 py-1.5 focus-within:border-apex-accent/60 focus-within:ring-1 focus-within:ring-apex-accent/60">
               <input
                 ref={inputRef}
                 value={input}
@@ -403,12 +403,12 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && send()}
                 placeholder="Ask Bolt anything..."
                 disabled={loading || searching}
-                className="flex-1 bg-transparent py-1.5 text-sm text-slate-800 placeholder-slate-400 outline-none disabled:opacity-50"
+                className="flex-1 bg-transparent py-1.5 text-sm text-slate-100 placeholder-slate-500 outline-none disabled:opacity-50"
               />
               <button
                 onClick={send}
                 disabled={!input.trim() || loading || searching}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-500 text-white transition-all hover:bg-orange-400 disabled:opacity-30 disabled:hover:bg-orange-500"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-apex-accent text-white transition-all hover:brightness-110 disabled:opacity-30 disabled:hover:brightness-100"
               >
                 <Send size={13} />
               </button>

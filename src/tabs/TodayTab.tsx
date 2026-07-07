@@ -85,9 +85,9 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
   if (leads.length === 0) {
     return (
       <div className="mx-auto max-w-5xl">
-        <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-900">Today</h1>
-        <p className="mb-6 text-xs text-slate-500">{dateLine}</p>
-        <div className="rounded-2xl bg-white ring-1 ring-slate-200/70 px-8 py-16 text-center text-sm text-slate-500">
+        <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-100">Today</h1>
+        <p className="mb-6 text-xs text-slate-400">{dateLine}</p>
+        <div className="rounded-2xl bg-apex-850 ring-1 ring-white/10 px-8 py-16 text-center text-sm text-slate-400">
           No leads in this workspace yet. Add leads on the Leads tab and the day's work builds
           itself here.
         </div>
@@ -98,8 +98,8 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6">
-        <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-900">Today</h1>
-        <p className="text-xs text-slate-500">
+        <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-100">Today</h1>
+        <p className="text-xs text-slate-400">
           {dateLine} · calls first, then bumps, then new sends.
         </p>
       </div>
@@ -120,7 +120,7 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
         {hotCalls.length === 0 ? (
           <EmptyLine text="No hiring-signal shops to call. Scan the job boards and tag new ones." />
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-white/5">
             {hotCalls.map((lead) => (
               <div
                 key={lead.id}
@@ -148,7 +148,7 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
         {checkIns.length === 0 ? (
           <EmptyLine text="No past clients on the books yet." />
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-white/5">
             {checkIns.map((lead) => (
               <div
                 key={lead.id}
@@ -171,7 +171,7 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
                       href={buildGmailUrl(lead)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-600 transition-colors hover:bg-sky-500/20"
+                      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-300 transition-colors hover:bg-sky-500/20"
                       title="Open a pre-written check-in draft in Gmail"
                     >
                       <MailPlus size={14} /> Check in
@@ -193,7 +193,7 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
         {bumps.length === 0 ? (
           <EmptyLine text="Nothing due. Put the time into new outreach." />
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-white/5">
             {bumps.map((lead) => (
               <div
                 key={lead.id}
@@ -204,7 +204,7 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
                   <div className="mt-0.5 truncate text-xs text-slate-400">
                     {lead.em}
                     {' · '}
-                    <span className="font-medium text-violet-600">
+                    <span className="font-medium text-violet-300">
                       {daysSince(lead)}d since contact
                     </span>
                   </div>
@@ -214,7 +214,7 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
                     href={threadSearchUrl(lead.em)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-600 transition-colors hover:bg-violet-500/20"
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-300 transition-colors hover:bg-violet-500/20"
                     title="Find the existing Gmail thread and reply there"
                   >
                     <MessagesSquare size={14} /> Open thread
@@ -235,7 +235,7 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
         {ready.length === 0 ? (
           <EmptyLine text="No untouched leads with an email on file. Time to prospect." />
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-white/5">
             {ready.map((lead) => (
               <div
                 key={lead.id}
@@ -257,7 +257,7 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
                     href={buildGmailUrl(lead)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-600 transition-colors hover:bg-sky-500/20"
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-300 transition-colors hover:bg-sky-500/20"
                     title="Open a pre-written cold intro draft in Gmail"
                   >
                     <MailPlus size={14} /> Draft email
@@ -288,12 +288,12 @@ function StatChip({
     <span
       className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs ring-1 ${
         highlight
-          ? 'bg-violet-50 text-violet-700 ring-violet-200'
-          : 'bg-white text-slate-500 ring-slate-200/70'
+          ? 'bg-violet-500/10 text-violet-300 ring-violet-500/30'
+          : 'bg-apex-850 text-slate-400 ring-white/10'
       }`}
     >
       {label}
-      <span className={`font-semibold ${highlight ? 'text-violet-800' : 'text-slate-900'}`}>
+      <span className={`font-semibold ${highlight ? 'text-violet-200' : 'text-slate-100'}`}>
         {value}
       </span>
     </span>
@@ -310,15 +310,15 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mb-6 rounded-2xl bg-white ring-1 ring-slate-200/70 p-4 md:p-5">
+    <section className="mb-6 rounded-2xl bg-apex-850 ring-1 ring-white/10 shadow-lg shadow-black/40 p-4 md:p-5">
       <div
-        className={`text-[10px] font-medium uppercase tracking-widest text-slate-400 ${
+        className={`text-[10px] font-medium uppercase tracking-widest text-slate-500 ${
           hint ? 'mb-1' : 'mb-3'
         }`}
       >
         {title}
       </div>
-      {hint && <p className="mb-3 text-xs text-slate-500">{hint}</p>}
+      {hint && <p className="mb-3 text-xs text-slate-400">{hint}</p>}
       {children}
     </section>
   );
@@ -333,8 +333,11 @@ function GroupLabel({
   count: number;
   tone: 'orange' | 'amber';
 }) {
-  const text = tone === 'orange' ? 'text-orange-700' : 'text-amber-700';
-  const pill = tone === 'orange' ? 'bg-orange-100 text-orange-700' : 'bg-amber-100 text-amber-700';
+  const text = tone === 'orange' ? 'text-orange-400' : 'text-amber-400';
+  const pill =
+    tone === 'orange'
+      ? 'bg-orange-500/10 text-orange-300 ring-1 ring-orange-500/30'
+      : 'bg-amber-500/10 text-amber-300 ring-1 ring-amber-500/30';
   return (
     <div className={`mb-1 flex items-center gap-2 text-xs font-semibold ${text}`}>
       {label}
@@ -353,7 +356,7 @@ function CoButton({ lead, onLeadClick }: { lead: Lead; onLeadClick: (id: string)
   return (
     <button
       onClick={() => onLeadClick(lead.id)}
-      className="block max-w-full truncate text-left text-sm font-semibold text-slate-900 transition-colors hover:text-blue-600"
+      className="block max-w-full truncate text-left text-sm font-semibold text-slate-100 transition-colors hover:text-orange-400"
       title="Open the full card on the Leads tab"
     >
       {lead.co}
@@ -364,8 +367,10 @@ function CoButton({ lead, onLeadClick }: { lead: Lead; onLeadClick: (id: string)
 function TierPill({ t }: { t: 1 | 2 }) {
   return (
     <span
-      className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${
-        t === 1 ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
+      className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ring-1 ${
+        t === 1
+          ? 'bg-orange-500/10 text-orange-300 ring-orange-500/30'
+          : 'bg-blue-500/10 text-blue-300 ring-blue-500/30'
       }`}
     >
       {t === 1 ? 'T1' : 'T2'}
@@ -378,7 +383,7 @@ function BigPhone({ ph }: { ph: string }) {
   return (
     <a
       href={`tel:${ph}`}
-      className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-emerald-500/10 px-4 py-2 text-base font-semibold tabular-nums text-emerald-700 ring-1 ring-emerald-500/20 transition-colors hover:bg-emerald-500/20"
+      className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-emerald-500/10 px-4 py-2 text-base font-semibold tabular-nums text-emerald-300 ring-1 ring-emerald-500/30 transition-colors hover:bg-emerald-500/20"
     >
       <Phone size={16} /> {ph}
     </a>
@@ -395,7 +400,7 @@ function LogCallButton({
   return (
     <button
       onClick={() => void logCall(lead)}
-      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-100"
+      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-apex-800 px-3 py-1.5 text-xs font-medium text-slate-300 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-slate-100"
       title="Log a call touch — sets last contacted, bumps touch count, stamps notes"
     >
       <PhoneCall size={14} /> Log call
@@ -415,7 +420,7 @@ function MarkEmailedButton({
   return (
     <button
       onClick={() => void markEmailed(lead)}
-      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-teal-500/20 bg-teal-500/10 px-3 py-1.5 text-xs font-medium text-teal-600 transition-colors hover:bg-teal-500/20"
+      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-teal-500/20 bg-teal-500/10 px-3 py-1.5 text-xs font-medium text-teal-300 transition-colors hover:bg-teal-500/20"
       title={title}
     >
       <MailCheck size={14} /> Mark emailed

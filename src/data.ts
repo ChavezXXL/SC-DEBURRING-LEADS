@@ -1,15 +1,17 @@
 import type { Lead, StatusDef, ScriptDef, ObjectionDef } from './types';
 
+/* Dark Apex chip palette: hue-300 text on the same hue at 12% over #12151A.
+   `dot` doubles as the ring color (used at ~30% alpha by consumers). */
 export const STATUS: StatusDef[] = [
-  {k:"new",label:"New",dot:"#94a3b8",bg:"#f1f5f9",tx:"#475569"},
-  {k:"called",label:"Called",dot:"#f59e0b",bg:"#fef3c7",tx:"#92400e"},
-  {k:"emailed",label:"Emailed",dot:"#3b82f6",bg:"#dbeafe",tx:"#1e40af"},
-  {k:"visited",label:"Visited",dot:"#a855f7",bg:"#f3e8ff",tx:"#6b21a8"},
-  {k:"voicemail",label:"Voicemail",dot:"#6b7280",bg:"#f3f4f6",tx:"#374151"},
-  {k:"interested",label:"Interested",dot:"#10b981",bg:"#d1fae5",tx:"#065f46"},
-  {k:"quote",label:"Quote Sent",dot:"#06b6d4",bg:"#cffafe",tx:"#0e7490"},
-  {k:"dead",label:"Dead",dot:"#ef4444",bg:"#fee2e2",tx:"#991b1b"},
-  {k:"client",label:"CLIENT",dot:"#f59e0b",bg:"#fef9c3",tx:"#713f12"},
+  {k:"new",label:"New",dot:"#94a3b8",bg:"rgba(148,163,184,0.12)",tx:"#cbd5e1"},
+  {k:"called",label:"Called",dot:"#f59e0b",bg:"rgba(245,158,11,0.12)",tx:"#fcd34d"},
+  {k:"emailed",label:"Emailed",dot:"#3b82f6",bg:"rgba(59,130,246,0.12)",tx:"#93c5fd"},
+  {k:"visited",label:"Visited",dot:"#a855f7",bg:"rgba(168,85,247,0.12)",tx:"#d8b4fe"},
+  {k:"voicemail",label:"Voicemail",dot:"#6b7280",bg:"rgba(156,163,175,0.12)",tx:"#d1d5db"},
+  {k:"interested",label:"Interested",dot:"#10b981",bg:"rgba(16,185,129,0.12)",tx:"#6ee7b7"},
+  {k:"quote",label:"Quote Sent",dot:"#06b6d4",bg:"rgba(6,182,212,0.12)",tx:"#67e8f9"},
+  {k:"dead",label:"Dead",dot:"#ef4444",bg:"rgba(239,68,68,0.12)",tx:"#fca5a5"},
+  {k:"client",label:"CLIENT",dot:"#f59e0b",bg:"rgba(245,158,11,0.16)",tx:"#fde68a"},
 ];
 
 export const REGIONS = [

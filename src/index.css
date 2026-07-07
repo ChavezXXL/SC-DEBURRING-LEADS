@@ -3,10 +3,22 @@
    paths (e.g. \c46d0a...) parse as invalid CSS escapes and crash the build. */
 @source not "../scripts";
 
-/* Apex front door: slow molten highlight that sweeps across the chrome
-   divider on the login screen. Always used with `motion-safe:` so
-   reduced-motion users just see the static line. */
+/* ---------------------------------------------------------------------------
+   Apex dark system — single source of truth for the interior theme.
+   The login (src/auth/Login.tsx) established the look: near-black graphite
+   ground, chrome hairlines (white/10), molten-orange #F26D21 accent.
+   These tokens make it available everywhere as bg-apex-950 … ring-apex-accent.
+   -------------------------------------------------------------------------- */
 @theme {
+  --color-apex-950: #08090C; /* page ground (matches login + <body>)        */
+  --color-apex-900: #0E1014; /* sidebar / board wells / chrome bars         */
+  --color-apex-850: #12151A; /* card surface                                */
+  --color-apex-800: #171B21; /* nested rows, inputs, code                   */
+  --color-apex-accent: #F26D21; /* molten orange — primary action + accent  */
+
+  /* Apex front door: slow molten highlight that sweeps across the chrome
+     divider on the login screen. Always used with `motion-safe:` so
+     reduced-motion users just see the static line. */
   --animate-apex-sheen: apex-sheen 6s ease-in-out infinite;
 
   @keyframes apex-sheen {
@@ -26,4 +38,40 @@
       opacity: 0;
     }
   }
+}
+
+/* Native controls (select dropdowns, range sliders, color pickers, in-page
+   scrollbars) render dark instead of flashing white. */
+:root {
+  color-scheme: dark;
+}
+
+/* Every interactive element gets a visible molten-orange focus ring —
+   keyboard users never lose their place on the dark ground. */
+:where(a, button, select, input, textarea, [role="button"]):focus-visible {
+  outline: 2px solid rgba(242, 109, 33, 0.7);
+  outline-offset: 2px;
+}
+
+/* Dark scrollbars — subtle graphite rails, chrome-grey thumbs. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.28) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+  background-clip: content-box;
 }

@@ -16,8 +16,8 @@ export default defineConfig(({mode}) => {
           name: 'Apex Growth CRM',
           short_name: 'Apex CRM',
           description: 'Sales CRM by Apex Growth',
-          theme_color: '#09090b',
-          background_color: '#09090b',
+          theme_color: '#08090C',
+          background_color: '#08090C',
           display: 'standalone',
           icons: [
             {

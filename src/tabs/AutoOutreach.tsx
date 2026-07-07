@@ -93,10 +93,10 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6">
-        <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-900">
+        <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-100">
           Autopilot
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-400">
           Automated prospecting queue — drafts and sends emails daily without you lifting a finger.
         </p>
       </div>
@@ -104,16 +104,16 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
       {/* Main Controls */}
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         {/* Enable/Disable Toggle */}
-        <div className="rounded-xl bg-white ring-1 ring-slate-200/70 p-5">
-          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">
+        <div className="rounded-xl bg-apex-850 ring-1 ring-white/10 p-5">
+          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-500">
             <Zap size={14} /> Status
           </div>
           <button
             onClick={() => saveSettings({ enabled: !settings.enabled })}
             className={`flex w-full items-center justify-between rounded-lg px-4 py-3 text-sm font-bold transition-all ${
               settings.enabled
-                ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30'
-                : 'bg-slate-100 text-slate-500 border border-slate-300 hover:bg-slate-200/70'
+                ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                : 'bg-apex-800 text-slate-400 border border-white/10 hover:bg-white/10 hover:text-slate-200'
             }`}
           >
             <span className="flex items-center gap-2">
@@ -122,7 +122,7 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
             </span>
             <div
               className={`h-5 w-9 rounded-full transition-colors ${
-                settings.enabled ? 'bg-emerald-500' : 'bg-slate-300'
+                settings.enabled ? 'bg-emerald-500' : 'bg-white/15'
               }`}
             >
               <div
@@ -135,20 +135,20 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
         </div>
 
         {/* Mode Selector */}
-        <div className="rounded-xl bg-white ring-1 ring-slate-200/70 p-5">
-          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">
+        <div className="rounded-xl bg-apex-850 ring-1 ring-white/10 p-5">
+          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-500">
             <Settings size={14} /> Mode
           </div>
           <div className="relative">
             <button
               onClick={() => setShowModeDropdown(!showModeDropdown)}
-              className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-100"
+              className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-apex-800 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-white/20 hover:bg-white/10"
             >
               <span>{MODE_LABELS[settings.mode]?.label}</span>
               <ChevronDown size={14} className={`transition-transform ${showModeDropdown ? 'rotate-180' : ''}`} />
             </button>
             {showModeDropdown && (
-              <div className="absolute z-10 mt-1 w-full rounded-lg bg-white py-1 shadow-lg ring-1 ring-slate-200">
+              <div className="absolute z-10 mt-1 w-full rounded-lg bg-apex-800 py-1 shadow-xl shadow-black/60 ring-1 ring-white/10">
                 {Object.entries(MODE_LABELS).map(([key, { label, desc }]) => (
                   <button
                     key={key}
@@ -156,11 +156,11 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
                       saveSettings({ mode: key as any });
                       setShowModeDropdown(false);
                     }}
-                    className={`flex w-full flex-col items-start px-4 py-2.5 text-left transition-colors hover:bg-slate-50 ${
-                      settings.mode === key ? 'bg-slate-50' : ''
+                    className={`flex w-full flex-col items-start px-4 py-2.5 text-left transition-colors hover:bg-white/5 ${
+                      settings.mode === key ? 'bg-white/5' : ''
                     }`}
                   >
-                    <span className="text-sm font-medium text-slate-800">{label}</span>
+                    <span className="text-sm font-medium text-slate-200">{label}</span>
                     <span className="text-[11px] text-slate-400">{desc}</span>
                   </button>
                 ))}
@@ -170,12 +170,12 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
         </div>
 
         {/* Volume */}
-        <div className="rounded-xl bg-white ring-1 ring-slate-200/70 p-5">
-          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">
+        <div className="rounded-xl bg-apex-850 ring-1 ring-white/10 p-5">
+          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-500">
             <Mail size={14} /> Daily Volume
           </div>
           <div className="mb-2 flex items-baseline gap-2">
-            <span className="text-3xl font-semibold tabular-nums text-orange-600">{settings.dailyLimit}</span>
+            <span className="text-3xl font-semibold tabular-nums text-orange-400">{settings.dailyLimit}</span>
             <span className="text-xs text-slate-400">emails/day</span>
           </div>
           <input
@@ -187,7 +187,7 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
             onChange={(e) => saveSettings({ dailyLimit: Number(e.target.value) })}
             className="w-full accent-orange-500"
           />
-          <div className="mt-1 flex justify-between text-[10px] text-slate-400">
+          <div className="mt-1 flex justify-between text-[10px] text-slate-500">
             <span>5</span>
             <span>25</span>
             <span>50</span>
@@ -197,31 +197,31 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
 
       {/* Stats Row */}
       <div className="mb-6 grid grid-cols-3 gap-4">
-        <div className="rounded-xl bg-white ring-1 ring-slate-200/70 p-4 text-center">
-          <div className="text-2xl font-semibold tabular-nums text-blue-600">{eligibleLeads.length}</div>
+        <div className="rounded-xl bg-apex-850 ring-1 ring-white/10 p-4 text-center">
+          <div className="text-2xl font-semibold tabular-nums text-blue-400">{eligibleLeads.length}</div>
           <div className="mt-1 text-[11px] text-slate-400">In Queue</div>
         </div>
-        <div className="rounded-xl bg-white ring-1 ring-slate-200/70 p-4 text-center">
-          <div className="text-2xl font-semibold tabular-nums text-emerald-600">{todaySent}</div>
+        <div className="rounded-xl bg-apex-850 ring-1 ring-white/10 p-4 text-center">
+          <div className="text-2xl font-semibold tabular-nums text-emerald-400">{todaySent}</div>
           <div className="mt-1 text-[11px] text-slate-400">Sent Today</div>
         </div>
-        <div className="rounded-xl bg-white ring-1 ring-slate-200/70 p-4 text-center">
-          <div className="text-2xl font-semibold tabular-nums text-orange-600">{logs.length}</div>
+        <div className="rounded-xl bg-apex-850 ring-1 ring-white/10 p-4 text-center">
+          <div className="text-2xl font-semibold tabular-nums text-orange-400">{logs.length}</div>
           <div className="mt-1 text-[11px] text-slate-400">Total Sent</div>
         </div>
       </div>
 
       {/* Preview Queue */}
-      <div className="mb-6 rounded-xl bg-white ring-1 ring-slate-200/70 p-5">
+      <div className="mb-6 rounded-xl bg-apex-850 ring-1 ring-white/10 p-5">
         <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-500">
             <Eye size={14} /> Next Up — Preview Queue
           </div>
           <span className="text-[11px] tabular-nums text-slate-400">{eligibleLeads.length} leads ready</span>
         </div>
 
         {eligibleLeads.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-4 py-3 text-xs text-slate-500 ring-1 ring-slate-200/70">
+          <div className="flex items-center gap-2 rounded-lg bg-apex-800 px-4 py-3 text-xs text-slate-400 ring-1 ring-white/10">
             <AlertCircle size={14} />
             No eligible leads. Change mode or add leads with emails.
           </div>
@@ -230,10 +230,10 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
             {eligibleLeads.slice(0, 8).map((lead) => (
               <div
                 key={lead.id}
-                className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-2.5 ring-1 ring-slate-200/70"
+                className="flex items-center justify-between rounded-lg bg-apex-800 px-4 py-2.5 ring-1 ring-white/10"
               >
                 <div className="min-w-0 flex-1 truncate pr-3">
-                  <span className="text-sm font-medium text-slate-800">{lead.co}</span>
+                  <span className="text-sm font-medium text-slate-200">{lead.co}</span>
                   <span className="ml-2 text-xs text-slate-400">
                     {lead.pm || lead.who || 'No contact'} · {lead.em || 'No email'}
                   </span>
@@ -241,7 +241,7 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
                 <button
                   onClick={() => handlePreview(lead)}
                   disabled={previewLoading && previewLead?.id === lead.id}
-                  className="flex shrink-0 items-center gap-1 rounded-lg border border-orange-500/20 bg-orange-500/10 px-3 py-1.5 text-[11px] font-medium text-orange-600 transition-colors hover:bg-orange-500/20 disabled:opacity-50"
+                  className="flex shrink-0 items-center gap-1 rounded-lg border border-orange-500/20 bg-orange-500/10 px-3 py-1.5 text-[11px] font-medium text-orange-300 transition-colors hover:bg-orange-500/20 disabled:opacity-50"
                 >
                   {previewLoading && previewLead?.id === lead.id ? (
                     <Loader2 size={12} className="animate-spin" />
@@ -262,34 +262,34 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
 
         {/* Email Preview */}
         {previewEmail && previewLead && (
-          <div className="mt-4 rounded-xl border border-orange-500/20 bg-white p-4">
+          <div className="mt-4 rounded-xl border border-orange-500/30 bg-apex-800 p-4">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-semibold text-orange-600">
+              <span className="text-xs font-semibold text-orange-400">
                 Preview for {previewLead.co}
               </span>
               <button
                 onClick={() => { setPreviewEmail(null); setPreviewLead(null); }}
-                className="rounded-md px-1.5 py-0.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                className="rounded-md px-1.5 py-0.5 text-xs text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
               >
                 Close
               </button>
             </div>
-            <div className="mb-1 text-[10px] font-medium uppercase tracking-widest text-slate-400">
+            <div className="mb-1 text-[10px] font-medium uppercase tracking-widest text-slate-500">
               Subject
             </div>
             <input
               value={previewEmail.subject}
               onChange={(e) => setPreviewEmail({ ...previewEmail, subject: e.target.value })}
-              className="mb-3 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-800 transition focus:border-orange-500/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-orange-500/40"
+              className="mb-3 w-full rounded-lg border border-white/10 bg-apex-850 px-3 py-1.5 text-sm text-slate-100 transition focus:border-apex-accent/60 focus:outline-none focus:ring-1 focus:ring-apex-accent/50"
             />
-            <div className="mb-1 text-[10px] font-medium uppercase tracking-widest text-slate-400">
+            <div className="mb-1 text-[10px] font-medium uppercase tracking-widest text-slate-500">
               Body
             </div>
             <textarea
               value={previewEmail.body}
               onChange={(e) => setPreviewEmail({ ...previewEmail, body: e.target.value })}
               rows={10}
-              className="mb-3 w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-700 transition focus:border-orange-500/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-orange-500/40"
+              className="mb-3 w-full resize-none rounded-lg border border-white/10 bg-apex-850 px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-200 transition focus:border-apex-accent/60 focus:outline-none focus:ring-1 focus:ring-apex-accent/50"
             />
             <div className="flex flex-wrap gap-2">
               <a
@@ -298,8 +298,8 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
                 rel="noreferrer"
                 className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold shadow-lg transition-all ${
                   previewLead.em
-                    ? 'bg-orange-500 text-white shadow-orange-500/20 hover:bg-orange-400'
-                    : 'pointer-events-none bg-slate-200 text-slate-500'
+                    ? 'bg-apex-accent text-white shadow-orange-950/50 hover:brightness-110'
+                    : 'pointer-events-none bg-white/10 text-slate-500'
                 }`}
               >
                 <Send size={13} /> Send via Gmail
@@ -307,7 +307,7 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
               <button
                 onClick={() => handlePreview(previewLead)}
                 disabled={previewLoading}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-2 text-xs font-medium text-violet-600 transition-colors hover:bg-violet-500/20 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-2 text-xs font-medium text-violet-300 transition-colors hover:bg-violet-500/20 disabled:opacity-50"
               >
                 {previewLoading ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
                 Regenerate
@@ -318,7 +318,7 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
                     await navigator.clipboard.writeText(`Subject: ${previewEmail.subject}\n\n${previewEmail.body}`);
                   } catch {}
                 }}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-apex-850 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-white/10"
               >
                 <Copy size={13} /> Copy
               </button>
@@ -328,13 +328,13 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
       </div>
 
       {/* Outreach Log */}
-      <div className="rounded-xl bg-white ring-1 ring-slate-200/70 p-5">
-        <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">
+      <div className="rounded-xl bg-apex-850 ring-1 ring-white/10 p-5">
+        <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-500">
           <Clock size={14} /> Outreach Log
         </div>
 
         {logs.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-4 py-3 text-xs text-slate-500 ring-1 ring-slate-200/70">
+          <div className="flex items-center gap-2 rounded-lg bg-apex-800 px-4 py-3 text-xs text-slate-400 ring-1 ring-white/10">
             <Mail size={14} />
             No emails sent yet. Enable autopilot and it runs daily at 8am PT.
           </div>
@@ -343,22 +343,22 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
             {logs.map((log) => (
               <div
                 key={log.id}
-                className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-2.5 ring-1 ring-slate-200/70"
+                className="flex items-center justify-between rounded-lg bg-apex-800 px-4 py-2.5 ring-1 ring-white/10"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-slate-800 truncate">
+                    <span className="text-sm font-medium text-slate-200 truncate">
                       {log.company}
                     </span>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${
                         log.status === 'sent'
-                          ? 'bg-blue-500/10 text-blue-700'
+                          ? 'bg-blue-500/10 text-blue-300 ring-blue-500/30'
                           : log.status === 'opened'
-                          ? 'bg-emerald-500/10 text-emerald-700'
+                          ? 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/30'
                           : log.status === 'replied'
-                          ? 'bg-orange-500/10 text-orange-700'
-                          : 'bg-red-500/10 text-red-700'
+                          ? 'bg-orange-500/10 text-orange-300 ring-orange-500/30'
+                          : 'bg-red-500/10 text-red-300 ring-red-500/30'
                       }`}
                     >
                       {log.status}

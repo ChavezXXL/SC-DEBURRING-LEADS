@@ -17,12 +17,12 @@ export const LeadCardStatus: React.FC<LeadCardStatusProps> = ({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400">
+        <div className="text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500">
           Update Status
         </div>
         <button
           onClick={() => setDeleteModal({ id: lead.id, co: lead.co })}
-          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold font-mono uppercase tracking-widest text-red-500/70 transition-colors hover:bg-red-500/10 hover:text-red-600"
+          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold font-mono uppercase tracking-widest text-red-400/80 transition-colors hover:bg-red-500/10 hover:text-red-300"
         >
           <Trash2 size={12} />
           Delete Lead
@@ -39,7 +39,14 @@ export const LeadCardStatus: React.FC<LeadCardStatusProps> = ({
                 lead.status === statusOption.k
                   ? statusOption.dot
                   : statusOption.bg,
-              color: lead.status === statusOption.k ? '#fff' : statusOption.tx,
+              // Light slate dot ("New") needs dark text when selected; every
+              // other dot is saturated enough to carry white.
+              color:
+                lead.status === statusOption.k
+                  ? statusOption.k === 'new'
+                    ? '#0B0D10'
+                    : '#fff'
+                  : statusOption.tx,
               borderColor: `${statusOption.dot}40`,
             }}
           >

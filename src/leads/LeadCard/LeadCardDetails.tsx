@@ -9,13 +9,13 @@ export const LeadCardDetails: React.FC<LeadCardDetailsProps> = ({ lead }) => {
   const hasPM = !!lead.pm;
 
   return (
-    <div className="mb-4 grid grid-cols-1 gap-5 rounded-xl border border-slate-200 bg-slate-50 p-5 md:grid-cols-2">
+    <div className="mb-4 grid grid-cols-1 gap-5 rounded-xl border border-white/10 bg-apex-800 p-5 md:grid-cols-2">
       {hasPM && (
         <div className="col-span-1 md:col-span-2">
-          <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-400">
+          <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-500">
             Purchasing Manager
           </div>
-          <div className="text-xs font-semibold text-violet-700">
+          <div className="text-xs font-semibold text-violet-300">
             {lead.pm} — {lead.pm_title}
           </div>
         </div>
@@ -23,43 +23,43 @@ export const LeadCardDetails: React.FC<LeadCardDetailsProps> = ({ lead }) => {
 
       {lead.role && (
         <div>
-          <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-400">
+          <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-500">
             Role / Contact
           </div>
-          <div className="text-xs text-slate-500">{lead.role}</div>
+          <div className="text-xs text-slate-300">{lead.role}</div>
         </div>
       )}
 
       {lead.ph && (
         <div>
-          <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-400">
+          <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-500">
             Phone
           </div>
-          <div className="text-xs text-slate-500">{lead.ph}</div>
+          <div className="text-xs text-slate-300">{lead.ph}</div>
         </div>
       )}
 
       {lead.em && (
         <div className="col-span-1 md:col-span-2">
-          <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-400">
+          <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-500">
             Email Address
           </div>
-          <div className="text-xs font-semibold text-violet-700">{lead.em}</div>
+          <div className="text-xs font-semibold text-violet-300">{lead.em}</div>
         </div>
       )}
 
       <div className="col-span-1 md:col-span-2">
-        <div className="mb-1 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400">
+        <div className="mb-1 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500">
           Parts and Programs
         </div>
-        <div className="text-xs leading-relaxed text-slate-500">{lead.parts}</div>
+        <div className="text-xs leading-relaxed text-slate-300">{lead.parts}</div>
       </div>
 
       <div className="col-span-1 md:col-span-2">
-        <div className="mb-1 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400">
+        <div className="mb-1 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500">
           Pitch Angle
         </div>
-        <div className="text-xs leading-relaxed text-amber-700">{lead.pitch}</div>
+        <div className="text-xs leading-relaxed text-amber-300">{lead.pitch}</div>
       </div>
     </div>
   );

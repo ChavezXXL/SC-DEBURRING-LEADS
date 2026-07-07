@@ -90,19 +90,19 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
   };
 
   return (
-    <div className="mt-3 rounded-xl border border-orange-500/20 bg-white p-4">
+    <div className="mt-3 rounded-xl border border-orange-500/30 bg-apex-850 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-bold text-orange-600">
+        <div className="flex items-center gap-2 text-sm font-bold text-orange-400">
           <Mail size={15} /> Quick Email
         </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
+        <button onClick={onClose} className="text-slate-400 hover:text-slate-200">
           <X size={15} />
         </button>
       </div>
 
       {/* Template Picker */}
       <div className="mb-3">
-        <div className="mb-1.5 text-[10px] font-mono uppercase tracking-widest text-slate-400">
+        <div className="mb-1.5 text-[10px] font-mono uppercase tracking-widest text-slate-500">
           Template
         </div>
         <div className="flex flex-wrap gap-2">
@@ -112,8 +112,8 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
               onClick={() => { setSelectedId(s.id); setShowPicker(false); }}
               className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium transition-colors ${
                 selectedId === s.id
-                  ? 'border-orange-500/30 bg-orange-500/10 text-orange-600'
-                  : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                  ? 'border-orange-500/30 bg-orange-500/10 text-orange-300'
+                  : 'border-white/10 bg-apex-800 text-slate-400 hover:border-white/20 hover:text-slate-200'
               }`}
             >
               {s.title}
@@ -122,7 +122,7 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
           <button
             onClick={handleAiDraft}
             disabled={aiLoading}
-            className="flex items-center gap-1 rounded-lg border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[11px] font-medium text-violet-600 transition-colors hover:bg-violet-500/20 disabled:opacity-50"
+            className="flex items-center gap-1 rounded-lg border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[11px] font-medium text-violet-300 transition-colors hover:bg-violet-500/20 disabled:opacity-50"
           >
             {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
             AI Draft
@@ -132,15 +132,15 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
 
       {/* To Field */}
       <div className="mb-2">
-        <div className="mb-1 text-[10px] font-mono uppercase tracking-widest text-slate-400">To</div>
+        <div className="mb-1 text-[10px] font-mono uppercase tracking-widest text-slate-500">To</div>
         <input
           value={toEmail}
           onChange={(e) => setToEmail(e.target.value)}
           placeholder="email@company.com"
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+          className="w-full rounded-lg border border-white/10 bg-apex-800 px-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:border-apex-accent/60 focus:outline-none focus:ring-1 focus:ring-apex-accent/60"
         />
         {!toEmail && (
-          <div className="mt-1 text-[10px] text-amber-600">
+          <div className="mt-1 text-[10px] text-amber-400">
             No email on file — use Research Contact to find one
           </div>
         )}
@@ -148,26 +148,26 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
 
       {/* Subject */}
       <div className="mb-2">
-        <div className="mb-1 text-[10px] font-mono uppercase tracking-widest text-slate-400">
+        <div className="mb-1 text-[10px] font-mono uppercase tracking-widest text-slate-500">
           Subject
         </div>
         <input
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+          className="w-full rounded-lg border border-white/10 bg-apex-800 px-3 py-1.5 text-xs text-slate-100 focus:border-apex-accent/60 focus:outline-none focus:ring-1 focus:ring-apex-accent/60"
         />
       </div>
 
       {/* Body */}
       <div className="mb-3">
-        <div className="mb-1 text-[10px] font-mono uppercase tracking-widest text-slate-400">
+        <div className="mb-1 text-[10px] font-mono uppercase tracking-widest text-slate-500">
           Body
         </div>
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={6}
-          className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-700 focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+          className="w-full resize-none rounded-lg border border-white/10 bg-apex-800 px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-200 focus:border-apex-accent/60 focus:outline-none focus:ring-1 focus:ring-apex-accent/60"
         />
       </div>
 
@@ -180,8 +180,8 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
           onClick={() => onEmailSent?.(lead.id)}
           className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold shadow-lg transition-all ${
             toEmail.trim()
-              ? 'bg-orange-500 text-white shadow-orange-500/20 hover:bg-orange-400'
-              : 'pointer-events-none bg-slate-200 text-slate-500'
+              ? 'bg-apex-accent text-white shadow-orange-950/50 hover:brightness-110'
+              : 'pointer-events-none bg-white/10 text-slate-500'
           }`}
         >
           <Send size={13} /> Open in Gmail — Ready to Send
@@ -191,8 +191,8 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
           onClick={copyAll}
           className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
             copied
-              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700'
-              : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
+              : 'border-white/10 bg-apex-800 text-slate-300 hover:bg-white/10'
           }`}
         >
           {copied ? <Check size={13} /> : <Copy size={13} />}

@@ -124,10 +124,10 @@ export function LeadsTab({
     <div className="mx-auto max-w-5xl">
       <div className="mb-8 flex items-end justify-between">
         <div>
-          <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-900">
+          <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-100">
             {hot5 ? "Today's Pipeline" : 'Leads'}
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-400">
             {filtered.length} of {visibleLeads.length} leads · {REGIONS.length - 1} regions ·{' '}
             {namedPMs} named purchasing managers
           </p>
@@ -136,7 +136,7 @@ export function LeadsTab({
         <div className="flex gap-3">
           <button
             onClick={onAddLeadClick}
-            className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 active:scale-[0.99]"
+            className="flex items-center gap-2 rounded-xl bg-apex-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-950/50 transition hover:brightness-110 active:scale-[0.99]"
           >
             + Add Lead
           </button>
@@ -144,13 +144,13 @@ export function LeadsTab({
       </div>
 
       {hot5 && filtered.length > 0 && (
-        <div className="mb-6 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 ring-1 ring-orange-200/60 p-4">
+        <div className="mb-6 rounded-2xl bg-orange-500/10 ring-1 ring-orange-500/30 p-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <div className="font-semibold text-orange-700 text-sm flex items-center gap-2">
+              <div className="font-semibold text-orange-300 text-sm flex items-center gap-2">
                 🔥 Today's {filtered.length} — your move
               </div>
-              <div className="mt-1 text-xs text-slate-600 leading-relaxed">
+              <div className="mt-1 text-xs text-slate-300 leading-relaxed">
                 Tier-1 leads with named decision-makers and verified emails. Send{' '}
                 {filtered.length} emails before lunch — that's your daily goal. After each send,
                 expand the card and mark status &quot;emailed&quot; so it drops off the list.
@@ -158,7 +158,7 @@ export function LeadsTab({
             </div>
             <button
               onClick={() => setHot5(false)}
-              className="shrink-0 rounded-xl bg-white ring-1 ring-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+              className="shrink-0 rounded-xl bg-apex-800 ring-1 ring-white/10 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/10 hover:text-slate-100"
               title="Exit HOT 5 mode and view all leads"
             >
               View all leads
@@ -167,14 +167,14 @@ export function LeadsTab({
         </div>
       )}
 
-      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl bg-white ring-1 ring-slate-200/70 p-3">
+      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl bg-apex-850 ring-1 ring-white/10 p-3">
         <div className="relative min-w-[200px] flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
           <input
             value={qInput}
             onChange={(e) => setQInput(e.target.value)}
             placeholder="Search company, contact, city, parts..."
-            className="w-full rounded-xl bg-slate-50 py-2 pl-9 pr-8 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-slate-200 transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            className="w-full rounded-xl bg-apex-800 py-2 pl-9 pr-8 text-sm text-slate-100 placeholder-slate-500 ring-1 ring-white/10 transition-all focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
           />
           {qInput && (
             <button
@@ -182,7 +182,7 @@ export function LeadsTab({
                 setQInput('');
                 setQ('');
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
               aria-label="Clear search"
             >
               <X size={16} />
@@ -193,7 +193,7 @@ export function LeadsTab({
         <select
           value={regF}
           onChange={(e) => setRegF(e.target.value)}
-          className="cursor-pointer rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600 ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+          className="cursor-pointer rounded-xl bg-apex-800 px-3 py-2 text-xs text-slate-300 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
         >
           {REGIONS.map((r) => (
             <option key={r}>{r}</option>
@@ -203,7 +203,7 @@ export function LeadsTab({
         <select
           value={tierF}
           onChange={(e) => setTierF(e.target.value)}
-          className="cursor-pointer rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600 ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+          className="cursor-pointer rounded-xl bg-apex-800 px-3 py-2 text-xs text-slate-300 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
         >
           <option value="all">All Tiers</option>
           <option value="1">Tier 1 — Call Now</option>
@@ -213,7 +213,7 @@ export function LeadsTab({
         <select
           value={stF}
           onChange={(e) => setStF(e.target.value)}
-          className="cursor-pointer rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600 ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+          className="cursor-pointer rounded-xl bg-apex-800 px-3 py-2 text-xs text-slate-300 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
         >
           <option value="all">All Statuses</option>
           <option value="active">Active Pipeline</option>
@@ -231,8 +231,8 @@ export function LeadsTab({
           }}
           className={`whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
             hot5
-              ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/30'
-              : 'bg-orange-50 text-orange-700 ring-1 ring-orange-200 hover:bg-orange-100'
+              ? 'bg-apex-accent text-white shadow-sm shadow-orange-950/50'
+              : 'bg-orange-500/10 text-orange-300 ring-1 ring-orange-500/30 hover:bg-orange-500/20'
           }`}
           title="Show top 5 actionable leads to contact today (new + has email + has named PM)"
         >
@@ -246,15 +246,15 @@ export function LeadsTab({
           }}
           className={`whitespace-nowrap rounded-xl px-3 py-2 text-xs font-medium transition-all ${
             dueFollowUp
-              ? 'bg-violet-100 text-violet-700 ring-1 ring-violet-200'
-              : 'bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100'
+              ? 'bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/40'
+              : 'bg-apex-800 text-slate-300 ring-1 ring-white/10 hover:bg-white/10'
           }`}
           title="Emailed 4+ days ago, fewer than 3 touches, no reply — time to follow up"
         >
           Due follow-up
           <span
             className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-              dueFollowUp ? 'bg-violet-200 text-violet-800' : 'bg-slate-200 text-slate-600'
+              dueFollowUp ? 'bg-violet-500/25 text-violet-200' : 'bg-white/10 text-slate-300'
             }`}
           >
             {dueCount}
@@ -268,15 +268,15 @@ export function LeadsTab({
           }}
           className={`whitespace-nowrap rounded-xl px-3 py-2 text-xs font-medium transition-all ${
             hiringOnly
-              ? 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
-              : 'bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100'
+              ? 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/40'
+              : 'bg-apex-800 text-slate-300 ring-1 ring-white/10 hover:bg-white/10'
           }`}
           title="Notes show a hiring signal — deburr/finisher openings mean they're overloaded right now"
         >
           Hiring
           <span
             className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-              hiringOnly ? 'bg-amber-200 text-amber-800' : 'bg-slate-200 text-slate-600'
+              hiringOnly ? 'bg-amber-500/25 text-amber-200' : 'bg-white/10 text-slate-300'
             }`}
           >
             {hiringCount}
@@ -287,8 +287,8 @@ export function LeadsTab({
           onClick={() => setPmOnly(!pmOnly)}
           className={`whitespace-nowrap rounded-xl px-3 py-2 text-xs font-medium transition-all ${
             pmOnly
-              ? 'bg-amber-100 text-amber-700 ring-1 ring-amber-200'
-              : 'bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100'
+              ? 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/40'
+              : 'bg-apex-800 text-slate-300 ring-1 ring-white/10 hover:bg-white/10'
           }`}
         >
           {pmOnly ? 'Named PM Only' : 'Named PMs Only'}
@@ -298,8 +298,8 @@ export function LeadsTab({
           onClick={() => setRemindersOnly(!remindersOnly)}
           className={`whitespace-nowrap rounded-xl px-3 py-2 text-xs font-medium transition-all ${
             remindersOnly
-              ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200'
-              : 'bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100'
+              ? 'bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/40'
+              : 'bg-apex-800 text-slate-300 ring-1 ring-white/10 hover:bg-white/10'
           }`}
         >
           {remindersOnly ? 'Reminders Only' : 'Reminders'}
@@ -309,35 +309,35 @@ export function LeadsTab({
       {filtered.length === 0 ? (
         visibleLeads.length === 0 ? (
           // Brand-new account — no leads at all yet. Welcoming onboarding state.
-          <div className="rounded-2xl bg-white ring-1 ring-slate-200/70 py-16 px-8 text-center">
+          <div className="rounded-2xl bg-apex-850 ring-1 ring-white/10 py-16 px-8 text-center">
             <div className="text-2xl">👋</div>
-            <h2 className="mt-4 text-lg font-semibold text-slate-900">
+            <h2 className="mt-4 text-lg font-semibold text-slate-100">
               Welcome to your CRM
             </h2>
-            <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-              Your account is fresh — no leads yet. Click <strong>+ Add Lead</strong>{' '}
+            <p className="mt-2 text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
+              Your account is fresh — no leads yet. Click <strong className="text-slate-200">+ Add Lead</strong>{' '}
               above to enter your first one, or use the AI assistant in the bottom right
               to find leads in your area.
             </p>
             <div className="mt-6 flex items-center justify-center gap-3">
               <button
                 onClick={onAddLeadClick}
-                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 active:scale-[0.99]"
+                className="inline-flex items-center gap-2 rounded-xl bg-apex-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-950/50 transition hover:brightness-110 active:scale-[0.99]"
               >
                 + Add your first lead
               </button>
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl bg-white ring-1 ring-slate-200/70 py-16 px-8 text-center">
+          <div className="rounded-2xl bg-apex-850 ring-1 ring-white/10 py-16 px-8 text-center">
             <div className="text-2xl">🔍</div>
-            <p className="mt-3 text-sm text-slate-500">No leads match your filters.</p>
+            <p className="mt-3 text-sm text-slate-400">No leads match your filters.</p>
             <button
               onClick={() => {
                 resetAll();
                 setHot5(false);
               }}
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-xs font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-200"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-apex-800 px-4 py-2 text-xs font-medium text-slate-300 ring-1 ring-white/10 transition hover:bg-white/10 hover:text-slate-100"
             >
               Clear all filters
             </button>

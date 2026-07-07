@@ -77,18 +77,18 @@ export function AdminPanel() {
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <div className="mb-1 flex items-center gap-2">
-            <Shield size={20} className="text-blue-600" />
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            <Shield size={20} className="text-apex-accent" />
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
               Admin
             </h1>
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-400">
             Every tenant on the platform — create accounts, change plans, disable, delete.
           </p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 active:scale-[0.99]"
+          className="flex items-center gap-2 rounded-xl bg-apex-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-950/50 transition hover:brightness-110 active:scale-[0.99]"
         >
           <Plus size={16} />
           New client account
@@ -102,53 +102,53 @@ export function AdminPanel() {
           label="Total tenants"
           value={stats.total}
           sub={`${stats.active} active`}
-          accent="text-blue-600"
+          accent="text-blue-400"
         />
         <StatCard
           icon={<TrendingUp size={14} />}
           label="Paid plans"
           value={stats.paid}
           sub={`${stats.trial} on trial`}
-          accent="text-emerald-600"
+          accent="text-emerald-400"
         />
         <StatCard
           icon={<Database size={14} />}
           label="Leads across system"
           value={stats.totalLeads}
-          accent="text-slate-700"
+          accent="text-slate-200"
         />
         <StatCard
           icon={<Plus size={14} />}
           label="New this month"
           value={stats.newThisMonth}
-          accent="text-amber-600"
+          accent="text-amber-400"
         />
       </div>
 
       {/* Search */}
       <div className="mb-4 relative">
         <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
           size={16}
         />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search by company, owner email, or slug…"
-          className="w-full rounded-2xl bg-white px-9 py-2.5 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+          className="w-full rounded-2xl bg-apex-850 px-9 py-2.5 text-sm text-slate-100 placeholder-slate-500 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
         />
       </div>
 
       {/* Error */}
       {error && (
-        <div className="mb-4 flex items-start gap-2 rounded-2xl bg-red-50 ring-1 ring-red-200 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 flex items-start gap-2 rounded-2xl bg-red-500/10 ring-1 ring-red-500/30 px-4 py-3 text-sm text-red-300">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
           <div>
             <div className="font-medium">Couldn't load tenants</div>
             <div className="mt-0.5 text-xs opacity-80">{error}</div>
             <div className="mt-2 text-xs">
               Common cause: the Cloudflare Pages env var
-              <code className="px-1 mx-1 rounded bg-red-100 text-red-900">
+              <code className="px-1 mx-1 rounded bg-red-500/20 text-red-200">
                 FIREBASE_SERVICE_ACCOUNT
               </code>
               isn't set. See the deploy README.
@@ -158,7 +158,7 @@ export function AdminPanel() {
       )}
 
       {/* Tenant table */}
-      <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200">
+      <div className="overflow-hidden rounded-2xl bg-apex-850 ring-1 ring-white/10">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="animate-spin text-slate-400" size={20} />
@@ -171,7 +171,7 @@ export function AdminPanel() {
           <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-[10px] uppercase tracking-widest text-slate-400">
+              <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500">
                 <th className="px-4 py-3 text-left font-medium">Business</th>
                 <th className="px-4 py-3 text-left font-medium">Owner</th>
                 <th className="px-4 py-3 text-left font-medium">Plan</th>
@@ -186,35 +186,35 @@ export function AdminPanel() {
                 <tr
                   key={t.id}
                   onClick={() => setSelected(t)}
-                  className="cursor-pointer border-b border-slate-50 last:border-b-0 hover:bg-slate-50 transition"
+                  className="cursor-pointer border-b border-white/5 last:border-b-0 hover:bg-white/5 transition"
                 >
                   <td className="px-4 py-3">
-                    <div className="font-medium text-slate-900">{t.name}</div>
-                    <div className="text-[10px] text-slate-400 font-mono">{t.id}</div>
+                    <div className="font-medium text-slate-100">{t.name}</div>
+                    <div className="text-[10px] text-slate-500 font-mono">{t.id}</div>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{t.ownerEmail}</td>
+                  <td className="px-4 py-3 text-slate-300">{t.ownerEmail}</td>
                   <td className="px-4 py-3">
                     <PlanBadge plan={t.plan} />
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-slate-700">
+                  <td className="px-4 py-3 text-right font-mono text-slate-300">
                     {t.leadCount}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-slate-700">
+                  <td className="px-4 py-3 text-right font-mono text-slate-300">
                     {t.userCount}
                   </td>
                   <td className="px-4 py-3">
                     {t.disabled ? (
-                      <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700">
+                      <span className="inline-flex items-center rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-300 ring-1 ring-red-500/30">
                         Disabled
                       </span>
                     ) : (
-                      <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                      <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-300 ring-1 ring-emerald-500/30">
                         Active
                       </span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <ChevronRight size={14} className="ml-auto text-slate-400" />
+                    <ChevronRight size={14} className="ml-auto text-slate-500" />
                   </td>
                 </tr>
               ))}
@@ -257,13 +257,13 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <div className="rounded-2xl bg-white ring-1 ring-slate-200 px-4 py-3">
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-slate-400 font-medium">
+    <div className="rounded-2xl bg-apex-850 ring-1 ring-white/10 px-4 py-3">
+      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-slate-500 font-medium">
         <span className={accent}>{icon}</span>
         {label}
       </div>
       <div className={`mt-1 text-2xl font-semibold ${accent}`}>{value}</div>
-      {sub && <div className="mt-0.5 text-[10px] text-slate-400">{sub}</div>}
+      {sub && <div className="mt-0.5 text-[10px] text-slate-500">{sub}</div>}
     </div>
   );
 }
@@ -271,20 +271,20 @@ function StatCard({
 function PlanBadge({ plan }: { plan?: string }) {
   if (plan === 'paid') {
     return (
-      <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+      <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-300 ring-1 ring-emerald-500/30">
         Paid
       </span>
     );
   }
   if (plan === 'internal') {
     return (
-      <span className="inline-flex items-center rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-medium text-slate-700">
+      <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-slate-300 ring-1 ring-white/15">
         Internal
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+    <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-300 ring-1 ring-amber-500/30">
       Trial
     </span>
   );

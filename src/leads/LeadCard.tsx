@@ -59,14 +59,14 @@ const LeadCardComponent: React.FC<LeadCardProps> = ({
   return (
     <div
       id={`lead-${lead.id}`}
-      className={`overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200/70 transition-all duration-200 hover:ring-slate-300 hover:shadow-md hover:shadow-slate-900/5 ${
+      className={`overflow-hidden rounded-2xl bg-apex-850 ring-1 ring-white/10 transition-all duration-200 hover:ring-white/20 hover:shadow-md hover:shadow-black/40 ${
         isDead ? 'opacity-50' : ''
       }`}
     >
       <LeadCardHeader lead={lead} isOpen={isOpen} setOpenId={setOpenId} />
 
       {isOpen && (
-        <div className="border-t border-slate-200/70 bg-slate-50/50 px-4 pb-4 pt-2">
+        <div className="border-t border-white/10 bg-apex-900/40 px-4 pb-4 pt-2">
           <LeadCardActions
             lead={lead}
             cp={cp}

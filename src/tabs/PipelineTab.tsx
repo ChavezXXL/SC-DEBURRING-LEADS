@@ -33,10 +33,10 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col">
       <div className="mb-6 shrink-0">
-        <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-900">
+        <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-100">
           Pipeline
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-400">
           Where each deal stands. Click a card to open it — use its stage menu to move it.
         </p>
       </div>
@@ -49,10 +49,10 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
           return (
             <div
               key={st.k}
-              className="flex w-72 shrink-0 flex-col rounded-xl bg-slate-100/70 ring-1 ring-slate-200/70"
+              className="flex w-72 shrink-0 flex-col rounded-xl bg-apex-900 ring-1 ring-white/10"
             >
               <div
-                className="flex items-center justify-between border-b border-slate-200 p-3"
+                className="flex items-center justify-between border-b border-white/10 p-3"
                 style={{ borderTop: `3px solid ${st.dot}` }}
               >
                 <div className="flex items-center gap-2">
@@ -60,11 +60,11 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
                     className="h-2 w-2 rounded-full"
                     style={{ background: st.dot }}
                   />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-700">
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: st.tx }}>
                     {st.label}
                   </span>
                 </div>
-                <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-medium tabular-nums text-slate-500 ring-1 ring-slate-200/70">
+                <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-medium tabular-nums text-slate-300 ring-1 ring-white/10">
                   {columnLeads.length}
                 </span>
               </div>
@@ -79,9 +79,9 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
                       <div
                         key={lead.id}
                         onClick={() => onLeadClick(lead.id)}
-                        className="cursor-pointer rounded-xl bg-white p-3 ring-1 ring-slate-200/70 transition-all hover:shadow-md hover:shadow-slate-900/5 hover:ring-slate-300"
+                        className="cursor-pointer rounded-xl bg-apex-850 p-3 ring-1 ring-white/10 transition-all hover:shadow-md hover:shadow-black/40 hover:ring-white/20"
                       >
-                        <div className="mb-2 text-sm font-semibold text-slate-900 line-clamp-1">
+                        <div className="mb-2 text-sm font-semibold text-slate-100 line-clamp-1">
                           {lead.co}
                         </div>
 
@@ -98,20 +98,20 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
 
                         <div className="flex items-center justify-between mt-3">
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[9px] font-semibold ${
+                            className={`rounded-full px-2 py-0.5 text-[9px] font-semibold ring-1 ${
                               lead.t === 1
-                                ? 'bg-orange-100 text-orange-700'
-                                : 'bg-blue-100 text-blue-700'
+                                ? 'bg-orange-500/10 text-orange-300 ring-orange-500/30'
+                                : 'bg-blue-500/10 text-blue-300 ring-blue-500/30'
                             }`}
                           >
                             {lead.t === 1 ? 'T1' : 'T2'}
                           </span>
 
                           {lead.reminderDate && (
-                            <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold tabular-nums ${
-                              isReminderPast ? 'bg-red-100 text-red-700' :
-                              isReminderToday ? 'bg-orange-100 text-orange-700' :
-                              'bg-blue-100 text-blue-700'
+                            <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold tabular-nums ring-1 ${
+                              isReminderPast ? 'bg-red-500/10 text-red-300 ring-red-500/30' :
+                              isReminderToday ? 'bg-orange-500/10 text-orange-300 ring-orange-500/30' :
+                              'bg-blue-500/10 text-blue-300 ring-blue-500/30'
                             }`}>
                               <Calendar size={10} />
                               {new Date(lead.reminderDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
@@ -125,7 +125,7 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
                             value={lead.status}
                             onChange={(e) => void setStatus(lead.id, e.target.value as LeadStatus)}
                             title="Move this lead to another stage"
-                            className="w-full cursor-pointer rounded-lg bg-slate-50 px-2 py-1.5 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                            className="w-full cursor-pointer rounded-lg bg-apex-800 px-2 py-1.5 text-[11px] font-medium text-slate-300 ring-1 ring-white/10 transition-colors hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
                           >
                             {STATUS.map((s) => (
                               <option key={s.k} value={s.k}>
@@ -138,7 +138,7 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
                     );
                   })}
                   {columnLeads.length === 0 && (
-                    <div className="py-8 text-center text-xs italic text-slate-400">
+                    <div className="py-8 text-center text-xs italic text-slate-500">
                       No leads
                     </div>
                   )}

@@ -15,7 +15,7 @@ export function renderMarkdown(text: string): React.ReactNode {
   function flushList() {
     if (listItems.length > 0) {
       elements.push(
-        <ul key={`list-${listKey++}`} className="ml-4 list-disc space-y-0.5 text-slate-500">
+        <ul key={`list-${listKey++}`} className="ml-4 list-disc space-y-0.5 text-slate-300">
           {listItems}
         </ul>
       );
@@ -62,19 +62,19 @@ export function renderMarkdown(text: string): React.ReactNode {
       if (first.type === 'link') {
         const m = first.match;
         parts.push(
-          <a key={key++} href={m[2]} target="_blank" rel="noreferrer" className="text-orange-600 underline hover:text-orange-500">
+          <a key={key++} href={m[2]} target="_blank" rel="noreferrer" className="text-orange-400 underline hover:text-orange-300">
             {m[1]}
           </a>
         );
       } else if (first.type === 'bold') {
         const m = first.match;
-        parts.push(<strong key={key++} className="font-semibold text-slate-800">{m[1] || m[2]}</strong>);
+        parts.push(<strong key={key++} className="font-semibold text-slate-100">{m[1] || m[2]}</strong>);
       } else if (first.type === 'italic') {
         const m = first.match;
-        parts.push(<em key={key++} className="italic text-slate-500">{m[1] || m[2]}</em>);
+        parts.push(<em key={key++} className="italic text-slate-400">{m[1] || m[2]}</em>);
       } else if (first.type === 'code') {
         const m = first.match;
-        parts.push(<code key={key++} className="rounded bg-slate-100 px-1 py-0.5 text-orange-600">{m[1]}</code>);
+        parts.push(<code key={key++} className="rounded bg-apex-800 px-1 py-0.5 text-orange-300 ring-1 ring-white/10">{m[1]}</code>);
       }
 
       remaining = remaining.substring(idx + first.match[0].length);
@@ -90,7 +90,7 @@ export function renderMarkdown(text: string): React.ReactNode {
     if (line.startsWith('### ')) {
       flushList();
       elements.push(
-        <h4 key={i} className="mt-3 mb-1 text-xs font-bold text-orange-600 uppercase tracking-wide">
+        <h4 key={i} className="mt-3 mb-1 text-xs font-bold text-orange-400 uppercase tracking-wide">
           {formatInline(line.slice(4))}
         </h4>
       );
@@ -99,7 +99,7 @@ export function renderMarkdown(text: string): React.ReactNode {
     if (line.startsWith('## ')) {
       flushList();
       elements.push(
-        <h3 key={i} className="mt-3 mb-1 text-sm font-bold text-orange-500">
+        <h3 key={i} className="mt-3 mb-1 text-sm font-bold text-orange-400">
           {formatInline(line.slice(3))}
         </h3>
       );
@@ -108,7 +108,7 @@ export function renderMarkdown(text: string): React.ReactNode {
     if (line.startsWith('# ')) {
       flushList();
       elements.push(
-        <h2 key={i} className="mt-3 mb-1 text-sm font-bold text-orange-500">
+        <h2 key={i} className="mt-3 mb-1 text-sm font-bold text-orange-400">
           {formatInline(line.slice(2))}
         </h2>
       );
@@ -132,8 +132,8 @@ export function renderMarkdown(text: string): React.ReactNode {
     if (stampMatch) {
       flushList();
       elements.push(
-        <div key={i} className="mt-3 mb-1 flex items-center gap-2 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-mono text-slate-400">
-          <span className="text-orange-500/70">{stampMatch[1]}</span>
+        <div key={i} className="mt-3 mb-1 flex items-center gap-2 rounded-md bg-white/5 ring-1 ring-white/10 px-2 py-1 text-[10px] font-mono text-slate-400">
+          <span className="text-orange-400/80">{stampMatch[1]}</span>
           <span>·</span>
           <span>{stampMatch[2]}</span>
         </div>
@@ -150,7 +150,7 @@ export function renderMarkdown(text: string): React.ReactNode {
     // Regular paragraph
     flushList();
     elements.push(
-      <p key={i} className="text-slate-500 leading-relaxed">
+      <p key={i} className="text-slate-300 leading-relaxed">
         {formatInline(line)}
       </p>
     );

@@ -22,28 +22,28 @@ export const DeleteModal: React.FC<DeleteModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={() => setDeleteModal(null)}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/20"
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-apex-850 p-6 shadow-2xl shadow-black/60"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-2 text-xl font-bold text-slate-900">Delete Lead</h2>
-        <p className="mb-6 text-sm text-slate-500">
-          Are you sure you want to delete the lead for <span className="font-bold text-slate-800">{deleteModal.co}</span>? This action cannot be undone.
+        <h2 className="mb-2 text-xl font-bold text-slate-100">Delete Lead</h2>
+        <p className="mb-6 text-sm text-slate-400">
+          Are you sure you want to delete the lead for <span className="font-bold text-slate-200">{deleteModal.co}</span>? This action cannot be undone.
         </p>
-        
+
         <div className="flex justify-end gap-3">
           <button
             onClick={() => setDeleteModal(null)}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-100"
           >
             Cancel
           </button>
           <button
             onClick={() => handleDeleteLead(deleteModal.id)}
-            className="rounded-lg bg-red-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-red-600 shadow-lg shadow-red-500/20"
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-red-500 shadow-lg shadow-red-950/50"
           >
             Delete Lead
           </button>

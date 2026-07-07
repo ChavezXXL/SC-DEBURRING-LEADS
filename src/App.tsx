@@ -175,23 +175,23 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500">
+      <div className="flex min-h-screen items-center justify-center bg-apex-950 text-slate-400">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin text-blue-500" size={32} />
-          <div className="text-sm text-slate-500">Loading your CRM…</div>
+          <Loader2 className="animate-spin text-apex-accent" size={32} />
+          <div className="text-sm text-slate-400">Loading your CRM…</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-700 selection:bg-blue-500/20">
+    <div className="flex min-h-screen bg-apex-950 font-sans text-slate-300 selection:bg-apex-accent/30">
       {/* Mobile header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-xl ring-1 ring-slate-200/70 z-40 flex items-center justify-between px-4">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-apex-900/90 backdrop-blur-xl ring-1 ring-white/10 z-40 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <FancyLogo className="h-8 w-8" />
           <div className="min-w-0">
-            <div className="text-sm font-semibold tracking-tight text-slate-900">
+            <div className="text-sm font-semibold tracking-tight text-slate-100">
               Apex Growth
             </div>
             <div className="truncate text-[10px] text-slate-400">
@@ -201,7 +201,7 @@ export default function App() {
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition"
+          className="rounded-lg p-1.5 text-slate-400 hover:bg-white/5 hover:text-slate-100 transition"
         >
           {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -210,7 +210,7 @@ export default function App() {
       {/* Mobile scrim — tap outside the drawer to close it. */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-20 bg-slate-900/30 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm md:hidden"
           onClick={() => setMobileMenuOpen(false)}
           aria-hidden
         />
@@ -235,7 +235,7 @@ export default function App() {
 
       <main className="max-h-screen flex-1 overflow-y-auto p-4 pt-20 md:p-8 md:pt-8 w-full">
         {dbError && (
-          <div className="mx-auto mb-6 flex max-w-5xl items-start gap-3 rounded-2xl bg-red-50 ring-1 ring-red-200/60 p-4 text-red-700">
+          <div className="mx-auto mb-6 flex max-w-5xl items-start gap-3 rounded-2xl bg-red-500/10 ring-1 ring-red-500/30 p-4 text-red-300">
             <X size={20} className="mt-0.5 shrink-0" />
             <div>
               <div className="mb-1 text-sm font-semibold">Database Connection Error</div>
@@ -245,7 +245,7 @@ export default function App() {
         )}
 
         {crud.appError && (
-          <div className="mx-auto mb-6 flex max-w-5xl items-start justify-between gap-3 rounded-2xl bg-red-50 ring-1 ring-red-200/60 p-4 text-red-700 shadow-sm">
+          <div className="mx-auto mb-6 flex max-w-5xl items-start justify-between gap-3 rounded-2xl bg-red-500/10 ring-1 ring-red-500/30 p-4 text-red-300 shadow-sm shadow-black/40">
             <div className="flex gap-3">
               <X size={20} className="mt-0.5 shrink-0" />
               <div>
@@ -255,7 +255,7 @@ export default function App() {
             </div>
             <button
               onClick={() => crud.setAppError(null)}
-              className="shrink-0 p-1 hover:bg-red-100 rounded-md transition-colors"
+              className="shrink-0 p-1 hover:bg-red-500/20 rounded-md transition-colors"
             >
               <X size={16} />
             </button>

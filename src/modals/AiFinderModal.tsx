@@ -27,16 +27,16 @@ export const AiFinderModal: React.FC<AiFinderModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={() => setShowAiFinder(false)}
     >
       <div
-        className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/20 md:p-8"
+        className="w-full max-w-2xl rounded-2xl border border-white/10 bg-apex-850 p-6 shadow-2xl shadow-black/60 md:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-6 flex items-start justify-between">
           <div>
-            <div className="mb-1 flex items-center gap-2 text-lg font-bold text-orange-500">
+            <div className="mb-1 flex items-center gap-2 text-lg font-bold text-orange-400">
               <Sparkles size={20} /> AI Prospector
             </div>
             <div className="text-xs font-mono text-slate-400">
@@ -46,7 +46,7 @@ export const AiFinderModal: React.FC<AiFinderModalProps> = ({
 
           <button
             onClick={() => setShowAiFinder(false)}
-            className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
             aria-label="Close"
           >
             <X size={22} />
@@ -54,21 +54,21 @@ export const AiFinderModal: React.FC<AiFinderModalProps> = ({
         </div>
 
         <div className="mb-6">
-          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">
             Search Query
           </label>
           <textarea
             value={aiFinderQuery}
             onChange={(e) => setAiFinderQuery(e.target.value)}
             placeholder="e.g. Find 5 aerospace machine shops in San Diego that might need deburring services"
-            className="min-h-[100px] w-full rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-800 transition-all focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+            className="min-h-[100px] w-full rounded-xl border border-white/10 bg-apex-800 p-4 text-sm text-slate-100 placeholder-slate-500 transition-all focus:border-apex-accent/60 focus:outline-none focus:ring-1 focus:ring-apex-accent/60"
           />
         </div>
 
         <div className="flex justify-end gap-3">
           <button
             onClick={() => setShowAiFinder(false)}
-            className="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-500 transition-colors hover:text-slate-800"
+            className="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-400 transition-colors hover:text-slate-100"
           >
             Cancel
           </button>
@@ -76,7 +76,7 @@ export const AiFinderModal: React.FC<AiFinderModalProps> = ({
           <button
             onClick={handleFindLeads}
             disabled={!aiFinderQuery.trim() || aiFinderLoading}
-            className="flex items-center gap-2 rounded-xl bg-orange-500 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-apex-accent px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-950/50 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
           >
             {aiFinderLoading ? (
               <>

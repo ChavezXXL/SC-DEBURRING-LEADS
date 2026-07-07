@@ -91,16 +91,16 @@ export const AiModal: React.FC<AiModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={() => setAiModal(null)}
     >
       <div
-        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/20 md:p-8"
+        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-apex-850 p-6 shadow-2xl shadow-black/60 md:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-6 flex items-start justify-between">
           <div>
-            <div className="mb-1 flex items-center gap-2 text-lg font-bold text-orange-500">
+            <div className="mb-1 flex items-center gap-2 text-lg font-bold text-orange-400">
               {aiModal.mode === 'pitch' ? (
                 <>
                   <Sparkles size={20} /> AI Pitch Generator
@@ -116,7 +116,7 @@ export const AiModal: React.FC<AiModalProps> = ({
             </div>
           </div>
 
-          <button onClick={() => setAiModal(null)} className="text-slate-400 transition-colors hover:text-slate-700">
+          <button onClick={() => setAiModal(null)} className="text-slate-400 transition-colors hover:text-slate-200">
             <X size={24} />
           </button>
         </div>
@@ -131,39 +131,39 @@ export const AiModal: React.FC<AiModalProps> = ({
         ) : (
           <>
             {/* Rendered markdown instead of raw pre */}
-            <div className="mb-5 rounded-xl border border-slate-200 bg-white p-5 text-xs leading-relaxed text-slate-700">
+            <div className="mb-5 rounded-xl border border-white/10 bg-apex-800 p-5 text-xs leading-relaxed text-slate-300">
               {renderMarkdown(aiText)}
             </div>
 
             {/* Extracted contact info preview */}
             {parsedContact && updateLeadFields && (
-              <div className="mb-4 rounded-xl border border-violet-500/20 bg-violet-500/5 p-4">
-                <div className="mb-2 flex items-center gap-2 text-xs font-bold text-violet-700">
+              <div className="mb-4 rounded-xl border border-violet-500/30 bg-violet-500/10 p-4">
+                <div className="mb-2 flex items-center gap-2 text-xs font-bold text-violet-300">
                   <UserPlus size={14} /> Found Contact Info — Save to Lead?
                 </div>
                 <div className="mb-3 space-y-1 text-xs">
                   {parsedContact.pm && (
                     <div className="flex gap-2">
                       <span className="text-slate-400 w-16">Name:</span>
-                      <span className="text-slate-800 font-medium">{parsedContact.pm}</span>
+                      <span className="text-slate-200 font-medium">{parsedContact.pm}</span>
                     </div>
                   )}
                   {parsedContact.pm_title && (
                     <div className="flex gap-2">
                       <span className="text-slate-400 w-16">Title:</span>
-                      <span className="text-slate-800 font-medium">{parsedContact.pm_title}</span>
+                      <span className="text-slate-200 font-medium">{parsedContact.pm_title}</span>
                     </div>
                   )}
                   {parsedContact.em && (
                     <div className="flex gap-2">
                       <span className="text-slate-400 w-16">Email:</span>
-                      <span className="text-violet-700 font-medium">{parsedContact.em}</span>
+                      <span className="text-violet-300 font-medium">{parsedContact.em}</span>
                     </div>
                   )}
                   {parsedContact.ph && (
                     <div className="flex gap-2">
                       <span className="text-slate-400 w-16">Phone:</span>
-                      <span className="text-slate-800 font-medium">{parsedContact.ph}</span>
+                      <span className="text-slate-200 font-medium">{parsedContact.ph}</span>
                     </div>
                   )}
                 </div>
@@ -190,8 +190,8 @@ export const AiModal: React.FC<AiModalProps> = ({
                 onClick={() => copy('ai', aiText)}
                 className={`flex-1 rounded-xl border py-2.5 text-sm font-bold transition-all ${
                   cp === 'ai'
-                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700'
-                    : 'border-orange-500/30 bg-orange-500/10 text-orange-600 hover:bg-orange-500/20'
+                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                    : 'border-orange-500/30 bg-orange-500/10 text-orange-300 hover:bg-orange-500/20'
                 }`}
               >
                 {cp === 'ai' ? 'Copied!' : 'Copy to Clipboard'}
@@ -208,7 +208,7 @@ export const AiModal: React.FC<AiModalProps> = ({
                   );
                   setAiModal(null);
                 }}
-                className="flex-1 rounded-xl border border-blue-500/30 bg-blue-500/10 py-2.5 text-sm font-bold text-blue-600 transition-all hover:bg-blue-500/20"
+                className="flex-1 rounded-xl border border-blue-500/30 bg-blue-500/10 py-2.5 text-sm font-bold text-blue-300 transition-all hover:bg-blue-500/20"
               >
                 Save to Notes Only
               </button>

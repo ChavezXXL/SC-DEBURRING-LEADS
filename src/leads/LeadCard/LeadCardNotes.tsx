@@ -23,7 +23,7 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
   return (
     <div className="mb-4">
       <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-1 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-400">
+        <div className="flex items-center gap-1 text-[10px] font-bold font-mono uppercase tracking-widest text-slate-500">
           <FileText size={12} />
           Call Log / Notes
         </div>
@@ -33,7 +33,7 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
               setEditId(lead.id);
               setDraft(lead.notes || '');
             }}
-            className="rounded px-2 py-0.5 text-[10px] font-mono text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            className="rounded px-2 py-0.5 text-[10px] font-mono text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
           >
             Edit
           </button>
@@ -47,18 +47,18 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Log calls, follow-ups, who you spoke to, research found..."
-            className="min-h-[100px] w-full resize-y rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-700 focus:border-orange-500/50 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+            className="min-h-[100px] w-full resize-y rounded-lg border border-white/10 bg-apex-800 p-3 text-xs text-slate-100 placeholder-slate-500 focus:border-apex-accent/60 focus:outline-none focus:ring-1 focus:ring-apex-accent/60"
           />
           <div className="flex gap-2">
             <button
               onClick={() => saveNote(lead.id, draft)}
-              className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-500/20"
+              className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-500/20"
             >
               Save
             </button>
             <button
               onClick={() => setEditId(null)}
-              className="rounded-lg border border-slate-300 bg-slate-100 px-4 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-200"
+              className="rounded-lg border border-white/10 bg-apex-800 px-4 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/10"
             >
               Cancel
             </button>
@@ -72,10 +72,10 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
               setDraft(lead.notes || '');
             }
           }}
-          className={`min-h-[44px] rounded-lg border border-slate-200 bg-white p-4 text-xs leading-relaxed transition-colors ${
+          className={`min-h-[44px] rounded-lg border border-white/10 bg-apex-800 p-4 text-xs leading-relaxed transition-colors ${
             lead.notes
-              ? 'text-slate-700'
-              : 'cursor-text italic text-slate-400 hover:border-slate-300'
+              ? 'text-slate-300'
+              : 'cursor-text italic text-slate-500 hover:border-white/20'
           }`}
         >
           {lead.notes ? renderMarkdown(lead.notes) : 'Click to add notes...'}
