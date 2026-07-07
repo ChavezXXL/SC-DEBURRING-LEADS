@@ -6,6 +6,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
 import { TenantTheme } from './auth/TenantTheme';
+import { WorkspaceProvider } from './auth/WorkspaceContext';
 import { ToastProvider } from './ui/Toast';
 import { showRefreshPrompt } from './shell/pwaUpdate';
 
@@ -24,13 +25,15 @@ const updateSW = registerSW({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
-      <TenantTheme>
-        <ToastProvider>
-          <AuthGate>
-            <App />
-          </AuthGate>
-        </ToastProvider>
-      </TenantTheme>
+      <WorkspaceProvider>
+        <TenantTheme>
+          <ToastProvider>
+            <AuthGate>
+              <App />
+            </AuthGate>
+          </ToastProvider>
+        </TenantTheme>
+      </WorkspaceProvider>
     </AuthProvider>
   </StrictMode>,
 );

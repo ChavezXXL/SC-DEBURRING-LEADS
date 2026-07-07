@@ -1,19 +1,21 @@
 import React, { ReactNode, useEffect } from 'react';
-import { useAuth } from './AuthContext';
+import { useWorkspaceCtx } from './WorkspaceContext';
 
 const DEFAULT_PRIMARY = '#2563eb'; // tailwind blue-600 — keeps SC Deburring on the default look
 
 /**
- * TenantTheme — applies the current tenant's primary color as a CSS variable
+ * TenantTheme — applies the ACTIVE workspace's primary color as a CSS variable
  * (`--tenant-primary`) on the document root. Used by the sidebar accent bar
  * and a few other "their identity" touchpoints. Most of the UI stays neutral
  * slate so functional colors (red = delete, green = success) read the same
  * across all tenants.
  *
- * Also updates document.title to the tenant's business name when signed in.
+ * Follows the workspace switcher: a super-admin who drops into a client sees
+ * that client's color + title; the Platform Console gets the Apex identity.
+ * Branding edits land live (the workspace context subscribes to the doc).
  */
 export function TenantTheme({ children }: { children: ReactNode }) {
-  const { tenant } = useAuth();
+  const { activeTenant: tenant, isPlatformConsole } = useWorkspaceCtx();
   const primary = tenant?.primaryColor || DEFAULT_PRIMARY;
 
   useEffect(() => {
@@ -31,8 +33,10 @@ export function TenantTheme({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (tenant?.name) {
       document.title = `${tenant.name} CRM`;
+    } else if (isPlatformConsole) {
+      document.title = 'Apex Growth — Platform';
     }
-  }, [tenant?.name]);
+  }, [tenant?.name, isPlatformConsole]);
 
   return <>{children}</>;
 }

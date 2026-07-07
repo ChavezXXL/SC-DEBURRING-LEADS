@@ -11,6 +11,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
+import { useWorkspaceCtx } from '../auth/WorkspaceContext';
 import { apiFetch, isNotConfigured, ApiError } from '../services/api';
 import { ServerSetupCallout } from '../ui/ServerSetupCallout';
 import { useInstallPrompt } from '../shell/useInstallPrompt';
@@ -36,11 +37,15 @@ interface SettingsTabProps {
 }
 
 export function SettingsTab({ leads }: SettingsTabProps) {
-  const { tenant, profile, user, resetPassword } = useAuth();
+  const { profile, user, resetPassword } = useAuth();
+  // The ACTIVE workspace's tenant — for owners that's their own tenant; for a
+  // super-admin it follows the switcher (null in the Platform Console).
+  const { activeTenant: tenant } = useWorkspaceCtx();
   const toast = useToast();
   // Native "Install app" affordance — only renders where the browser offered
   // an install prompt (Chrome/Edge/Android) and the app isn't already installed.
   const { canInstall, promptInstall } = useInstallPrompt();
+  const isSuperAdmin = profile?.role === 'super-admin';
   const [name, setName] = useState(tenant?.name || '');
   const [primaryColor, setPrimaryColor] = useState(tenant?.primaryColor || '#2563eb');
   const [logoUrl, setLogoUrl] = useState(tenant?.logoUrl || '');
@@ -59,7 +64,10 @@ export function SettingsTab({ leads }: SettingsTabProps) {
     setLogoUrl(tenant?.logoUrl || '');
   }, [tenant?.id, tenant?.name, tenant?.primaryColor, tenant?.logoUrl]);
 
-  if (!tenant) {
+  // Platform admins (super-admin, no client tenant) get a personal account view
+  // — no workspace branding of their own. Only a real owner with no tenant loaded
+  // is an actual error state.
+  if (!tenant && !isSuperAdmin) {
     return (
       <div className="mx-auto max-w-3xl py-16 text-center text-sm text-slate-300">
         No tenant loaded.
@@ -75,6 +83,7 @@ export function SettingsTab({ leads }: SettingsTabProps) {
       setError('Not signed in.');
       return;
     }
+    if (!tenant) return;
     setBusy(true);
     try {
       const idToken = await user.getIdToken();
@@ -149,11 +158,14 @@ export function SettingsTab({ leads }: SettingsTabProps) {
           <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Settings</h1>
         </div>
         <p className="text-xs text-slate-400">
-          Workspace branding, your account, the locked outreach voice, and data export.
+          {isSuperAdmin && !tenant
+            ? 'Your platform account, the locked outreach voice, and data export. Edit a client’s branding from the Admin tab.'
+            : 'Workspace branding, your account, the locked outreach voice, and data export.'}
         </p>
       </div>
 
-      {/* Read-only stats */}
+      {/* Read-only stats — tenant owners only (a platform admin has no tenant) */}
+      {tenant && (
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <ReadOnlyCard label="Tenant slug" value={tenant.id} mono />
         <ReadOnlyCard
@@ -180,6 +192,7 @@ export function SettingsTab({ leads }: SettingsTabProps) {
           }
         />
       </div>
+      )}
 
       {/* INSTALL APP — only shown when the browser offers a native install and
           the app isn't already running standalone. */}
@@ -198,7 +211,9 @@ export function SettingsTab({ leads }: SettingsTabProps) {
         </Section>
       )}
 
-      {/* 1 · WORKSPACE */}
+      {/* 1 · WORKSPACE — owners edit their own; a platform admin edits client
+          branding from the Admin tab, so they see a pointer instead. */}
+      {tenant ? (
       <form onSubmit={onSave}>
         <Section
           title="Workspace"
@@ -295,6 +310,20 @@ export function SettingsTab({ leads }: SettingsTabProps) {
           </div>
         </Section>
       </form>
+      ) : (
+        <Section
+          title="Workspace"
+          hint="You're the platform admin — you don't have your own workspace branding."
+        >
+          <p className="text-sm leading-relaxed text-slate-300">
+            To edit a client's business name, brand color, or logo, open the{' '}
+            <span className="font-medium text-slate-100">Admin</span> tab, click the
+            client, and use the{' '}
+            <span className="font-medium text-slate-100">Branding</span> section in
+            their panel.
+          </p>
+        </Section>
+      )}
 
       {/* 2 · ACCOUNT */}
       <Section title="Account" hint="Who's signed in, and how to change your password.">

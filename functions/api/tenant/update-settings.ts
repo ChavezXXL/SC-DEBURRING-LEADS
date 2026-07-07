@@ -45,7 +45,7 @@ export const onRequestPost = async ({ request, env }: CtxArg): Promise<Response>
     const projectId = sa.project_id;
     const accessToken = await getAccessToken(sa);
 
-    const caller = await verifyIdToken(body.idToken, projectId);
+    const caller = await verifyIdToken(body.idToken, projectId, accessToken);
     const callerProfile = await firestoreGet(projectId, accessToken, `users/${caller.uid}`);
     const role = fromFirestoreValue(callerProfile?.fields?.role);
     const callerTenantId = fromFirestoreValue(callerProfile?.fields?.tenantId);

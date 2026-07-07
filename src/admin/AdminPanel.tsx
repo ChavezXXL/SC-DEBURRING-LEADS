@@ -205,7 +205,39 @@ export function AdminPanel() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Phones: tappable cards — no sideways table scrolling. */}
+          <div className="divide-y divide-white/5 md:hidden">
+            {filtered.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setSelected(t)}
+                className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition active:bg-white/5"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-medium text-slate-100">{t.name}</span>
+                    {t.disabled && (
+                      <span className="shrink-0 rounded-full bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium text-red-300 ring-1 ring-red-500/30">
+                        Disabled
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 truncate text-[11px] text-slate-500">{t.ownerEmail}</div>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <PlanBadge plan={t.plan} />
+                    <span className="text-[10px] tabular-nums text-slate-400">
+                      {t.leadCount ?? 0} leads · {t.userCount ?? 0} user{(t.userCount ?? 0) === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight size={16} className="shrink-0 text-slate-500" />
+              </button>
+            ))}
+          </div>
+
+          {/* Desktop: full table. */}
+          <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-slate-500">
@@ -260,6 +292,7 @@ export function AdminPanel() {
             </tbody>
           </table>
           </div>
+          </>
         )}
       </div>
       )}

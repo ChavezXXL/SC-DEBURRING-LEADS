@@ -93,7 +93,10 @@ export interface TenantStats extends Tenant {
 export interface UserProfile {
   uid: string;
   email: string;
-  tenantId: string;          // which tenant's data this user sees
+  /** Which tenant's data this user sees. A platform admin (super-admin not tied
+   * to any client) uses the '__platform__' sentinel and lands in the Platform
+   * Console; super-admins can switch into any client tenant from there. */
+  tenantId: string;
   role: 'super-admin' | 'owner' | 'member';
   displayName?: string;
   createdAt: string;

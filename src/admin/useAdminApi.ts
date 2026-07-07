@@ -45,6 +45,26 @@ export function useAdminApi() {
     [getToken],
   );
 
+  // Branding (name / color / logo) goes through the tenant update-settings
+  // endpoint, which lets a super-admin edit ANY tenant. Kept separate from
+  // updateTenant (plan/disabled) so the two concerns stay clean.
+  const updateTenantBranding = useCallback(
+    async (args: {
+      tenantId: string;
+      name?: string;
+      primaryColor?: string;
+      logoUrl?: string;
+    }) => {
+      const token = await getToken();
+      return await apiFetch('/api/tenant/update-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: token, ...args }),
+      });
+    },
+    [getToken],
+  );
+
   const deleteTenant = useCallback(
     async (tenantId: string, confirm: string) => {
       const token = await getToken();
@@ -74,5 +94,5 @@ export function useAdminApi() {
     [getToken],
   );
 
-  return { listTenants, updateTenant, deleteTenant, resetPassword };
+  return { listTenants, updateTenant, updateTenantBranding, deleteTenant, resetPassword };
 }

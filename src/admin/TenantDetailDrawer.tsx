@@ -33,7 +33,7 @@ interface Props {
  *   - delete (with double-confirm matching the tenant slug)
  */
 export function TenantDetailDrawer({ tenant, onClose, onChanged }: Props) {
-  const { updateTenant, deleteTenant, resetPassword } = useAdminApi();
+  const { updateTenant, updateTenantBranding, deleteTenant, resetPassword } = useAdminApi();
   const toast = useToast();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +41,10 @@ export function TenantDetailDrawer({ tenant, onClose, onChanged }: Props) {
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [resetPw, setResetPw] = useState<{ email: string; password: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  // Branding editor (name / color / logo) — seeded from the tenant on open.
+  const [brandName, setBrandName] = useState('');
+  const [brandColor, setBrandColor] = useState('#2563eb');
+  const [brandLogo, setBrandLogo] = useState('');
 
   // Reset the transient per-tenant UI state whenever a different tenant opens
   // (so a stale "password reset" panel or confirm text can't leak across rows).
@@ -50,7 +54,10 @@ export function TenantDetailDrawer({ tenant, onClose, onChanged }: Props) {
     setDeleteConfirm('');
     setResetPw(null);
     setCopied(false);
-  }, [tenant?.id]);
+    setBrandName(tenant?.name || '');
+    setBrandColor(tenant?.primaryColor || '#2563eb');
+    setBrandLogo(tenant?.logoUrl || '');
+  }, [tenant?.id, tenant?.name, tenant?.primaryColor, tenant?.logoUrl]);
 
   // Esc closes the drawer (only while open).
   useEffect(() => {
@@ -79,6 +86,33 @@ export function TenantDetailDrawer({ tenant, onClose, onChanged }: Props) {
       onChanged();
     } catch (e: any) {
       setError(e?.message || 'Failed to update plan.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleSaveBranding = async () => {
+    if (!tenant) return;
+    const color = brandColor.trim();
+    if (!/^#[0-9a-f]{6}$/i.test(color)) {
+      setError('Brand color must be a #RRGGBB hex value.');
+      return;
+    }
+    setBusy('branding');
+    setError(null);
+    setSuccess(null);
+    try {
+      await updateTenantBranding({
+        tenantId: tenant.id,
+        name: brandName.trim() || tenant.name,
+        primaryColor: color,
+        logoUrl: brandLogo.trim(),
+      });
+      setSuccess('Branding saved.');
+      toast(`Branding saved — ${brandName.trim() || tenant.name}`);
+      onChanged();
+    } catch (e: any) {
+      setError(e?.message || 'Failed to save branding.');
     } finally {
       setBusy(null);
     }
@@ -245,6 +279,62 @@ export function TenantDetailDrawer({ tenant, onClose, onChanged }: Props) {
               </div>
             </div>
           </div>
+
+          {/* Branding */}
+          <Section title="Branding">
+            <div className="space-y-3">
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-slate-500">
+                  Business name
+                </span>
+                <input
+                  value={brandName}
+                  onChange={(e) => setBrandName(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-apex-800 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-slate-500">
+                  Brand color
+                </span>
+                <div className="mt-1 flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={/^#[0-9a-f]{6}$/i.test(brandColor) ? brandColor : '#2563eb'}
+                    onChange={(e) => setBrandColor(e.target.value)}
+                    className="h-9 w-12 cursor-pointer rounded-lg border border-white/10 bg-apex-800"
+                  />
+                  <input
+                    type="text"
+                    value={brandColor}
+                    onChange={(e) => setBrandColor(e.target.value)}
+                    placeholder="#2563eb"
+                    className="flex-1 rounded-xl border border-white/10 bg-apex-800 px-3 py-2 text-sm font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
+                  />
+                </div>
+              </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-slate-500">
+                  Logo URL (optional)
+                </span>
+                <input
+                  type="url"
+                  value={brandLogo}
+                  onChange={(e) => setBrandLogo(e.target.value)}
+                  placeholder="https://…"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-apex-800 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
+                />
+              </label>
+              <button
+                onClick={handleSaveBranding}
+                disabled={busy === 'branding'}
+                className="flex min-h-[40px] w-full items-center justify-center gap-2 rounded-xl bg-apex-accent px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 active:scale-[0.99] disabled:opacity-50"
+              >
+                {busy === 'branding' ? <Loader2 size={14} className="animate-spin" /> : null}
+                {busy === 'branding' ? 'Saving…' : 'Save branding'}
+              </button>
+            </div>
+          </Section>
 
           {/* Plan */}
           <Section title="Plan">

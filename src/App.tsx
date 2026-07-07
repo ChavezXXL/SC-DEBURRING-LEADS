@@ -1,5 +1,5 @@
-import React, { lazy, Suspense, useCallback, useState } from 'react';
-import { Menu, X, Loader2 } from 'lucide-react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Menu, X, Loader2, LayoutGrid, ArrowRight, Search } from 'lucide-react';
 
 import type { Lead, TabKey, LeadStatus } from './types';
 import { STATUS } from './data';
@@ -7,6 +7,10 @@ import { useToast } from './ui/Toast';
 
 import { useAuth } from './auth/AuthContext';
 import { useLeads } from './leads/useLeads';
+import { PLATFORM_WORKSPACE } from './auth/useWorkspace';
+import { useWorkspaceCtx } from './auth/WorkspaceContext';
+import { MobileNav } from './shell/MobileNav';
+import { CommandPalette } from './shell/CommandPalette';
 import { useLeadCrud } from './leads/useLeadCrud';
 import { useLeadFilters } from './leads/useLeadFilters';
 import { useLeadSort } from './leads/useLeadSort';
@@ -94,14 +98,57 @@ const qs = {
  *   - Modal coordination (AddLead / Delete)
  *   - Sidebar/main layout
  */
-export default function App() {
-  const { tenant, profile, signOut } = useAuth();
-  const toast = useToast();
-  // Prefer the tenant doc, but fall back to the profile's tenantId so lead
-  // writes are always tenant-stamped even if the tenant doc failed to load.
-  const tenantId = tenant?.id ?? profile?.tenantId;
+/**
+ * Shown on the lead-scoped tabs when a super-admin is in the tenant-less
+ * Platform Console — there's no client selected, so there are no leads to show.
+ * Points them at the admin console or the workspace switcher.
+ */
+function PlatformConsoleEmpty({ onManage }: { onManage: () => void }) {
+  return (
+    <div className="mx-auto flex max-w-lg flex-col items-center justify-center py-24 text-center">
+      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-apex-accent/10 ring-1 ring-apex-accent/30 text-orange-300">
+        <LayoutGrid size={26} />
+      </div>
+      <h2 className="mt-5 text-lg font-semibold text-slate-100">Platform Console</h2>
+      <p className="mt-2 text-sm leading-relaxed text-slate-400">
+        You're operating Apex Growth itself — not a single client. Pick a client
+        workspace from the switcher (top-left) to work their leads, or manage all
+        accounts in the admin console.
+      </p>
+      <button
+        onClick={onManage}
+        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-apex-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-500"
+      >
+        Manage client accounts
+        <ArrowRight size={16} />
+      </button>
+    </div>
+  );
+}
 
-  const { visibleLeads, loading, dbError, markDeleted } = useLeads(tenantId);
+export default function App() {
+  const { profile, signOut } = useAuth();
+  const toast = useToast();
+
+  // Super-admins can operate as any client tenant, or sit in the tenant-less
+  // Platform Console; everyone else is pinned to their own tenant. The workspace
+  // context resolves which tenantId all data + writes are scoped to, and holds
+  // the LIVE tenant doc for the active workspace (branding follows the switch).
+  const {
+    workspaceId,
+    effectiveTenantId,
+    isPlatformConsole,
+    isSuperAdmin,
+    setWorkspace,
+    activeTenant,
+  } = useWorkspaceCtx();
+  // Prefer the workspace selection, but fall back to the profile's tenantId so
+  // lead writes are always tenant-stamped even if the tenant doc failed to load.
+  const tenantId = effectiveTenantId ?? (isSuperAdmin ? undefined : profile?.tenantId);
+
+  const { visibleLeads, loading, dbError, markDeleted } = useLeads(tenantId, {
+    skip: isPlatformConsole,
+  });
   const crud = useLeadCrud({ leads: visibleLeads, tenantId, markDeleted });
   const { state: filterState, setters: filterSetters, filtered } = useLeadFilters(visibleLeads);
   // Sort applies AFTER filtering, BEFORE render. `sorted` is what the Leads tab
@@ -112,6 +159,27 @@ export default function App() {
   // "Today" is the money screen — the day starts on the execution list.
   const [tab, setTab] = useState<TabKey>('today');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Switch workspace (super-admin only): land on Admin for the Platform Console,
+  // Today for a client tenant.
+  const selectWorkspace = useCallback(
+    (id: string) => {
+      setWorkspace(id);
+      setTab(id === PLATFORM_WORKSPACE ? 'admin' : 'today');
+      setMobileMenuOpen(false);
+    },
+    [setWorkspace],
+  );
+
+  // A platform admin with no client tenant lands on the Admin console, not an
+  // empty Today. Runs once, after the profile AND the workspace both resolve
+  // (workspaceId is '' for a tick on reload — deciding then would misfire).
+  const didInitTab = useRef(false);
+  useEffect(() => {
+    if (didInitTab.current || !profile || !workspaceId) return;
+    didInitTab.current = true;
+    if (isPlatformConsole) setTab('admin');
+  }, [profile, workspaceId, isPlatformConsole]);
 
   // Card UI state (shared across LeadsTab/Pipeline jumps)
   const [openId, setOpenId] = useState<string | null>(null);
@@ -125,6 +193,31 @@ export default function App() {
   const [deleteModal, setDeleteModal] = useState<{ id: string; co: string } | null>(null);
   // Bulk delete goes through a confirm modal; holds the ids awaiting confirmation.
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[] | null>(null);
+
+  // ⌘K command palette — search leads, jump tabs, quick actions, workspaces.
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Reminders due today or earlier — badge on the mobile Today tab.
+  const dueCount = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return visibleLeads.filter((l) => l.reminderDate && l.reminderDate <= today).length;
+  }, [visibleLeads]);
+
+  const handleExportAll = useCallback(() => {
+    if (visibleLeads.length === 0) return;
+    downloadLeadsCsv(visibleLeads, `leads-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast(`Exported ${visibleLeads.length} lead${visibleLeads.length === 1 ? '' : 's'}`);
+  }, [visibleLeads, toast]);
 
   // ---- handlers ----------------------------------------------------------
 
@@ -281,17 +374,26 @@ export default function App() {
               Apex Growth
             </div>
             <div className="truncate text-[10px] text-slate-400">
-              {tenant?.name || 'SC Deburring'}
+              {isPlatformConsole ? 'Platform Console' : activeTenant?.name || 'SC Deburring'}
             </div>
           </div>
         </div>
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-          className="rounded-lg p-2.5 text-slate-400 hover:bg-white/5 hover:text-slate-100 transition"
-        >
-          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setPaletteOpen(true)}
+            aria-label="Search"
+            className="rounded-lg p-2.5 text-slate-400 hover:bg-white/5 hover:text-slate-100 transition"
+          >
+            <Search size={20} />
+          </button>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            className="rounded-lg p-2.5 text-slate-400 hover:bg-white/5 hover:text-slate-100 transition"
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile scrim — tap outside the drawer to close it. */}
@@ -310,8 +412,13 @@ export default function App() {
         setTab={setTab}
         leads={visibleLeads}
         saved={crud.saved}
-        tenant={tenant}
+        tenant={activeTenant}
         profile={profile}
+        isSuperAdmin={isSuperAdmin}
+        isPlatformConsole={isPlatformConsole}
+        workspaceId={workspaceId}
+        onSelectWorkspace={selectWorkspace}
+        onOpenPalette={() => setPaletteOpen(true)}
         onSignOut={() => void signOut()}
         onPipelineClick={(id) => {
           setTab('leads');
@@ -320,7 +427,7 @@ export default function App() {
         }}
       />
 
-      <main className="max-h-screen flex-1 overflow-y-auto p-4 pt-20 md:p-8 md:pt-8 w-full">
+      <main className="max-h-screen flex-1 overflow-y-auto p-4 pt-20 pb-28 md:p-8 md:pt-8 md:pb-8 w-full">
         {dbError && (
           <div className="mx-auto mb-6 flex max-w-5xl items-start gap-3 rounded-2xl bg-red-500/10 ring-1 ring-red-500/30 p-4 text-red-300">
             <X size={20} className="mt-0.5 shrink-0" />
@@ -350,7 +457,12 @@ export default function App() {
           </div>
         )}
 
-        {tab === 'today' && (
+        {isPlatformConsole &&
+          (tab === 'today' || tab === 'leads' || tab === 'pipeline' || tab === 'outreach') && (
+            <PlatformConsoleEmpty onManage={() => setTab('admin')} />
+          )}
+
+        {!isPlatformConsole && tab === 'today' && (
           <TodayTab
             leads={visibleLeads}
             logCall={handleLogCall}
@@ -359,7 +471,7 @@ export default function App() {
           />
         )}
 
-        {tab === 'leads' && (
+        {!isPlatformConsole && tab === 'leads' && (
           <LeadsTab
             visibleLeads={visibleLeads}
             filtered={filtered}
@@ -401,12 +513,12 @@ export default function App() {
           />
         )}
 
-        {tab === 'outreach' && (
+        {!isPlatformConsole && tab === 'outreach' && (
           <Suspense fallback={<TabSkeleton />}>
             <OutreachTab />
           </Suspense>
         )}
-        {tab === 'pipeline' && (
+        {!isPlatformConsole && tab === 'pipeline' && (
           <Suspense fallback={<TabSkeleton />}>
             <PipelineTab leads={visibleLeads} onLeadClick={jumpToLead} setStatus={handleSetStatus} />
           </Suspense>
@@ -452,6 +564,31 @@ export default function App() {
           />
         </Suspense>
       )}
+
+      {/* Phone bottom tab bar — hides while the drawer menu is open. */}
+      <MobileNav
+        tab={tab}
+        setTab={setTab}
+        role={profile?.role}
+        dueCount={dueCount}
+        hidden={mobileMenuOpen}
+      />
+
+      {/* ⌘K — search leads, jump tabs, quick actions, switch workspaces. */}
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        leads={visibleLeads}
+        onJumpToLead={jumpToLead}
+        onNavigate={(t) => {
+          setTab(t);
+          setMobileMenuOpen(false);
+        }}
+        onAddLead={() => setShowAddLead(true)}
+        onExport={handleExportAll}
+        onSelectWorkspace={selectWorkspace}
+        role={profile?.role}
+      />
     </div>
   );
 }

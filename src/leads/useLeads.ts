@@ -54,7 +54,8 @@ const REQUIRE_AUTH = true;
  * is empty AND we haven't seeded before, push INIT_LEADS into Firestore once.
  * Multi-tenant accounts start blank (that's the point of "suit them").
  */
-export function useLeads(tenantId: string | undefined) {
+export function useLeads(tenantId: string | undefined, opts?: { skip?: boolean }) {
+  const skip = opts?.skip ?? false;
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState<string | null>(null);
@@ -68,6 +69,14 @@ export function useLeads(tenantId: string | undefined) {
   });
 
   useEffect(() => {
+    // Platform Console (super-admin, no active client workspace): intentionally
+    // no leads. Resolve immediately so the shell doesn't hang on the loader.
+    if (skip) {
+      setLeads([]);
+      setLoading(false);
+      setDbError(null);
+      return;
+    }
     // Auth on but tenant not loaded yet — don't subscribe globally (would leak
     // other tenants' docs into the cache). AuthGate is showing Login/loading.
     if (REQUIRE_AUTH && !tenantId) return;
@@ -128,7 +137,7 @@ export function useLeads(tenantId: string | undefined) {
     );
 
     return () => unsub();
-  }, [tenantId]);
+  }, [tenantId, skip]);
 
   // Filter out client-side-deleted leads from the visible list.
   const visibleLeads = useMemo(

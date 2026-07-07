@@ -108,17 +108,17 @@ async function getAccessToken(sa: ServiceAccount, scopes: string[]): Promise<str
 }
 
 // Verify the caller's Firebase ID token, returning the uid + email.
-async function verifyIdToken(idToken: string, projectId: string): Promise<{ uid: string; email: string }> {
-  // Use Google's tokeninfo endpoint — simple verification path.
+async function verifyIdToken(idToken: string, projectId: string, accessToken: string): Promise<{ uid: string; email: string }> {
+  // Project-scoped accounts:lookup is an admin endpoint: it 403s "unregistered
+  // caller" unless authenticated with the service-account access token. The
+  // idToken in the body identifies (and validates) which user is calling.
   const resp = await fetch(
     `https://identitytoolkit.googleapis.com/v1/projects/${projectId}/accounts:lookup`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // identitytoolkit:lookup with idToken doesn't need a service-account token
-        // when called with API key — but we can also call it with our access token
-        // (works the same and avoids leaking the API key here).
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({ idToken }),
     },
@@ -285,7 +285,7 @@ export const onRequestPost = async ({ request, env }: CtxArg): Promise<Response>
     ]);
 
     // 1) Verify the caller is super-admin
-    const caller = await verifyIdToken(body.idToken, projectId);
+    const caller = await verifyIdToken(body.idToken, projectId, accessToken);
     const callerProfile = await firestoreGet(projectId, accessToken, `users/${caller.uid}`);
     const role = fromFirestoreValue(callerProfile?.fields?.role);
     if (role !== 'super-admin') {

@@ -9,6 +9,7 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import type { Tenant, UserProfile } from '../types';
+import { PLATFORM_WORKSPACE } from './useWorkspace';
 
 /**
  * AuthContext — provides the current Firebase user, their UserProfile (which
@@ -44,9 +45,10 @@ interface AuthCtx {
 
 const AuthContext = createContext<AuthCtx | null>(null);
 
-/** Santiago's super-admin bootstrap. First time he signs in with this email,
- * he automatically becomes super-admin of the sc-deburring tenant. */
-const BOOTSTRAP_SUPER_ADMIN_EMAIL = 'scprecisiondeburring@gmail.com';
+/** Master-admin bootstrap. The Apex Growth email is the platform operator —
+ * first sign-in with it (with no existing profile) becomes the tenant-less
+ * super-admin. SC Deburring is just client #1, not the master account. */
+const BOOTSTRAP_SUPER_ADMIN_EMAIL = 'apexgrowthgroupllc@gmail.com';
 const BOOTSTRAP_TENANT_ID = 'sc-deburring';
 const BOOTSTRAP_TENANT_NAME = 'SC Deburring LLC';
 
@@ -81,7 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           prof = {
             uid: fbUser.uid,
             email: fbUser.email || '',
-            tenantId: isSuperAdmin ? BOOTSTRAP_TENANT_ID : BOOTSTRAP_TENANT_ID,
+            // Master admin bootstraps into the tenant-less Platform Console;
+            // any other brand-new login defaults to the SC Deburring tenant.
+            tenantId: isSuperAdmin ? PLATFORM_WORKSPACE : BOOTSTRAP_TENANT_ID,
             role: isSuperAdmin ? 'super-admin' : 'member',
             displayName: fbUser.displayName || undefined,
             createdAt: new Date().toISOString(),
@@ -105,14 +109,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setProfile(prof);
 
-        // Load the tenant doc
-        if (prof.tenantId) {
+        // Load the tenant doc. A platform admin (super-admin with no client
+        // tenant) uses the PLATFORM_WORKSPACE sentinel and has no tenant doc —
+        // skip the lookup so they land cleanly in the Platform Console.
+        if (prof.tenantId && prof.tenantId !== PLATFORM_WORKSPACE) {
           const tSnap = await getDoc(doc(db, 'tenants', prof.tenantId));
           if (tSnap.exists()) {
             setTenant(tSnap.data() as Tenant);
           } else {
             setTenant(null);
           }
+        } else {
+          setTenant(null);
         }
       } catch (e: any) {
         console.error('AuthProvider: error loading profile/tenant', e);

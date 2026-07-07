@@ -257,10 +257,14 @@ const IT_BASE = 'https://identitytoolkit.googleapis.com/v1';
 export async function verifyIdToken(
   idToken: string,
   projectId: string,
+  accessToken: string,
 ): Promise<{ uid: string; email: string }> {
+  // Project-scoped accounts:lookup is an admin endpoint — it rejects
+  // "unregistered callers" (403) without the service-account token. The idToken
+  // in the body still identifies (and validates) which user is calling.
   const resp = await fetch(`${IT_BASE}/projects/${projectId}/accounts:lookup`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify({ idToken }),
   });
   if (!resp.ok) throw new Error('Invalid ID token');
@@ -330,7 +334,7 @@ export async function requireSuperAdmin(
   const sa = JSON.parse(env.FIREBASE_SERVICE_ACCOUNT) as ServiceAccount;
   const projectId = sa.project_id;
   const accessToken = await getAccessToken(sa);
-  const caller = await verifyIdToken(idToken, projectId);
+  const caller = await verifyIdToken(idToken, projectId, accessToken);
   const callerProfile = await firestoreGet(projectId, accessToken, `users/${caller.uid}`);
   const role = fromFirestoreValue(callerProfile?.fields?.role);
   if (role !== 'super-admin') {

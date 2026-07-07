@@ -8,9 +8,11 @@ import {
   LogOut,
   Shield,
   Settings as SettingsIcon,
+  Search as SearchIcon,
 } from 'lucide-react';
 import type { Lead, TabKey, Tenant, UserProfile } from '../types';
 import { FancyLogo } from './FancyLogo';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
 interface SidebarProps {
   mobileMenuOpen: boolean;
@@ -23,6 +25,13 @@ interface SidebarProps {
   // Multi-tenant: shown at bottom of sidebar
   tenant?: Tenant | null;
   profile?: UserProfile | null;
+  // Super-admin workspace switching
+  isSuperAdmin?: boolean;
+  isPlatformConsole?: boolean;
+  workspaceId?: string;
+  onSelectWorkspace?: (id: string) => void;
+  /** Opens the ⌘K command palette. */
+  onOpenPalette?: () => void;
   onSignOut?: () => void;
   onCreateAccount?: () => void; // super-admin only
 }
@@ -42,6 +51,11 @@ export function Sidebar({
   onPipelineClick,
   tenant,
   profile,
+  isSuperAdmin,
+  isPlatformConsole,
+  workspaceId,
+  onSelectWorkspace,
+  onOpenPalette,
   onSignOut,
   onCreateAccount,
 }: SidebarProps) {
@@ -103,18 +117,44 @@ export function Sidebar({
         aria-hidden
       />
       <div>
-        {/* Brand — platform mark + name, tenant account beneath */}
-        <div className="mb-7 hidden items-center gap-3 md:flex">
+        {/* Brand — desktop only; mobile has its own top bar */}
+        <div className="mb-4 hidden items-center gap-3 md:flex">
           <FancyLogo className="h-10 w-10 ring-1 ring-white/10" />
           <div className="min-w-0">
             <div className="text-sm font-semibold tracking-tight text-slate-100">
               Apex Growth
             </div>
-            <div className="mt-1 inline-flex max-w-full items-center rounded-full bg-white/5 ring-1 ring-white/10 px-2 py-0.5 text-[10px] font-medium text-slate-400">
-              <span className="truncate">{tenant?.name || 'SC Deburring'}</span>
+            <div className="text-[10px] text-slate-500">
+              {isSuperAdmin ? 'Platform operator' : 'Client workspace'}
             </div>
           </div>
         </div>
+
+        {/* Workspace: super-admins get the switcher (Platform Console + every
+            client tenant); everyone else sees their static tenant chip. */}
+        <div className="mb-6">
+          {isSuperAdmin && onSelectWorkspace ? (
+            <WorkspaceSwitcher workspaceId={workspaceId || ''} onSelect={onSelectWorkspace} />
+          ) : (
+            <div className="hidden max-w-full items-center rounded-full bg-white/5 ring-1 ring-white/10 px-2 py-0.5 text-[10px] font-medium text-slate-400 md:inline-flex">
+              <span className="truncate">{tenant?.name || 'SC Deburring'}</span>
+            </div>
+          )}
+        </div>
+
+        {/* ⌘K search pill — desktop only (mobile header has its own button) */}
+        {onOpenPalette && (
+          <button
+            onClick={onOpenPalette}
+            className="mb-5 hidden w-full items-center gap-2 rounded-xl bg-apex-800 px-3 py-2 text-left text-xs text-slate-500 ring-1 ring-white/10 transition hover:bg-white/5 hover:text-slate-300 md:flex"
+          >
+            <SearchIcon size={13} />
+            <span className="flex-1">Search…</span>
+            <kbd className="rounded-md bg-white/5 px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-white/10">
+              ⌘K
+            </kbd>
+          </button>
+        )}
 
         {/* Nav */}
         <nav className="mb-8 space-y-1">
@@ -127,7 +167,8 @@ export function Sidebar({
           {profile?.role === 'super-admin' && navItem('admin', 'Admin', Shield)}
         </nav>
 
-        {/* Pipeline status */}
+        {/* Pipeline status — hidden in the tenant-less Platform Console */}
+        {!isPlatformConsole && (
         <div className="border-t border-white/10 pt-5">
           <div className="mb-3 text-[10px] uppercase tracking-widest text-slate-500 font-medium">
             Pipeline
@@ -164,6 +205,7 @@ export function Sidebar({
             {Math.round((S.clients / Math.max(S.total, 1)) * 100)}% converted
           </div>
         </div>
+        )}
       </div>
 
       {/* Footer: tenant + user + sign-out */}
