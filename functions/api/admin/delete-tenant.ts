@@ -17,6 +17,7 @@ import {
   firestoreStructuredQuery,
   docToObject,
   deleteAuthUser,
+  logAdminAction,
   jsonResp,
   errorResp,
   httpError,
@@ -33,7 +34,10 @@ type CtxArg = { request: Request; env: AdminEnv };
 export const onRequestPost = async ({ request, env }: CtxArg): Promise<Response> => {
   try {
     const body = (await request.json()) as Body;
-    const { projectId, accessToken } = await requireSuperAdmin(env, body.idToken);
+    const { projectId, accessToken, callerUid, callerEmail } = await requireSuperAdmin(
+      env,
+      body.idToken,
+    );
 
     if (!body.tenantId) throw httpError(400, 'Missing tenantId');
     if (body.confirm !== body.tenantId) {
@@ -118,6 +122,15 @@ export const onRequestPost = async ({ request, env }: CtxArg): Promise<Response>
 
     // 4) delete the tenant doc
     await firestoreDelete(projectId, accessToken, `tenants/${body.tenantId}`);
+
+    // Audit trail — deletions especially must leave a record.
+    await logAdminAction(projectId, accessToken, {
+      action: 'tenant.deleted',
+      actorUid: callerUid,
+      actorEmail: callerEmail,
+      targetTenantId: body.tenantId,
+      detail: `${summary.leadsDeleted} leads, ${summary.logsDeleted} logs, ${summary.usersDeleted} users removed`,
+    });
 
     return jsonResp({ success: true, tenantId: body.tenantId, summary });
   } catch (err) {

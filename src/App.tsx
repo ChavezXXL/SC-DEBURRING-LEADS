@@ -67,6 +67,17 @@ const EMPTY_LEAD_FORM: Partial<Lead> = {
   r: 'Other',
 };
 
+// PWA shortcut deep links: /?tab=leads etc. Parsed once at module load.
+const VALID_TABS: TabKey[] = ['today', 'leads', 'outreach', 'pipeline', 'admin', 'settings'];
+const URL_TAB: TabKey | null = (() => {
+  try {
+    const t = new URLSearchParams(window.location.search).get('tab') as TabKey | null;
+    return t && VALID_TABS.includes(t) ? t : null;
+  } catch {
+    return null;
+  }
+})();
+
 // External-search helpers (Google/LinkedIn/Indeed) used by the LeadCard action row.
 const qs = {
   google: (co: string) =>
@@ -157,8 +168,17 @@ export default function App() {
   const selection = useLeadSelection(sorted.map((l) => l.id));
 
   // "Today" is the money screen — the day starts on the execution list.
-  const [tab, setTab] = useState<TabKey>('today');
+  // A PWA-shortcut deep link (/?tab=…) wins over the default.
+  const [tab, setTab] = useState<TabKey>(URL_TAB ?? 'today');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Role guard: a deep link (or stale state) can't strand someone on a tab
+  // their role doesn't render — bounce to Today instead of a blank screen.
+  useEffect(() => {
+    if (!profile) return;
+    if (tab === 'admin' && profile.role !== 'super-admin') setTab('today');
+    if (tab === 'settings' && profile.role === 'member') setTab('today');
+  }, [tab, profile]);
 
   // Switch workspace (super-admin only): land on Admin for the Platform Console,
   // Today for a client tenant.
@@ -174,7 +194,8 @@ export default function App() {
   // A platform admin with no client tenant lands on the Admin console, not an
   // empty Today. Runs once, after the profile AND the workspace both resolve
   // (workspaceId is '' for a tick on reload — deciding then would misfire).
-  const didInitTab = useRef(false);
+  // An explicit ?tab= deep link wins over this default.
+  const didInitTab = useRef(!!URL_TAB);
   useEffect(() => {
     if (didInitTab.current || !profile || !workspaceId) return;
     didInitTab.current = true;

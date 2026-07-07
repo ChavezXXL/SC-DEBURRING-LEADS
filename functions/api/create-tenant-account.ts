@@ -22,6 +22,8 @@
  *   APP_URL                   – e.g. "https://apx-crm.pages.dev" (where the welcome email points)
  */
 
+import { logAdminAction } from '../_shared/admin';
+
 interface Env {
   FIREBASE_SERVICE_ACCOUNT: string;
   RESEND_API_KEY: string;
@@ -323,6 +325,15 @@ export const onRequestPost = async ({ request, env }: CtxArg): Promise<Response>
 
     // 6) Send welcome email (don't block on failure)
     await sendWelcomeEmail(env, body.ownerEmail, body.tenantName, body.ownerPassword);
+
+    // 7) Audit trail — the flagship platform event.
+    await logAdminAction(projectId, accessToken, {
+      action: 'client.created',
+      actorUid: caller.uid,
+      actorEmail: caller.email,
+      targetTenantId: slug,
+      detail: `${body.tenantName} — owner ${body.ownerEmail}`,
+    });
 
     return jsonResp({
       success: true,

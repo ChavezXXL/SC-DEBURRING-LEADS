@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { auth } from '../firebase';
-import type { TenantStats } from '../types';
+import type { AdminEvent, TenantStats } from '../types';
 import { apiFetch } from '../services/api';
 
 /**
@@ -25,6 +25,15 @@ export function useAdminApi() {
       headers: { Authorization: `Bearer ${token}` },
     });
     return data.tenants || [];
+  }, [getToken]);
+
+  // Platform audit trail — every admin action, newest first.
+  const listActivity = useCallback(async (): Promise<AdminEvent[]> => {
+    const token = await getToken();
+    const data = await apiFetch<{ events?: AdminEvent[] }>('/api/admin/activity', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return data.events || [];
   }, [getToken]);
 
   const updateTenant = useCallback(
@@ -94,5 +103,12 @@ export function useAdminApi() {
     [getToken],
   );
 
-  return { listTenants, updateTenant, updateTenantBranding, deleteTenant, resetPassword };
+  return {
+    listTenants,
+    listActivity,
+    updateTenant,
+    updateTenantBranding,
+    deleteTenant,
+    resetPassword,
+  };
 }

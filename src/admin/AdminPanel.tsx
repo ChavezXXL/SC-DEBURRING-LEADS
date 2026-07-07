@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { TenantStats } from '../types';
 import { useAdminApi } from './useAdminApi';
+import { ActivityFeed } from './ActivityFeed';
 import { TenantDetailDrawer } from './TenantDetailDrawer';
 import { CreateAccountModal } from '../modals/CreateAccountModal';
 import { isNotConfigured } from '../services/api';
@@ -296,6 +297,9 @@ export function AdminPanel() {
         )}
       </div>
       )}
+
+      {/* Platform audit trail — every admin action, newest first. */}
+      <ActivityFeed />
 
       {/* Drawer */}
       <TenantDetailDrawer

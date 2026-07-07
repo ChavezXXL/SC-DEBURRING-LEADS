@@ -13,6 +13,7 @@ import {
   updateAuthPassword,
   sendResendEmail,
   docToObject,
+  logAdminAction,
   jsonResp,
   errorResp,
   httpError,
@@ -37,7 +38,10 @@ function generatePassword(length = 12): string {
 export const onRequestPost = async ({ request, env }: CtxArg): Promise<Response> => {
   try {
     const body = (await request.json()) as Body;
-    const { projectId, accessToken } = await requireSuperAdmin(env, body.idToken);
+    const { projectId, accessToken, callerUid, callerEmail } = await requireSuperAdmin(
+      env,
+      body.idToken,
+    );
     if (!body.targetUid) throw httpError(400, 'Missing targetUid');
 
     const userDoc = await firestoreGet(projectId, accessToken, `users/${body.targetUid}`);
@@ -64,6 +68,15 @@ For security, please sign in and change your password right away.
 Apex Growth
 `,
     );
+
+    // Audit trail — records WHO reset WHOSE password, never the password itself.
+    await logAdminAction(projectId, accessToken, {
+      action: 'password.reset',
+      actorUid: callerUid,
+      actorEmail: callerEmail,
+      targetTenantId: profile.tenantId,
+      detail: `for ${profile.email}`,
+    });
 
     return jsonResp({ success: true, email: profile.email, newPassword });
   } catch (err) {

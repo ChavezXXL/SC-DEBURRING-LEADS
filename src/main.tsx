@@ -8,6 +8,7 @@ import { AuthGate } from './auth/AuthGate';
 import { TenantTheme } from './auth/TenantTheme';
 import { WorkspaceProvider } from './auth/WorkspaceContext';
 import { ToastProvider } from './ui/Toast';
+import { ErrorBoundary } from './ui/ErrorBoundary';
 import { showRefreshPrompt } from './shell/pwaUpdate';
 
 // Service worker registration. The heavy lifting for build freshness happens in
@@ -24,16 +25,18 @@ const updateSW = registerSW({
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <WorkspaceProvider>
-        <TenantTheme>
-          <ToastProvider>
-            <AuthGate>
-              <App />
-            </AuthGate>
-          </ToastProvider>
-        </TenantTheme>
-      </WorkspaceProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <WorkspaceProvider>
+          <TenantTheme>
+            <ToastProvider>
+              <AuthGate>
+                <App />
+              </AuthGate>
+            </ToastProvider>
+          </TenantTheme>
+        </WorkspaceProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );

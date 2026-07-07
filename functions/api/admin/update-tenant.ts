@@ -18,6 +18,7 @@ import {
   requireSuperAdmin,
   firestoreGet,
   firestorePatch,
+  logAdminAction,
   jsonResp,
   errorResp,
   httpError,
@@ -37,7 +38,10 @@ type CtxArg = { request: Request; env: AdminEnv };
 export const onRequestPost = async ({ request, env }: CtxArg): Promise<Response> => {
   try {
     const body = (await request.json()) as Body;
-    const { projectId, accessToken } = await requireSuperAdmin(env, body.idToken);
+    const { projectId, accessToken, callerUid, callerEmail } = await requireSuperAdmin(
+      env,
+      body.idToken,
+    );
 
     if (!body.tenantId) throw httpError(400, 'Missing tenantId');
 
@@ -69,6 +73,21 @@ export const onRequestPost = async ({ request, env }: CtxArg): Promise<Response>
     if (mask.length === 0) throw httpError(400, 'No updates provided');
 
     await firestorePatch(projectId, accessToken, `tenants/${body.tenantId}`, updates, mask);
+
+    // Audit trail (best-effort — never fails the action).
+    const parts: string[] = [];
+    if (typeof body.disabled === 'boolean') parts.push(body.disabled ? 'disabled' : 're-enabled');
+    if (body.plan) parts.push(`plan → ${body.plan}`);
+    if (body.name) parts.push(`name → ${body.name}`);
+    if (body.primaryColor) parts.push(`color → ${body.primaryColor}`);
+    await logAdminAction(projectId, accessToken, {
+      action: 'tenant.updated',
+      actorUid: callerUid,
+      actorEmail: callerEmail,
+      targetTenantId: body.tenantId,
+      detail: parts.join(', '),
+    });
+
     return jsonResp({ success: true, tenantId: body.tenantId, updates });
   } catch (err) {
     return errorResp(err);

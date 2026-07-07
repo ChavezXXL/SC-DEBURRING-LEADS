@@ -86,6 +86,18 @@ export interface TenantStats extends Tenant {
   userCount: number;
 }
 
+/** One platform audit event (`admin-logs` collection, written server-side by
+ * every admin action). Read back via /api/admin/activity, super-admin only. */
+export interface AdminEvent {
+  id: string;
+  at: string;      // ISO timestamp
+  action: string;  // 'client.created' | 'tenant.updated' | 'tenant.deleted' | 'password.reset' | 'branding.updated' | …
+  actorUid?: string;
+  actorEmail?: string;
+  targetTenantId?: string;
+  detail?: string;
+}
+
 /**
  * A user = one Firebase Auth account.
  * Maps a Firebase Auth UID to the tenant they belong to + their role.

@@ -326,7 +326,13 @@ export async function updateAuthPassword(
 export async function requireSuperAdmin(
   env: AdminEnv,
   idToken: string,
-): Promise<{ sa: ServiceAccount; accessToken: string; projectId: string; callerUid: string }> {
+): Promise<{
+  sa: ServiceAccount;
+  accessToken: string;
+  projectId: string;
+  callerUid: string;
+  callerEmail: string;
+}> {
   if (!env.FIREBASE_SERVICE_ACCOUNT) {
     throw httpError(500, 'Server missing FIREBASE_SERVICE_ACCOUNT secret');
   }
@@ -340,7 +346,44 @@ export async function requireSuperAdmin(
   if (role !== 'super-admin') {
     throw httpError(403, 'Only the super-admin can do that.');
   }
-  return { sa, accessToken, projectId, callerUid: caller.uid };
+  return { sa, accessToken, projectId, callerUid: caller.uid, callerEmail: caller.email };
+}
+
+// ---- platform activity log --------------------------------------------------
+// Server-side audit trail in the `admin-logs` collection. Clients can't touch
+// it (the rules' catch-all denies; these writes use the service account, which
+// bypasses rules). Read back via /api/admin/activity, super-admin only.
+
+export interface AdminLogEntry {
+  action: string; // e.g. 'client.created', 'tenant.plan', 'tenant.deleted'
+  actorUid: string;
+  actorEmail?: string;
+  targetTenantId?: string;
+  detail?: string;
+}
+
+export async function logAdminAction(
+  projectId: string,
+  token: string,
+  entry: AdminLogEntry,
+): Promise<void> {
+  // Best-effort by design: an audit-write hiccup must never fail the action.
+  try {
+    const url = `${FS_BASE}/projects/${projectId}/databases/(default)/documents/admin-logs`;
+    const fields: Record<string, any> = {};
+    const data: Record<string, any> = { at: new Date().toISOString(), ...entry };
+    for (const [k, v] of Object.entries(data)) {
+      if (v !== undefined) fields[k] = toFirestoreValue(v);
+    }
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields }),
+    });
+    if (!resp.ok) console.error('logAdminAction write failed:', resp.status);
+  } catch (e) {
+    console.error('logAdminAction failed:', e);
+  }
 }
 
 // ---- response helpers -----------------------------------------------------

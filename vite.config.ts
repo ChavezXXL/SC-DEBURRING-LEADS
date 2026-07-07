@@ -40,6 +40,13 @@ export default defineConfig(({mode}) => {
           display: 'standalone',
           start_url: '/',
           scope: '/',
+          // Long-press (Android) / right-click (desktop) app-icon shortcuts.
+          // Each deep-links via ?tab=, which App reads on boot.
+          shortcuts: [
+            { name: 'Today', url: '/?tab=today' },
+            { name: 'Leads', url: '/?tab=leads' },
+            { name: 'Pipeline', url: '/?tab=pipeline' },
+          ],
           icons: [
             {
               src: '/icon-192.png',

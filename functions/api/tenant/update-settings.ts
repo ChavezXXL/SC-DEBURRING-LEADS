@@ -18,6 +18,7 @@ import {
   firestoreGet,
   firestorePatch,
   fromFirestoreValue,
+  logAdminAction,
   jsonResp,
   errorResp,
   httpError,
@@ -90,6 +91,16 @@ export const onRequestPost = async ({ request, env }: CtxArg): Promise<Response>
     if (mask.length === 0) throw httpError(400, 'No updates provided');
 
     await firestorePatch(projectId, accessToken, `tenants/${body.tenantId}`, updates, mask);
+
+    // Audit trail — covers owner self-edits AND super-admin edits alike.
+    await logAdminAction(projectId, accessToken, {
+      action: 'branding.updated',
+      actorUid: caller.uid,
+      actorEmail: caller.email,
+      targetTenantId: body.tenantId,
+      detail: mask.join(', '),
+    });
+
     return jsonResp({ success: true, tenantId: body.tenantId, updates });
   } catch (err) {
     return errorResp(err);
