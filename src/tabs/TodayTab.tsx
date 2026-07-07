@@ -3,6 +3,7 @@ import { Phone, PhoneCall, MailCheck, MailPlus, MessagesSquare } from 'lucide-re
 import type { Lead } from '../types';
 import { isDueFollowUp, isHiringSignal } from '../leads/useLeadFilters';
 import { buildGmailUrl } from '../outreach/templates';
+import { OverviewPanel } from './OverviewPanel';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -103,6 +104,9 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
           {dateLine} · calls first, then bumps, then new sends.
         </p>
       </div>
+
+      {/* OVERVIEW — at-a-glance funnel + this-week + momentum, above the to-dos */}
+      <OverviewPanel leads={leads} />
 
       {/* Stat chips */}
       <div className="mb-6 flex flex-wrap items-center gap-2 tabular-nums">
