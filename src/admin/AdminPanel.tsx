@@ -6,7 +6,6 @@ import {
   TrendingUp,
   Plus,
   Search,
-  Loader2,
   ChevronRight,
   AlertCircle,
   RefreshCw,
@@ -17,6 +16,7 @@ import { TenantDetailDrawer } from './TenantDetailDrawer';
 import { CreateAccountModal } from '../modals/CreateAccountModal';
 import { isNotConfigured } from '../services/api';
 import { ServerSetupCallout } from '../ui/ServerSetupCallout';
+import { useToast } from '../ui/Toast';
 
 /**
  * Admin Panel — visible only when the logged-in user is `super-admin`.
@@ -25,6 +25,7 @@ import { ServerSetupCallout } from '../ui/ServerSetupCallout';
  */
 export function AdminPanel() {
   const { listTenants } = useAdminApi();
+  const toast = useToast();
   const [tenants, setTenants] = useState<TenantStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ notConfigured: boolean; message: string } | null>(null);
@@ -170,16 +171,16 @@ export function AdminPanel() {
           </div>
         ))}
 
-      {/* Tenant table */}
+      {/* Tenant table. On a hard load error the callout above already explains
+          it — hide the table block entirely so we never flash "No tenants yet". */}
+      {error && !loading ? null : (
       <div className="overflow-hidden rounded-2xl bg-apex-850 ring-1 ring-white/10">
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="animate-spin text-slate-400" size={20} />
-          </div>
+          <TableSkeleton />
         ) : filtered.length === 0 ? (
           <div className="px-8 py-16 text-center">
             <p className="text-sm font-medium text-slate-200">
-              {q ? 'No tenants match your search.' : 'No tenants yet.'}
+              {q ? 'No tenants match your search.' : 'No tenants yet — create your first client'}
             </p>
             <p className="mt-1 text-xs text-slate-400">
               {q
@@ -235,10 +236,10 @@ export function AdminPanel() {
                     <PlanBadge plan={t.plan} />
                   </td>
                   <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-300">
-                    {t.leadCount}
+                    {t.leadCount ?? 0}
                   </td>
                   <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-300">
-                    {t.userCount}
+                    {t.userCount ?? 0}
                   </td>
                   <td className="px-4 py-3">
                     {t.disabled ? (
@@ -261,6 +262,7 @@ export function AdminPanel() {
           </div>
         )}
       </div>
+      )}
 
       {/* Drawer */}
       <TenantDetailDrawer
@@ -275,6 +277,12 @@ export function AdminPanel() {
         onClose={() => {
           setShowCreate(false);
           void refresh();
+        }}
+        onCreated={(name) => {
+          // New tenant confirmed by the server — pull it into the list right
+          // away (the modal keeps its credentials panel open until dismissed).
+          void refresh();
+          toast(`Client created — ${name}`);
         }}
       />
     </div>
@@ -325,5 +333,25 @@ function PlanBadge({ plan }: { plan?: string }) {
     <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-300 ring-1 ring-amber-500/30">
       Trial
     </span>
+  );
+}
+
+/** Row-shaped loading placeholder shown while the tenant list is fetching. */
+function TableSkeleton() {
+  return (
+    <div className="divide-y divide-white/5" aria-hidden>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-4 px-4 py-3.5">
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="h-3 w-40 max-w-[45%] rounded bg-white/10 motion-safe:animate-pulse" />
+            <div className="h-2 w-24 max-w-[30%] rounded bg-white/5 motion-safe:animate-pulse" />
+          </div>
+          <div className="hidden h-3 w-32 rounded bg-white/10 motion-safe:animate-pulse sm:block" />
+          <div className="h-5 w-14 rounded-full bg-white/10 motion-safe:animate-pulse" />
+          <div className="h-3 w-8 rounded bg-white/10 motion-safe:animate-pulse" />
+          <div className="h-5 w-16 rounded-full bg-white/10 motion-safe:animate-pulse" />
+        </div>
+      ))}
+    </div>
   );
 }

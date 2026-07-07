@@ -8,6 +8,9 @@ import { useModalFocus } from '../ui/useModalFocus';
 interface CreateAccountModalProps {
   open: boolean;
   onClose: () => void;
+  /** Fired once the tenant + owner are actually created (server confirmed).
+   * Lets the parent refetch the list and toast. */
+  onCreated?: (tenantName: string) => void;
 }
 
 type FieldKey = 'tenantName' | 'tenantSlug' | 'ownerEmail' | 'password';
@@ -26,7 +29,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  *   - not-configured (friendly one-time-setup callout — never raw JSON garbage)
  *   - server error (clean message from the API)
  */
-export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
+export function CreateAccountModal({ open, onClose, onCreated }: CreateAccountModalProps) {
   const [tenantName, setTenantName] = useState('');
   const [tenantSlug, setTenantSlug] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
@@ -132,6 +135,9 @@ export function CreateAccountModal({ open, onClose }: CreateAccountModalProps) {
         }),
       });
       setSuccess(data?.message || `${tenantName.trim()} is live.`);
+      // Tell the parent it can refetch the tenant list + toast. The success
+      // panel (with credentials) stays open until the user dismisses it.
+      onCreated?.(tenantName.trim());
     } catch (err: any) {
       if (isNotConfigured(err)) {
         setNotConfigured(true);
