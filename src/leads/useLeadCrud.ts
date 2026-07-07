@@ -4,11 +4,9 @@ import {
   deleteField,
   doc,
   setDoc,
-  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Lead, LeadStatus } from '../types';
-import { findNewLeads } from '../services/gemini';
 import {
   OperationType,
   extractErrorMessage,
@@ -33,9 +31,8 @@ interface UseLeadCrudArgs {
  * Returns:
  *   - saved      flashes true for ~2s after every successful write
  *   - appError   user-visible error string (null when clean)
- *   - handlers   { addLead, findLeads, setStatus, updateLead, saveNote,
- *                  setReminder, addLeadFromBolt, markEmailed, logCall,
- *                  queueOutreach, deleteLead }
+ *   - handlers   { addLead, setStatus, updateLead, saveNote,
+ *                  setReminder, markEmailed, logCall, deleteLead }
  */
 export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
   const [saved, setSaved] = useState(false);
@@ -103,61 +100,6 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     }
   };
 
-  /** Gemini-generated batch insert. Returns number written or throws. */
-  const findLeads = async (q: string): Promise<number> => {
-    if (!q.trim()) return 0;
-    if (!requireTenant()) return 0;
-    let newLeads: Partial<Lead>[];
-    try {
-      newLeads = await findNewLeads(q);
-    } catch (e: any) {
-      setAppError('Error generating leads from AI: ' + (e?.message || String(e)));
-      throw e;
-    }
-    if (!Array.isArray(newLeads) || newLeads.length === 0) {
-      setAppError('No leads found. Try a different search query.');
-      return 0;
-    }
-    try {
-      const batch = writeBatch(db);
-      newLeads.forEach((lead, index) => {
-        const baseId =
-          lead.id ||
-          (lead.co || `lead-${index}`)
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '');
-        const uniqueId = `${baseId}-${Math.random().toString(36).substring(2, 7)}`;
-        const safeLead: Lead = {
-          id: uniqueId,
-          status: 'new',
-          notes: '',
-          co: lead.co ?? '',
-          city: lead.city ?? '',
-          who: lead.who ?? '',
-          role: lead.role ?? '',
-          pm: lead.pm ?? '',
-          pm_title: lead.pm_title ?? '',
-          parts: lead.parts ?? '',
-          pitch: lead.pitch ?? '',
-          ph: lead.ph ?? '',
-          em: lead.em ?? '',
-          web: lead.web ?? '',
-          t: (lead.t as 1 | 2) ?? 2,
-          r: lead.r ?? 'Other',
-          ...(lead.reminderDate ? { reminderDate: lead.reminderDate } : {}),
-          ...tenantStamp,
-        };
-        batch.set(doc(db, 'leads', uniqueId), safeLead);
-      });
-      await batch.commit();
-      return newLeads.length;
-    } catch (e: any) {
-      surface(e, OperationType.WRITE, 'leads');
-      return 0;
-    }
-  };
-
   /** Set a lead's status; auto-logs the change as a note timestamp. */
   const setStatus = async (id: string, st: LeadStatus) => {
     try {
@@ -215,35 +157,6 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     }
   };
 
-  const addLeadFromBolt = async (lead: Lead) => {
-    if (!requireTenant()) return;
-    try {
-      const fullLead: Lead = {
-        ...lead,
-        status: 'new',
-        notes: '',
-        t: lead.t ?? 2,
-        r: lead.r ?? 'Other',
-        co: lead.co ?? '',
-        city: lead.city ?? '',
-        who: lead.who ?? '',
-        role: lead.role ?? '',
-        pm: lead.pm ?? '',
-        pm_title: lead.pm_title ?? '',
-        parts: lead.parts ?? '',
-        pitch: lead.pitch ?? '',
-        ph: lead.ph ?? '',
-        em: lead.em ?? '',
-        web: lead.web ?? '',
-        ...tenantStamp,
-      };
-      await setDoc(doc(db, 'leads', lead.id), fullLead);
-      flashSaved();
-    } catch (e: any) {
-      surface(e, OperationType.CREATE, `leads/${lead.id}`);
-    }
-  };
-
   /** One-click "I emailed them" — bumps touch tracking, stamps the notes,
    * and only ever upgrades status (new/called/voicemail → emailed). */
   const markEmailed = async (lead: Lead) => {
@@ -287,20 +200,6 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     }
   };
 
-  const queueOutreach = async (lead: Lead) => {
-    try {
-      const current = (lead as any).queued_for_outreach;
-      await setDoc(
-        doc(db, 'leads', lead.id),
-        { queued_for_outreach: !current },
-        { merge: true },
-      );
-      flashSaved();
-    } catch (e: any) {
-      surface(e, OperationType.UPDATE, `leads/${lead.id}`);
-    }
-  };
-
   /** Always marks deleted locally + tries server delete (best effort).
    *  Returns immediately so the UI can restore scroll position. */
   const deleteLead = async (id: string) => {
@@ -318,15 +217,12 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     appError,
     setAppError,
     addLead,
-    findLeads,
     setStatus,
     updateLead,
     saveNote,
     setReminder,
-    addLeadFromBolt,
     markEmailed,
     logCall,
-    queueOutreach,
     deleteLead,
   };
 }

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Phone, PhoneCall, Mail, MailCheck, MailPlus, Copy, Globe, Search, Briefcase, ClipboardList, Microscope, Sparkles, Send, Zap } from 'lucide-react';
-import type { Lead, AiMode } from '../../types';
+import { Phone, PhoneCall, Mail, MailCheck, MailPlus, Copy, Globe, Search, Briefcase, ClipboardList, Send } from 'lucide-react';
+import type { Lead } from '../../types';
 import { buildGmailUrl, isWarmLead } from '../../outreach/templates';
 
 interface LeadCardActionsProps {
@@ -12,15 +12,13 @@ interface LeadCardActionsProps {
     linkedin: (co: string) => string;
     indeed: (city: string) => string;
   };
-  handleAI: (lead: Lead, mode: AiMode) => void;
   showEmail: boolean;
   setShowEmail: (show: boolean) => void;
-  onQueueOutreach?: (lead: Lead) => void;
   onMarkEmailed?: (lead: Lead) => void;
   onLogCall?: (lead: Lead) => void;
 }
 
-export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy, qs, handleAI, showEmail, setShowEmail, onQueueOutreach, onMarkEmailed, onLogCall }) => {
+export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy, qs, showEmail, setShowEmail, onMarkEmailed, onLogCall }) => {
   // buildGmailUrl picks the template from status — warm statuses (client,
   // visited, interested, quote) can never get the cold pitch.
   const warm = isWarmLead(lead);
@@ -135,22 +133,8 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
         </a>
 
         <button
-          onClick={() => handleAI(lead, 'research')}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-300 transition-colors hover:bg-rose-500/20"
-        >
-          <Microscope size={14} /> Research Contact
-        </button>
-
-        <button
-          onClick={() => handleAI(lead, 'pitch')}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-orange-500/20 bg-orange-500/10 px-3 py-1.5 text-xs font-medium text-orange-300 transition-colors hover:bg-orange-500/20"
-        >
-          <Sparkles size={14} /> AI Pitch
-        </button>
-
-        <button
           onClick={() => setShowEmail(!showEmail)}
-          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
+          className={`ml-auto inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
             showEmail
               ? 'border-orange-500/40 bg-orange-500/20 text-orange-300'
               : 'border-orange-500/30 bg-apex-accent text-white hover:brightness-110'
@@ -158,19 +142,6 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
         >
           <Send size={14} /> {showEmail ? 'Close Email' : 'Quick Email'}
         </button>
-
-        {onQueueOutreach && lead.status === 'new' && lead.em && (
-          <button
-            onClick={() => onQueueOutreach(lead)}
-            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
-              (lead as any).queued_for_outreach
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                : 'border-violet-500/20 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20'
-            }`}
-          >
-            <Zap size={14} /> {(lead as any).queued_for_outreach ? 'Queued' : 'Queue Outreach'}
-          </button>
-        )}
       </div>
     </>
   );

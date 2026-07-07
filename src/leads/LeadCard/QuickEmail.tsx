@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Mail, Send, Copy, Check, X, Sparkles, Loader2 } from 'lucide-react';
+import { Mail, Send, Copy, Check, X } from 'lucide-react';
 import { SCRIPTS } from '../../data';
 import type { Lead } from '../../types';
-import { generatePitch } from '../../services/gemini';
 
 interface QuickEmailProps {
   lead: Lead;
@@ -36,8 +35,6 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [copied, setCopied] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [showPicker, setShowPicker] = useState(false);
 
   const selectedScript = useMemo(
     () => EMAIL_SCRIPTS.find((s) => s.id === selectedId),
@@ -56,27 +53,6 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, lead.id]);
-
-  const handleAiDraft = async () => {
-    setAiLoading(true);
-    try {
-      const result = await generatePitch(lead);
-      if (result) {
-        const emailMatch = result.match(/COLD EMAIL\s*\n(?:Subject:\s*(.+)\n)?([\s\S]*?)(?:\n\s*CALL OPENER|$)/i);
-        if (emailMatch) {
-          setSubject(emailMatch[1]?.trim() || `Deburring support for ${lead.co}`);
-          setBody(emailMatch[2]?.trim() || result);
-        } else {
-          setBody(result);
-        }
-        setSelectedId('');
-      }
-    } catch (e: any) {
-      setBody(`Error generating email: ${e?.message || 'Try again'}`);
-    } finally {
-      setAiLoading(false);
-    }
-  };
 
   const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(toEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
@@ -113,7 +89,7 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
           {EMAIL_SCRIPTS.map((s) => (
             <button
               key={s.id}
-              onClick={() => { setSelectedId(s.id); setShowPicker(false); }}
+              onClick={() => setSelectedId(s.id)}
               className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium transition-colors ${
                 selectedId === s.id
                   ? 'border-orange-500/30 bg-orange-500/10 text-orange-300'
@@ -123,14 +99,6 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
               {s.title}
             </button>
           ))}
-          <button
-            onClick={handleAiDraft}
-            disabled={aiLoading}
-            className="flex items-center gap-1 rounded-lg border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[11px] font-medium text-violet-300 transition-colors hover:bg-violet-500/20 disabled:opacity-50"
-          >
-            {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-            AI Draft
-          </button>
         </div>
       </div>
 
@@ -145,7 +113,7 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
         />
         {!toEmail && (
           <div className="mt-1 text-[10px] text-amber-400">
-            No email on file — use Research Contact to find one
+            No email on file — check their website or the Google/LinkedIn buttons above
           </div>
         )}
       </div>

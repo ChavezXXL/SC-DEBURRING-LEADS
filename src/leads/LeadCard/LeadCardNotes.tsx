@@ -75,7 +75,7 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
           className={`min-h-[44px] rounded-lg border border-white/10 bg-apex-800 p-4 text-xs leading-relaxed transition-colors ${
             lead.notes
               ? 'text-slate-300'
-              : 'cursor-text italic text-slate-500 hover:border-white/20'
+              : 'cursor-text italic text-slate-400 hover:border-white/20'
           }`}
         >
           {lead.notes ? renderMarkdown(lead.notes) : 'Click to add notes...'}

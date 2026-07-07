@@ -4,10 +4,7 @@ import {
   ListTodo,
   MessageSquare,
   Check,
-  Sparkles,
   Kanban,
-  Brain,
-  Zap,
   LogOut,
   Shield,
   Settings as SettingsIcon,
@@ -125,8 +122,6 @@ export function Sidebar({
           {navItem('leads', 'Leads', LayoutDashboard, leads.length)}
           {navItem('outreach', 'Outreach', MessageSquare)}
           {navItem('pipeline', 'Pipeline', Kanban)}
-          {navItem('brain', 'AI Brain', Brain)}
-          {navItem('autopilot', 'Autopilot', Zap)}
           {(profile?.role === 'owner' || profile?.role === 'super-admin') &&
             navItem('settings', 'Settings', SettingsIcon)}
           {profile?.role === 'super-admin' && navItem('admin', 'Admin', Shield)}
@@ -165,7 +160,7 @@ export function Sidebar({
             />
           </div>
 
-          <div className="mt-2 text-[10px] tabular-nums text-slate-500">
+          <div className="mt-2 text-[10px] tabular-nums text-slate-400">
             {Math.round((S.clients / Math.max(S.total, 1)) * 100)}% converted
           </div>
         </div>
@@ -179,11 +174,6 @@ export function Sidebar({
             Saved
           </div>
         )}
-
-        <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 ring-1 ring-emerald-500/30 px-3 py-2 text-xs font-medium text-emerald-300">
-          <Sparkles size={14} />
-          Gemini AI Active
-        </div>
 
         {/* Create-account button now lives inside the Admin tab. */}
 

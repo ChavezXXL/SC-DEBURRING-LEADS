@@ -60,28 +60,7 @@ export interface ObjectionDef {
   a: string;
 }
 
-export type TabKey = 'today' | 'leads' | 'outreach' | 'pipeline' | 'brain' | 'autopilot' | 'admin' | 'settings';
-export type AiMode = 'pitch' | 'research';
-
-export type OutreachMode = 'all_new' | 'tier1' | 'tagged';
-
-export interface AutoOutreachSettings {
-  enabled: boolean;
-  mode: OutreachMode;
-  dailyLimit: number;
-}
-
-export interface OutreachLog {
-  id: string;
-  leadId: string;
-  company: string;
-  contact: string;
-  email: string;
-  subject: string;
-  body: string;
-  sentAt: string;
-  status: 'sent' | 'opened' | 'replied' | 'bounced';
-}
+export type TabKey = 'today' | 'leads' | 'outreach' | 'pipeline' | 'admin' | 'settings';
 
 /**
  * A tenant = one business that logs into the CRM.

@@ -7,7 +7,7 @@ Hello! If you are an AI assistant (like Claude) taking over or helping manage th
 - **Styling:** Tailwind CSS
 - **Icons:** `lucide-react`
 - **Database:** Firebase Firestore (`firebase.ts` handles initialization)
-- **AI Integration:** `@google/genai` (Gemini API for pitch generation and lead research)
+- **No AI integrations:** all AI/Gemini features (AI Brain, Autopilot, Bolt chat, AI pitch/research) were removed 2026-07 by owner order. Outreach copy is static templates in `src/outreach/templates.ts` + `src/data.ts`.
 
 ## Current Architecture & State
 Currently, the application is heavily centralized. 
@@ -16,7 +16,6 @@ Currently, the application is heavily centralized.
   - Hardcoded Data (`SCRIPTS`, `OBJECTIONS`, `STATUS`, `REGIONS`)
   - TypeScript Interfaces (`Lead`, `AiMode`)
   - Firebase CRUD operations (`addDoc`, `updateDoc`, `deleteDoc`, `onSnapshot`)
-  - Gemini AI logic (`handleAI`, `findNewLeads`)
   - All UI Components (Sidebar, Lead Cards, Modals, Outreach Tab)
 
 ## Database Schema (Firestore)
@@ -43,12 +42,11 @@ Because `App.tsx` is very large, **do not attempt to replace the entire file at 
 If the user asks you to add significant new features, your **first step** should be to modularize the codebase to save your context window:
 1. **Extract Types:** Move all `interface` and `type` declarations to `/src/types.ts`.
 2. **Extract Constants:** Move `SCRIPTS`, `OBJECTIONS`, `STATUS`, and `REGIONS` to `/src/constants.ts`.
-3. **Extract Services:** Move Firebase logic to `/src/services/db.ts` and Gemini logic to `/src/services/ai.ts`.
+3. **Extract Services:** Move Firebase logic to `/src/services/db.ts`.
 4. **Extract Components:** Break the UI into `/src/components/Sidebar.tsx`, `/src/components/LeadCard.tsx`, `/src/components/Modals.tsx`, etc.
 
 ## Environment Variables
 - `VITE_FIREBASE_*`: Standard Firebase config variables.
-- `GEMINI_API_KEY`: Used for the AI features. (Note: In the AI Studio environment, this is injected automatically via `process.env.GEMINI_API_KEY` on the backend, but currently the app calls it directly from the frontend using `import.meta.env.VITE_GEMINI_API_KEY` or similar if configured).
 
 ## Common Tasks
 - **Adding a new Status:** Update the `STATUS` array in `App.tsx`.

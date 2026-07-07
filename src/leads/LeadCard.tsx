@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Lead, LeadStatus, AiMode } from '../types';
+import type { Lead, LeadStatus } from '../types';
 import { LeadCardHeader } from './LeadCard/LeadCardHeader';
 import { LeadCardActions } from './LeadCard/LeadCardActions';
 import { LeadCardDetails } from './LeadCard/LeadCardDetails';
@@ -18,7 +18,6 @@ interface LeadCardProps {
   setStatus: (id: string, st: LeadStatus) => void;
   saveNote: (id: string, notes: string) => void;
   setDeleteModal: (modal: { id: string; co: string } | null) => void;
-  handleAI: (lead: Lead, mode: AiMode) => void;
   cp: string | null;
   copy: (id: string, text: string) => void;
   qs: {
@@ -27,7 +26,6 @@ interface LeadCardProps {
     indeed: (city: string) => string;
   };
   setReminder: (id: string, reminderDate: string | null) => void;
-  onQueueOutreach?: (lead: Lead) => void;
   onMarkEmailed?: (lead: Lead) => void;
   onLogCall?: (lead: Lead) => void;
 }
@@ -43,12 +41,10 @@ const LeadCardComponent: React.FC<LeadCardProps> = ({
   setStatus,
   saveNote,
   setDeleteModal,
-  handleAI,
   cp,
   copy,
   qs,
   setReminder,
-  onQueueOutreach,
   onMarkEmailed,
   onLogCall,
 }) => {
@@ -72,10 +68,8 @@ const LeadCardComponent: React.FC<LeadCardProps> = ({
             cp={cp}
             copy={copy}
             qs={qs}
-            handleAI={handleAI}
             showEmail={showEmail}
             setShowEmail={setShowEmail}
-            onQueueOutreach={onQueueOutreach}
             onMarkEmailed={onMarkEmailed}
             onLogCall={onLogCall}
           />

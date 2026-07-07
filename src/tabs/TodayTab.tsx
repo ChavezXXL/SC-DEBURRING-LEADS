@@ -87,7 +87,7 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
       <div className="mx-auto max-w-5xl">
         <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-100">Today</h1>
         <p className="mb-6 text-xs text-slate-400">{dateLine}</p>
-        <div className="rounded-2xl bg-apex-850 ring-1 ring-white/10 px-8 py-16 text-center text-sm text-slate-400">
+        <div className="rounded-2xl bg-apex-850 ring-1 ring-white/10 px-8 py-16 text-center text-sm text-slate-300">
           No leads in this workspace yet. Add leads on the Leads tab and the day's work builds
           itself here.
         </div>
@@ -349,7 +349,7 @@ function GroupLabel({
 }
 
 function EmptyLine({ text }: { text: string }) {
-  return <p className="py-2 text-sm text-slate-400">{text}</p>;
+  return <p className="py-2 text-sm text-slate-300">{text}</p>;
 }
 
 function CoButton({ lead, onLeadClick }: { lead: Lead; onLeadClick: (id: string) => void }) {

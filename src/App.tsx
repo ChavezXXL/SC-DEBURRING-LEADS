@@ -1,9 +1,8 @@
 import React, { lazy, Suspense, useCallback, useState } from 'react';
 import { Menu, X, Loader2 } from 'lucide-react';
 
-import type { Lead, AiMode, TabKey, LeadStatus } from './types';
+import type { Lead, TabKey, LeadStatus } from './types';
 import { STATUS } from './data';
-import { generatePitch, researchContact } from './services/gemini';
 import { useToast } from './ui/Toast';
 
 import { useAuth } from './auth/AuthContext';
@@ -19,9 +18,7 @@ import { FancyLogo } from './shell/FancyLogo';
 import { TodayTab } from './tabs/TodayTab';
 import { OutreachTab } from './tabs/OutreachTab';
 import { PipelineTab } from './tabs/PipelineTab';
-import { AutoOutreach } from './tabs/AutoOutreach';
 // Heavy tabs are code-split so the initial bundle only loads what most users need.
-const AiBrain = lazy(() => import('./tabs/AiBrain').then((m) => ({ default: m.AiBrain })));
 const AdminPanel = lazy(() =>
   import('./admin/AdminPanel').then((m) => ({ default: m.AdminPanel })),
 );
@@ -29,9 +26,7 @@ const SettingsTab = lazy(() =>
   import('./settings/SettingsTab').then((m) => ({ default: m.SettingsTab })),
 );
 
-import { AiModal } from './modals/AiModal';
 import { DeleteModal } from './modals/DeleteModal';
-import { BoltChat } from './modals/BoltChat';
 
 const EMPTY_LEAD_FORM: Partial<Lead> = {
   co: '',
@@ -77,8 +72,7 @@ const qs = {
  *   - Tab routing
  *   - Mobile menu state
  *   - Card open/edit/draft state (so it survives tab switches)
- *   - Modal coordination (AddLead / Delete / AI / BoltChat)
- *   - AI mode handler (calls Gemini, surfaces text in AiModal)
+ *   - Modal coordination (AddLead / Delete)
  *   - Sidebar/main layout
  */
 export default function App() {
@@ -96,7 +90,7 @@ export default function App() {
   const [tab, setTab] = useState<TabKey>('today');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Card UI state (shared across LeadsTab/AI Brain/Pipeline jumps)
+  // Card UI state (shared across LeadsTab/Pipeline jumps)
   const [openId, setOpenId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -106,9 +100,6 @@ export default function App() {
   const [showAddLead, setShowAddLead] = useState(false);
   const [newLeadForm, setNewLeadForm] = useState<Partial<Lead>>({ ...EMPTY_LEAD_FORM });
   const [deleteModal, setDeleteModal] = useState<{ id: string; co: string } | null>(null);
-  const [aiModal, setAiModal] = useState<{ lead: Lead; mode: AiMode } | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiText, setAiText] = useState('');
 
   // ---- handlers ----------------------------------------------------------
 
@@ -121,20 +112,6 @@ export default function App() {
       setTimeout(() => setCp(null), 2200);
     } catch (err) {
       console.error('Clipboard copy failed:', err);
-    }
-  }, []);
-
-  const handleAI = useCallback(async (lead: Lead, mode: AiMode) => {
-    setAiModal({ lead, mode });
-    setAiLoading(true);
-    setAiText('');
-    try {
-      const result = mode === 'pitch' ? await generatePitch(lead) : await researchContact(lead);
-      setAiText(result || '');
-    } catch (e: any) {
-      setAiText('Error: ' + (e?.message || 'Unknown error'));
-    } finally {
-      setAiLoading(false);
     }
   }, []);
 
@@ -188,11 +165,6 @@ export default function App() {
     }
     return crud.setStatus(id, st);
   }, [crud, toast, visibleLeads]);
-
-  const handleAddFromBolt = useCallback((lead: Lead) => {
-    toast(`Lead added — ${lead.co}`);
-    return crud.addLeadFromBolt(lead);
-  }, [crud, toast]);
 
   /** Cross-tab "show me this lead" — switch to Leads, open the card, scroll to it. */
   const jumpToLead = useCallback((id: string) => {
@@ -326,30 +298,16 @@ export default function App() {
             setStatus={handleSetStatus}
             saveNote={handleSaveNote}
             setReminder={crud.setReminder}
-            queueOutreach={crud.queueOutreach}
             markEmailed={handleMarkEmailed}
             logCall={handleLogCall}
-            handleAI={handleAI}
             onDelete={(id, co) => setDeleteModal({ id, co })}
             onAddLeadClick={() => setShowAddLead(true)}
           />
         )}
 
         {tab === 'outreach' && <OutreachTab />}
-        {tab === 'autopilot' && <AutoOutreach leads={visibleLeads} />}
         {tab === 'pipeline' && (
           <PipelineTab leads={visibleLeads} onLeadClick={jumpToLead} setStatus={handleSetStatus} />
-        )}
-        {tab === 'brain' && (
-          <Suspense fallback={<TabSpinner />}>
-            <AiBrain
-              leads={visibleLeads}
-              onLeadClick={jumpToLead}
-              onDeleteLead={(id, co) => setDeleteModal({ id, co })}
-              setStatus={handleSetStatus}
-              handleAI={handleAI}
-            />
-          </Suspense>
         )}
         {tab === 'admin' && profile?.role === 'super-admin' && (
           <Suspense fallback={<TabSpinner />}>
@@ -359,7 +317,7 @@ export default function App() {
         {tab === 'settings' &&
           (profile?.role === 'owner' || profile?.role === 'super-admin') && (
             <Suspense fallback={<TabSpinner />}>
-              <SettingsTab />
+              <SettingsTab leads={visibleLeads} />
             </Suspense>
           )}
       </main>
@@ -372,19 +330,6 @@ export default function App() {
         />
       )}
 
-      {aiModal && (
-        <AiModal
-          aiModal={aiModal}
-          setAiModal={setAiModal}
-          aiLoading={aiLoading}
-          aiText={aiText}
-          cp={cp}
-          copy={copy}
-          saveNote={handleSaveNote}
-          updateLeadFields={crud.updateLead}
-        />
-      )}
-
       {showAddLead && (
         <AddLeadModal
           newLeadForm={newLeadForm}
@@ -393,8 +338,6 @@ export default function App() {
           handleAddLead={handleAddLead}
         />
       )}
-
-      <BoltChat leads={visibleLeads} onAddLead={handleAddFromBolt} />
     </div>
   );
 }

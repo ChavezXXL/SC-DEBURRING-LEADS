@@ -301,7 +301,7 @@ function StatCard({
         {label}
       </div>
       <div className={`mt-1 text-2xl font-semibold tabular-nums ${accent}`}>{value}</div>
-      {sub && <div className="mt-0.5 text-[10px] text-slate-500">{sub}</div>}
+      {sub && <div className="mt-0.5 text-[10px] text-slate-400">{sub}</div>}
     </div>
   );
 }

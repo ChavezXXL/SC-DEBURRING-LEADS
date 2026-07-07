@@ -103,6 +103,32 @@
   color-scheme: dark;
 }
 
+/* Native <select> popups: force the dark scheme onto the control itself AND
+   its options — some Chromium/Windows builds ignore the :root color-scheme
+   for the popup and paint a white list with pale gray text (unreadable on
+   the owner's machine). Options can't take Tailwind classes, so the card
+   surface (#12151A) and slate-200 text are pinned here. Lives in @layer base
+   so per-element Tailwind utilities still win the cascade. */
+@layer base {
+  select,
+  select option {
+    color-scheme: dark;
+  }
+  /* Any select that slips in without utility classes still renders dark
+     with readable slate-100 text instead of UA white. */
+  select {
+    background-color: #171B21; /* apex-800 input well */
+    color: #F1F5F9;            /* slate-100 */
+  }
+  select option {
+    background-color: #12151A; /* apex-850 card surface */
+    color: #E2E8F0;            /* slate-200 */
+  }
+  select option:disabled {
+    color: #64748B;            /* slate-500 */
+  }
+}
+
 /* Every interactive element gets a visible molten-orange focus ring —
    keyboard users never lose their place on the dark ground. */
 :where(a, button, select, input, textarea, [role="button"]):focus-visible {

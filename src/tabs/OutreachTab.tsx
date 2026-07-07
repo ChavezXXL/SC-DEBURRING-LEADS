@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Copy, Check, Send, Mail, Phone, MessageSquare, Users, Briefcase, Target, Clock, ChevronRight } from 'lucide-react';
+import { Copy, Check, Send, Mail, Phone, MessageSquare, Briefcase, Target, Clock } from 'lucide-react';
 import { SCRIPTS, OBJECTIONS } from '../data';
 
 type View = 'email' | 'scripts' | 'cadence' | 'objections';

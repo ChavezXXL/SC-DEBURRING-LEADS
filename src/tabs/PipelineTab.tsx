@@ -125,7 +125,7 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
                             value={lead.status}
                             onChange={(e) => void setStatus(lead.id, e.target.value as LeadStatus)}
                             title="Move this lead to another stage"
-                            className="w-full cursor-pointer rounded-lg bg-apex-800 px-2 py-1.5 text-[11px] font-medium text-slate-300 ring-1 ring-white/10 transition-colors hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
+                            className="w-full cursor-pointer rounded-lg bg-apex-800 px-2 py-1.5 text-[11px] font-medium text-slate-100 ring-1 ring-white/10 transition-colors hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
                           >
                             {STATUS.map((s) => (
                               <option key={s.k} value={s.k}>
@@ -139,10 +139,10 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
                   })}
                   {columnLeads.length === 0 && (
                     <div className="rounded-xl border border-dashed border-white/10 py-10 text-center">
-                      <div className="text-xs font-medium text-slate-400">
+                      <div className="text-xs font-medium text-slate-300">
                         Nothing in {st.label.toLowerCase() === 'client' ? 'Clients' : st.label}
                       </div>
-                      <div className="mt-1 text-[11px] text-slate-500">
+                      <div className="mt-1 text-[11px] text-slate-400">
                         Move a lead here with its stage menu.
                       </div>
                     </div>

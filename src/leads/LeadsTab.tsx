@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
-import type { Lead, LeadStatus, AiMode } from '../types';
+import type { Lead, LeadStatus } from '../types';
 import { REGIONS, STATUS } from '../data';
 import { LeadCard } from './LeadCard';
 import { isDueFollowUp, isHiringSignal } from './useLeadFilters';
@@ -31,12 +31,10 @@ interface LeadsTabProps {
   setStatus: (id: string, st: LeadStatus) => void | Promise<void>;
   saveNote: (id: string, notes: string) => void | Promise<void>;
   setReminder: (id: string, d: string | null) => void | Promise<void>;
-  queueOutreach: (lead: Lead) => void | Promise<void>;
   markEmailed: (lead: Lead) => void | Promise<void>;
   logCall: (lead: Lead) => void | Promise<void>;
 
-  // Modal/AI handlers (from App)
-  handleAI: (lead: Lead, mode: AiMode) => void;
+  // Modal handlers (from App)
   onDelete: (id: string, co: string) => void;
   onAddLeadClick: () => void;
 }
@@ -64,10 +62,8 @@ export function LeadsTab({
   setStatus,
   saveNote,
   setReminder,
-  queueOutreach,
   markEmailed,
   logCall,
-  handleAI,
   onDelete,
   onAddLeadClick,
 }: LeadsTabProps) {
@@ -239,7 +235,7 @@ export function LeadsTab({
         <select
           value={regF}
           onChange={(e) => setRegF(e.target.value)}
-          className="cursor-pointer rounded-xl bg-apex-800 px-3 py-2 text-xs text-slate-300 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
+          className="cursor-pointer rounded-xl bg-apex-800 px-3 py-2 text-xs text-slate-100 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
         >
           {REGIONS.map((r) => (
             <option key={r}>{r}</option>
@@ -249,7 +245,7 @@ export function LeadsTab({
         <select
           value={tierF}
           onChange={(e) => setTierF(e.target.value)}
-          className="cursor-pointer rounded-xl bg-apex-800 px-3 py-2 text-xs text-slate-300 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
+          className="cursor-pointer rounded-xl bg-apex-800 px-3 py-2 text-xs text-slate-100 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
         >
           <option value="all">All Tiers</option>
           <option value="1">Tier 1 — Call Now</option>
@@ -259,7 +255,7 @@ export function LeadsTab({
         <select
           value={stF}
           onChange={(e) => setStF(e.target.value)}
-          className="cursor-pointer rounded-xl bg-apex-800 px-3 py-2 text-xs text-slate-300 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
+          className="cursor-pointer rounded-xl bg-apex-800 px-3 py-2 text-xs text-slate-100 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
         >
           <option value="all">All Statuses</option>
           <option value="active">Active Pipeline</option>
@@ -360,10 +356,10 @@ export function LeadsTab({
             <h2 className="mt-4 text-lg font-semibold text-slate-100">
               Welcome to your CRM
             </h2>
-            <p className="mt-2 text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
-              Your account is fresh — no leads yet. Click <strong className="text-slate-200">+ Add Lead</strong>{' '}
-              above to enter your first one, or use the AI assistant in the bottom right
-              to find leads in your area.
+            <p className="mt-2 text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
+              Your account is fresh — no leads yet. Click{' '}
+              <strong className="text-slate-100">+ Add Lead</strong> above to enter your
+              first company and start working the list.
             </p>
             <div className="mt-6 flex items-center justify-center gap-3">
               <button
@@ -377,7 +373,7 @@ export function LeadsTab({
         ) : (
           <div className="rounded-2xl bg-apex-850 ring-1 ring-white/10 py-16 px-8 text-center">
             <div className="text-2xl">🔍</div>
-            <p className="mt-3 text-sm text-slate-400">No leads match your filters.</p>
+            <p className="mt-3 text-sm text-slate-300">No leads match your filters.</p>
             <button
               onClick={() => {
                 resetAll();
@@ -405,11 +401,9 @@ export function LeadsTab({
               saveNote={saveNote}
               setReminder={setReminder}
               setDeleteModal={(m) => m && onDelete(m.id, m.co)}
-              handleAI={handleAI}
               cp={cp}
               copy={copy}
               qs={qs}
-              onQueueOutreach={queueOutreach}
               onMarkEmailed={markEmailed}
               onLogCall={logCall}
             />
