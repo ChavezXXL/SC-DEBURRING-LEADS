@@ -1,8 +1,9 @@
 import React from 'react';
-import { ChevronDown, ChevronUp, User, MapPin } from 'lucide-react';
+import { ChevronDown, ChevronUp, User, MapPin, CalendarClock } from 'lucide-react';
 import type { Lead } from '../../types';
 import { STATUS } from '../../data';
 import { isHiringSignal } from '../useLeadFilters';
+import { parseStampDate, relativeDay, absoluteDate, reminderState } from '../../utils/leadActivity';
 
 interface LeadCardHeaderProps {
   lead: Lead;
@@ -14,6 +15,11 @@ export const LeadCardHeader: React.FC<LeadCardHeaderProps> = ({ lead, isOpen, se
   const st = STATUS.find((s) => s.k === lead.status) || STATUS[0];
   const isClient = lead.status === 'client';
   const hasPM = !!lead.pm;
+
+  // Manually-scheduled follow-up pill: amber when due/overdue, slate when future.
+  const followUp = lead.reminderDate ? parseStampDate(lead.reminderDate) : null;
+  const followUpState = lead.reminderDate ? reminderState(lead.reminderDate) : null;
+  const followUpDue = followUpState === 'overdue' || followUpState === 'today';
 
   return (
     <div
@@ -66,6 +72,20 @@ export const LeadCardHeader: React.FC<LeadCardHeaderProps> = ({ lead, isOpen, se
           <span className="flex items-center gap-1 text-slate-400">
             <MapPin size={12} /> {lead.city}
           </span>
+          {followUp && (
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${
+                followUpDue
+                  ? 'bg-amber-500/10 text-amber-300 ring-amber-500/40'
+                  : 'bg-slate-500/10 text-slate-300 ring-slate-500/30'
+              }`}
+              title={`Follow-up ${absoluteDate(followUp)}`}
+            >
+              <CalendarClock size={11} />
+              Follow up{' '}
+              {followUpState === 'today' ? 'today' : relativeDay(followUp)}
+            </span>
+          )}
         </div>
       </div>
 

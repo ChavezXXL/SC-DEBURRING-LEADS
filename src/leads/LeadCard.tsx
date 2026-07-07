@@ -4,6 +4,8 @@ import type { Lead, LeadStatus } from '../types';
 import { LeadCardHeader } from './LeadCard/LeadCardHeader';
 import { LeadCardActions } from './LeadCard/LeadCardActions';
 import { LeadCardDetails } from './LeadCard/LeadCardDetails';
+import { LeadCardTimeline } from './LeadCard/LeadCardTimeline';
+import { LeadCardFollowUp } from './LeadCard/LeadCardFollowUp';
 import { LeadCardNotes } from './LeadCard/LeadCardNotes';
 import { LeadCardStatus } from './LeadCard/LeadCardStatus';
 import { QuickEmail } from './LeadCard/QuickEmail';
@@ -128,6 +130,8 @@ const LeadCardComponent: React.FC<LeadCardProps> = ({
             />
           )}
           <LeadCardDetails lead={lead} />
+          <LeadCardFollowUp lead={lead} setReminder={setReminder} />
+          <LeadCardTimeline lead={lead} />
           <LeadCardNotes
             lead={lead}
             editId={editId}

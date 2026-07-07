@@ -192,16 +192,28 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     }
   };
 
+  /**
+   * Set or clear a lead's follow-up reminder. Both branches are { merge: true }
+   * patches on the existing doc, so tenantId (and every other field) is
+   * preserved — identical write shape to markEmailed. Each also appends a dated
+   * timeline line to `notes` so the change shows up in the activity timeline.
+   */
   const setReminder = async (id: string, reminderDate: string | null) => {
     try {
+      const lead = leads.find((l) => l.id === id);
+      const today = new Date().toISOString().slice(0, 10);
       if (reminderDate === null) {
+        const stamp = `[${today}] Follow-up cleared.`;
+        const notes = lead?.notes ? `${lead.notes}\n${stamp}` : stamp;
         await setDoc(
           doc(db, 'leads', id),
-          { reminderDate: deleteField() },
+          { reminderDate: deleteField(), notes },
           { merge: true },
         );
       } else {
-        await setDoc(doc(db, 'leads', id), { reminderDate }, { merge: true });
+        const stamp = `[${today}] Follow-up set for ${reminderDate}.`;
+        const notes = lead?.notes ? `${lead.notes}\n${stamp}` : stamp;
+        await setDoc(doc(db, 'leads', id), { reminderDate, notes }, { merge: true });
       }
       flashSaved();
     } catch (e: any) {

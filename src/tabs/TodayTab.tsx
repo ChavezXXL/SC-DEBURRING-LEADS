@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
-import { Phone, PhoneCall, MailCheck, MailPlus, MessagesSquare } from 'lucide-react';
+import { Phone, PhoneCall, MailCheck, MailPlus, MessagesSquare, CalendarClock } from 'lucide-react';
 import type { Lead } from '../types';
 import { isDueFollowUp, isHiringSignal } from '../leads/useLeadFilters';
+import { isReminderDue, parseStampDate, relativeDay, absoluteDate, reminderState } from '../utils/leadActivity';
 import { buildGmailUrl } from '../outreach/templates';
 import { OverviewPanel } from './OverviewPanel';
 
@@ -41,9 +42,15 @@ interface TodayTabProps {
 export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabProps) {
   const now = Date.now();
 
-  const { stats, hotCalls, checkIns, bumps, ready } = useMemo(() => {
+  const { stats, hotCalls, checkIns, bumps, ready, scheduled } = useMemo(() => {
     const tierFirst = (a: Lead, b: Lead) =>
       a.t !== b.t ? a.t - b.t : (a.co || '').localeCompare(b.co || '');
+
+    // reminderDate as epoch ms (local midnight); missing sorts last.
+    const reminderMs = (l: Lead): number => {
+      const d = l.reminderDate ? parseStampDate(l.reminderDate) : null;
+      return d ? d.getTime() : Number.POSITIVE_INFINITY;
+    };
 
     return {
       stats: {
@@ -53,7 +60,13 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
         warm: leads.filter((l) => l.status === 'interested' || l.status === 'quote').length,
         clients: leads.filter((l) => l.status === 'client').length,
         bumpsDue: leads.filter((l) => isDueFollowUp(l)).length,
+        scheduledDue: leads.filter((l) => isReminderDue(l)).length,
       },
+      // Manually-scheduled follow-ups that have come due (reminderDate <= today).
+      // Most overdue first. Distinct from bumps (auto "emailed, went quiet").
+      scheduled: leads
+        .filter((l) => isReminderDue(l))
+        .sort((a, b) => reminderMs(a) - reminderMs(b)),
       hotCalls: leads
         .filter(
           (l) =>
@@ -116,6 +129,11 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
         <StatChip label="Interested+Quote" value={stats.warm} />
         <StatChip label="Clients" value={stats.clients} />
         <StatChip label="Bumps due" value={stats.bumpsDue} highlight={stats.bumpsDue > 0} />
+        <StatChip
+          label="Follow-ups due"
+          value={stats.scheduledDue}
+          highlight={stats.scheduledDue > 0}
+        />
       </div>
 
       {/* CALLS TO MAKE */}
@@ -185,6 +203,64 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </Section>
+
+      {/* FOLLOW-UPS SCHEDULED — the manually-picked reminderDate kind, distinct
+          from the auto-derived "Bumps due" below. Only leads whose reminder is
+          on or before today appear here. */}
+      <Section
+        title="Follow-ups scheduled"
+        hint="You set a reminder date on these and it's here or overdue. Open the card, then log the call or email."
+      >
+        {scheduled.length === 0 ? (
+          <EmptyLine text="No scheduled follow-ups due. Set a date on any lead's card to see it here." />
+        ) : (
+          <div className="divide-y divide-white/5">
+            {scheduled.map((lead) => {
+              const d = lead.reminderDate ? parseStampDate(lead.reminderDate) : null;
+              const overdue =
+                lead.reminderDate && reminderState(lead.reminderDate) === 'overdue';
+              return (
+                <div
+                  key={lead.id}
+                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <CoButton lead={lead} onLeadClick={onLeadClick} />
+                      <TierPill t={lead.t} />
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-400">
+                      <CalendarClock size={12} className={overdue ? 'text-amber-400' : 'text-slate-500'} />
+                      <span
+                        className={`font-medium tabular-nums ${overdue ? 'text-amber-300' : 'text-slate-300'}`}
+                        title={d ? absoluteDate(d) : undefined}
+                      >
+                        {d
+                          ? overdue
+                            ? `Overdue · ${relativeDay(d)}`
+                            : `Due ${relativeDay(d)}`
+                          : 'Due'}
+                      </span>
+                      {lead.city && <span className="text-slate-500">· {lead.city}</span>}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {lead.ph && <BigPhone ph={lead.ph} />}
+                    <LogCallButton lead={lead} logCall={logCall} />
+                    {lead.em && (
+                      <MarkEmailedButton
+                        lead={lead}
+                        markEmailed={markEmailed}
+                        title="Log the email after you send it"
+                      />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </Section>
