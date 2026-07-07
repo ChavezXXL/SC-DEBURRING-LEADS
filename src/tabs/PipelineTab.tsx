@@ -81,14 +81,14 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
                         onClick={() => onLeadClick(lead.id)}
                         className="cursor-pointer rounded-xl bg-apex-850 p-3 ring-1 ring-white/10 transition-all hover:shadow-md hover:shadow-black/40 hover:ring-white/20"
                       >
-                        <div className="mb-2 text-sm font-semibold text-slate-100 line-clamp-1">
+                        <div className="mb-2 text-sm font-semibold text-slate-100 line-clamp-1" title={lead.co}>
                           {lead.co}
                         </div>
 
                         <div className="mb-2 flex flex-col gap-1.5 text-[11px] text-slate-400">
                           <div className="flex items-center gap-1.5">
                             <User size={12} />
-                            <span className="line-clamp-1">{lead.pm || lead.who || 'No contact'}</span>
+                            <span className="line-clamp-1" title={lead.pm || lead.who || undefined}>{lead.pm || lead.who || 'No contact'}</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <MapPin size={12} />
@@ -138,8 +138,13 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
                     );
                   })}
                   {columnLeads.length === 0 && (
-                    <div className="py-8 text-center text-xs italic text-slate-500">
-                      No leads
+                    <div className="rounded-xl border border-dashed border-white/10 py-10 text-center">
+                      <div className="text-xs font-medium text-slate-400">
+                        Nothing in {st.label.toLowerCase() === 'client' ? 'Clients' : st.label}
+                      </div>
+                      <div className="mt-1 text-[11px] text-slate-500">
+                        Move a lead here with its stage menu.
+                      </div>
                     </div>
                   )}
                 </div>

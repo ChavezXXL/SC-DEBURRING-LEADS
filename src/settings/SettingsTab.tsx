@@ -9,6 +9,9 @@ import {
 import { useAuth } from '../auth/AuthContext';
 import { auth } from '../firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
+import { apiFetch, isNotConfigured, ApiError } from '../services/api';
+import { ServerSetupCallout } from '../ui/ServerSetupCallout';
+import { useToast } from '../ui/Toast';
 
 /**
  * Settings tab — visible to tenant owners + super-admin.
@@ -26,12 +29,13 @@ import { sendPasswordResetEmail } from 'firebase/auth';
  */
 export function SettingsTab() {
   const { tenant, profile, user } = useAuth();
+  const toast = useToast();
   const [name, setName] = useState(tenant?.name || '');
   const [primaryColor, setPrimaryColor] = useState(tenant?.primaryColor || '#2563eb');
   const [logoUrl, setLogoUrl] = useState(tenant?.logoUrl || '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [notConfigured, setNotConfigured] = useState(false);
 
   // Password reset state
   const [pwBusy, setPwBusy] = useState(false);
@@ -55,7 +59,7 @@ export function SettingsTab() {
   const onSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSaved(false);
+    setNotConfigured(false);
     if (!user) {
       setError('Not signed in.');
       return;
@@ -63,7 +67,7 @@ export function SettingsTab() {
     setBusy(true);
     try {
       const idToken = await user.getIdToken();
-      const resp = await fetch('/api/tenant/update-settings', {
+      await apiFetch('/api/tenant/update-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -74,15 +78,15 @@ export function SettingsTab() {
           logoUrl,
         }),
       });
-      const data = await resp.json();
-      if (!resp.ok) {
-        setError(data?.error || `Save failed (${resp.status})`);
-      } else {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2200);
-      }
+      toast('Saved');
     } catch (e: any) {
-      setError(e?.message || 'Network error');
+      if (isNotConfigured(e)) {
+        setNotConfigured(true);
+      } else if (e instanceof ApiError) {
+        setError(e.message);
+      } else {
+        setError(e?.message || 'Network error');
+      }
     } finally {
       setBusy(false);
     }
@@ -220,6 +224,8 @@ export function SettingsTab() {
           </span>
         </label>
 
+        {notConfigured && <ServerSetupCallout />}
+
         {error && (
           <div className="flex items-start gap-2 rounded-xl bg-red-500/10 ring-1 ring-red-500/30 px-3 py-2 text-xs text-red-300">
             <AlertCircle size={14} className="mt-0.5 shrink-0" />
@@ -236,12 +242,6 @@ export function SettingsTab() {
             {busy ? <Loader2 size={14} className="animate-spin" /> : null}
             {busy ? 'Saving…' : 'Save changes'}
           </button>
-          {saved && (
-            <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
-              <Check size={14} />
-              Saved
-            </span>
-          )}
           {readOnlyByRole && (
             <span className="text-xs text-slate-400">
               Only the tenant owner can change these.

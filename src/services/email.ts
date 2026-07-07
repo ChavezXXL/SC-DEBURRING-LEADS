@@ -14,25 +14,21 @@ export interface SendEmailResponse {
   error?: string;
 }
 
+import { apiFetch } from './api';
+
 export async function sendEmail(req: SendEmailRequest): Promise<SendEmailResponse> {
   if (!req.to || !req.subject || !req.body) {
     return { success: false, error: 'Missing required fields: to, subject, body' };
   }
 
   try {
-    const res = await fetch('/api/send-email', {
+    // apiFetch guards against the unconfigured-server case (HTML instead of
+    // JSON) so callers get a human message, never "Unexpected token '<'".
+    return await apiFetch<SendEmailResponse>('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req),
     });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      return { success: false, error: data.error || `Server error (${res.status})` };
-    }
-
-    return data;
   } catch (err: any) {
     return { success: false, error: err?.message || 'Network error — check your connection' };
   }

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useModalFocus } from '../ui/useModalFocus';
 
 interface DeleteModalProps {
   deleteModal: { id: string; co: string };
@@ -20,13 +21,20 @@ export const DeleteModal: React.FC<DeleteModalProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [setDeleteModal]);
 
+  // Destructive dialog: focus lands on the SAFE action (Cancel), so Enter
+  // never deletes by accident; focus returns to the trigger on close.
+  const cancelRef = useModalFocus<HTMLButtonElement>();
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm motion-safe:animate-fade-in"
       onClick={() => setDeleteModal(null)}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-apex-850 p-6 shadow-2xl shadow-black/60"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Delete ${deleteModal.co}`}
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-apex-850 p-6 shadow-2xl shadow-black/60 motion-safe:animate-modal-in"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="mb-2 text-xl font-bold text-slate-100">Delete Lead</h2>
@@ -36,6 +44,7 @@ export const DeleteModal: React.FC<DeleteModalProps> = ({
 
         <div className="flex justify-end gap-3">
           <button
+            ref={cancelRef}
             onClick={() => setDeleteModal(null)}
             className="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-100"
           >

@@ -9,11 +9,14 @@ import {
   Loader2,
   ChevronRight,
   AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import type { TenantStats } from '../types';
 import { useAdminApi } from './useAdminApi';
 import { TenantDetailDrawer } from './TenantDetailDrawer';
 import { CreateAccountModal } from '../modals/CreateAccountModal';
+import { isNotConfigured } from '../services/api';
+import { ServerSetupCallout } from '../ui/ServerSetupCallout';
 
 /**
  * Admin Panel — visible only when the logged-in user is `super-admin`.
@@ -24,7 +27,7 @@ export function AdminPanel() {
   const { listTenants } = useAdminApi();
   const [tenants, setTenants] = useState<TenantStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ notConfigured: boolean; message: string } | null>(null);
   const [q, setQ] = useState('');
   const [selected, setSelected] = useState<TenantStats | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -36,7 +39,10 @@ export function AdminPanel() {
       const list = await listTenants();
       setTenants(list);
     } catch (e: any) {
-      setError(e?.message || 'Failed to load tenants');
+      setError({
+        notConfigured: isNotConfigured(e),
+        message: e?.message || 'Failed to load tenants',
+      });
     } finally {
       setLoading(false);
     }
@@ -139,23 +145,30 @@ export function AdminPanel() {
         />
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="mb-4 flex items-start gap-2 rounded-2xl bg-red-500/10 ring-1 ring-red-500/30 px-4 py-3 text-sm text-red-300">
-          <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          <div>
-            <div className="font-medium">Couldn't load tenants</div>
-            <div className="mt-0.5 text-xs opacity-80">{error}</div>
-            <div className="mt-2 text-xs">
-              Common cause: the Cloudflare Pages env var
-              <code className="px-1 mx-1 rounded bg-red-500/20 text-red-200">
-                FIREBASE_SERVICE_ACCOUNT
-              </code>
-              isn't set. See the deploy README.
+      {/* Error — friendly setup callout when the server isn't configured,
+          clean message + retry for anything else. */}
+      {error &&
+        (error.notConfigured ? (
+          <div className="mb-4">
+            <ServerSetupCallout onRetry={() => void refresh()} retrying={loading} />
+          </div>
+        ) : (
+          <div className="mb-4 flex items-start gap-3 rounded-2xl bg-red-500/10 ring-1 ring-red-500/30 px-4 py-3 text-sm text-red-300">
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <div className="font-medium">Couldn't load tenants</div>
+              <div className="mt-0.5 text-xs opacity-80">{error.message}</div>
+              <button
+                onClick={() => void refresh()}
+                disabled={loading}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-red-500/15 px-3 py-1.5 text-xs font-medium text-red-200 ring-1 ring-red-500/30 transition-colors hover:bg-red-500/25 disabled:opacity-50"
+              >
+                <RefreshCw size={12} className={loading ? 'animate-spin' : ''} aria-hidden />
+                Retry
+              </button>
             </div>
           </div>
-        </div>
-      )}
+        ))}
 
       {/* Tenant table */}
       <div className="overflow-hidden rounded-2xl bg-apex-850 ring-1 ring-white/10">
@@ -164,8 +177,31 @@ export function AdminPanel() {
             <Loader2 className="animate-spin text-slate-400" size={20} />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-sm text-slate-400">
-            {q ? 'No tenants match your search.' : 'No tenants yet. Click "New client account" to create the first one.'}
+          <div className="px-8 py-16 text-center">
+            <p className="text-sm font-medium text-slate-200">
+              {q ? 'No tenants match your search.' : 'No tenants yet.'}
+            </p>
+            <p className="mt-1 text-xs text-slate-400">
+              {q
+                ? 'Try a different company, owner email, or slug.'
+                : 'Create the first client account and it shows up here.'}
+            </p>
+            {q ? (
+              <button
+                onClick={() => setQ('')}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-apex-800 px-4 py-2 text-xs font-medium text-slate-300 ring-1 ring-white/10 transition hover:bg-white/10 hover:text-slate-100"
+              >
+                Clear search
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowCreate(true)}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-apex-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-950/50 transition hover:brightness-110"
+              >
+                <Plus size={14} />
+                New client account
+              </button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -189,17 +225,19 @@ export function AdminPanel() {
                   className="cursor-pointer border-b border-white/5 last:border-b-0 hover:bg-white/5 transition"
                 >
                   <td className="px-4 py-3">
-                    <div className="font-medium text-slate-100">{t.name}</div>
-                    <div className="text-[10px] text-slate-500 font-mono">{t.id}</div>
+                    <div className="max-w-[220px] truncate font-medium text-slate-100" title={t.name}>{t.name}</div>
+                    <div className="max-w-[220px] truncate text-[10px] text-slate-500 font-mono" title={t.id}>{t.id}</div>
                   </td>
-                  <td className="px-4 py-3 text-slate-300">{t.ownerEmail}</td>
+                  <td className="px-4 py-3 text-slate-300">
+                    <div className="max-w-[220px] truncate" title={t.ownerEmail}>{t.ownerEmail}</div>
+                  </td>
                   <td className="px-4 py-3">
                     <PlanBadge plan={t.plan} />
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-slate-300">
+                  <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-300">
                     {t.leadCount}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-slate-300">
+                  <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-300">
                     {t.userCount}
                   </td>
                   <td className="px-4 py-3">
@@ -262,7 +300,7 @@ function StatCard({
         <span className={accent}>{icon}</span>
         {label}
       </div>
-      <div className={`mt-1 text-2xl font-semibold ${accent}`}>{value}</div>
+      <div className={`mt-1 text-2xl font-semibold tabular-nums ${accent}`}>{value}</div>
       {sub && <div className="mt-0.5 text-[10px] text-slate-500">{sub}</div>}
     </div>
   );

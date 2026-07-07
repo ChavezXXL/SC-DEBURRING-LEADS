@@ -95,8 +95,12 @@ export const QuickEmail: React.FC<QuickEmailProps> = ({ lead, onClose, onEmailSe
         <div className="flex items-center gap-2 text-sm font-bold text-orange-400">
           <Mail size={15} /> Quick Email
         </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-200">
-          <X size={15} />
+        <button
+          onClick={onClose}
+          aria-label="Close quick email"
+          className="-m-2 rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
+        >
+          <X size={16} />
         </button>
       </div>
 

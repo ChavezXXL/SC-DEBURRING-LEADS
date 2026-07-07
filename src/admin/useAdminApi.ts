@@ -1,11 +1,16 @@
 import { useCallback } from 'react';
 import { auth } from '../firebase';
 import type { TenantStats } from '../types';
+import { apiFetch } from '../services/api';
 
 /**
  * Hook giving the Admin Panel typed wrappers around the /api/admin/* endpoints.
  * Each call attaches the current Firebase ID token so the server can verify
  * super-admin role before doing anything.
+ *
+ * All calls go through apiFetch, so an unconfigured server (function returning
+ * the SPA's index.html) throws a typed ApiError('not-configured') instead of
+ * JSON-parse garbage — callers can render the friendly setup callout.
  */
 export function useAdminApi() {
   const getToken = useCallback(async (): Promise<string> => {
@@ -16,11 +21,9 @@ export function useAdminApi() {
 
   const listTenants = useCallback(async (): Promise<TenantStats[]> => {
     const token = await getToken();
-    const resp = await fetch('/api/admin/list-tenants', {
+    const data = await apiFetch<{ tenants?: TenantStats[] }>('/api/admin/list-tenants', {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data?.error || `Failed (${resp.status})`);
     return data.tenants || [];
   }, [getToken]);
 
@@ -33,14 +36,11 @@ export function useAdminApi() {
       primaryColor?: string;
     }) => {
       const token = await getToken();
-      const resp = await fetch('/api/admin/update-tenant', {
+      return await apiFetch('/api/admin/update-tenant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken: token, ...args }),
       });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data?.error || `Failed (${resp.status})`);
-      return data;
     },
     [getToken],
   );
@@ -48,14 +48,13 @@ export function useAdminApi() {
   const deleteTenant = useCallback(
     async (tenantId: string, confirm: string) => {
       const token = await getToken();
-      const resp = await fetch('/api/admin/delete-tenant', {
+      return await apiFetch<{
+        summary: { leadsDeleted: number; logsDeleted: number; usersDeleted: number };
+      }>('/api/admin/delete-tenant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken: token, tenantId, confirm }),
       });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data?.error || `Failed (${resp.status})`);
-      return data;
     },
     [getToken],
   );
@@ -63,14 +62,14 @@ export function useAdminApi() {
   const resetPassword = useCallback(
     async (targetUid: string) => {
       const token = await getToken();
-      const resp = await fetch('/api/admin/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken: token, targetUid }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data?.error || `Failed (${resp.status})`);
-      return data as { success: true; email: string; newPassword: string };
+      return await apiFetch<{ success: true; email: string; newPassword: string }>(
+        '/api/admin/reset-password',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: token, targetUid }),
+        },
+      );
     },
     [getToken],
   );

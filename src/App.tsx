@@ -1,8 +1,10 @@
 import React, { lazy, Suspense, useCallback, useState } from 'react';
 import { Menu, X, Loader2 } from 'lucide-react';
 
-import type { Lead, AiMode, TabKey } from './types';
+import type { Lead, AiMode, TabKey, LeadStatus } from './types';
+import { STATUS } from './data';
 import { generatePitch, researchContact } from './services/gemini';
+import { useToast } from './ui/Toast';
 
 import { useAuth } from './auth/AuthContext';
 import { useLeads } from './leads/useLeads';
@@ -81,6 +83,7 @@ const qs = {
  */
 export default function App() {
   const { tenant, profile, signOut } = useAuth();
+  const toast = useToast();
   // Prefer the tenant doc, but fall back to the profile's tenantId so lead
   // writes are always tenant-stamped even if the tenant doc failed to load.
   const tenantId = tenant?.id ?? profile?.tenantId;
@@ -138,6 +141,7 @@ export default function App() {
   const handleAddLead = async () => {
     const ok = await crud.addLead(newLeadForm);
     if (ok) {
+      toast('Lead added');
       setShowAddLead(false);
       setNewLeadForm({ ...EMPTY_LEAD_FORM });
     }
@@ -145,19 +149,50 @@ export default function App() {
 
   const handleSaveNote = useCallback(async (id: string, notes: string) => {
     await crud.saveNote(id, notes);
+    toast('Note saved');
     setEditId(null);
-  }, [crud]);
+  }, [crud, toast]);
 
   const handleDelete = useCallback(async (id: string) => {
     const scrollEl = document.querySelector('main');
     const scrollPos = scrollEl?.scrollTop || 0;
     await crud.deleteLead(id);
+    toast('Lead deleted');
     if (openId === id) setOpenId(null);
     setDeleteModal(null);
     requestAnimationFrame(() => {
       if (scrollEl) scrollEl.scrollTop = scrollPos;
     });
-  }, [crud, openId]);
+  }, [crud, openId, toast]);
+
+  // ---- toast-wrapped write actions ----------------------------------------
+  // Firestore latency compensation updates the snapshot instantly, so the
+  // toast fires immediately (before the network round-trip) and the UI never
+  // feels like it's waiting. Errors still surface through crud.appError.
+
+  const handleMarkEmailed = useCallback((lead: Lead) => {
+    toast(`Marked emailed — ${lead.co}`);
+    return crud.markEmailed(lead);
+  }, [crud, toast]);
+
+  const handleLogCall = useCallback((lead: Lead) => {
+    toast(`Call logged — ${lead.co}`);
+    return crud.logCall(lead);
+  }, [crud, toast]);
+
+  const handleSetStatus = useCallback((id: string, st: LeadStatus) => {
+    const lead = visibleLeads.find((l) => l.id === id);
+    if (!lead || lead.status !== st) {
+      const label = STATUS.find((s) => s.k === st)?.label ?? st;
+      toast(`Moved to ${label}`);
+    }
+    return crud.setStatus(id, st);
+  }, [crud, toast, visibleLeads]);
+
+  const handleAddFromBolt = useCallback((lead: Lead) => {
+    toast(`Lead added — ${lead.co}`);
+    return crud.addLeadFromBolt(lead);
+  }, [crud, toast]);
 
   /** Cross-tab "show me this lead" — switch to Leads, open the card, scroll to it. */
   const jumpToLead = useCallback((id: string) => {
@@ -201,7 +236,8 @@ export default function App() {
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="rounded-lg p-1.5 text-slate-400 hover:bg-white/5 hover:text-slate-100 transition"
+          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          className="rounded-lg p-2.5 text-slate-400 hover:bg-white/5 hover:text-slate-100 transition"
         >
           {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -255,7 +291,8 @@ export default function App() {
             </div>
             <button
               onClick={() => crud.setAppError(null)}
-              className="shrink-0 p-1 hover:bg-red-500/20 rounded-md transition-colors"
+              aria-label="Dismiss error"
+              className="shrink-0 p-2 hover:bg-red-500/20 rounded-md transition-colors"
             >
               <X size={16} />
             </button>
@@ -265,8 +302,8 @@ export default function App() {
         {tab === 'today' && (
           <TodayTab
             leads={visibleLeads}
-            logCall={crud.logCall}
-            markEmailed={crud.markEmailed}
+            logCall={handleLogCall}
+            markEmailed={handleMarkEmailed}
             onLeadClick={jumpToLead}
           />
         )}
@@ -286,12 +323,12 @@ export default function App() {
             cp={cp}
             copy={copy}
             qs={qs}
-            setStatus={crud.setStatus}
+            setStatus={handleSetStatus}
             saveNote={handleSaveNote}
             setReminder={crud.setReminder}
             queueOutreach={crud.queueOutreach}
-            markEmailed={crud.markEmailed}
-            logCall={crud.logCall}
+            markEmailed={handleMarkEmailed}
+            logCall={handleLogCall}
             handleAI={handleAI}
             onDelete={(id, co) => setDeleteModal({ id, co })}
             onAddLeadClick={() => setShowAddLead(true)}
@@ -301,7 +338,7 @@ export default function App() {
         {tab === 'outreach' && <OutreachTab />}
         {tab === 'autopilot' && <AutoOutreach leads={visibleLeads} />}
         {tab === 'pipeline' && (
-          <PipelineTab leads={visibleLeads} onLeadClick={jumpToLead} setStatus={crud.setStatus} />
+          <PipelineTab leads={visibleLeads} onLeadClick={jumpToLead} setStatus={handleSetStatus} />
         )}
         {tab === 'brain' && (
           <Suspense fallback={<TabSpinner />}>
@@ -309,7 +346,7 @@ export default function App() {
               leads={visibleLeads}
               onLeadClick={jumpToLead}
               onDeleteLead={(id, co) => setDeleteModal({ id, co })}
-              setStatus={crud.setStatus}
+              setStatus={handleSetStatus}
               handleAI={handleAI}
             />
           </Suspense>
@@ -343,7 +380,7 @@ export default function App() {
           aiText={aiText}
           cp={cp}
           copy={copy}
-          saveNote={crud.saveNote}
+          saveNote={handleSaveNote}
           updateLeadFields={crud.updateLead}
         />
       )}
@@ -357,7 +394,7 @@ export default function App() {
         />
       )}
 
-      <BoltChat leads={visibleLeads} onAddLead={crud.addLeadFromBolt} />
+      <BoltChat leads={visibleLeads} onAddLead={handleAddFromBolt} />
     </div>
   );
 }

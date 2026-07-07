@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import type { TenantStats } from '../types';
 import { useAdminApi } from './useAdminApi';
+import { useModalFocus } from '../ui/useModalFocus';
 
 interface Props {
   tenant: TenantStats | null;
@@ -43,6 +44,9 @@ export function TenantDetailDrawer({ tenant, onClose, onChanged }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [tenant, onClose]);
+
+  // Focus starts on Close; returns to the tenant row's context on dismiss.
+  const closeRef = useModalFocus<HTMLButtonElement>(!!tenant);
 
   if (!tenant) return null;
 
@@ -97,11 +101,14 @@ export function TenantDetailDrawer({ tenant, onClose, onChanged }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm motion-safe:animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="h-full w-full max-w-md overflow-y-auto bg-apex-850 shadow-2xl shadow-black/60 ring-1 ring-white/10"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Manage ${tenant.name}`}
+        className="h-full w-full max-w-md overflow-y-auto bg-apex-850 shadow-2xl shadow-black/60 ring-1 ring-white/10 motion-safe:animate-drawer-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -116,8 +123,10 @@ export function TenantDetailDrawer({ tenant, onClose, onChanged }: Props) {
             </div>
           </div>
           <button
+            ref={closeRef}
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-slate-100 transition"
+            aria-label="Close"
+            className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-slate-100 transition"
           >
             <X size={18} />
           </button>
@@ -226,6 +235,10 @@ export function TenantDetailDrawer({ tenant, onClose, onChanged }: Props) {
               <input
                 value={deleteConfirm}
                 onChange={(e) => setDeleteConfirm(e.target.value)}
+                onKeyDown={(e) => {
+                  // Single-field form: Enter confirms (only once the slug matches).
+                  if (e.key === 'Enter' && deleteConfirm === tenant.id) void handleDelete();
+                }}
                 placeholder={tenant.id}
                 className="mt-1 w-full rounded-xl border border-white/10 bg-apex-800 px-3 py-2 text-sm font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/60"
               />

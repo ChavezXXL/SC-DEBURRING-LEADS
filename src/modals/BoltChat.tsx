@@ -238,6 +238,7 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
       {!open && (
         <button
           onClick={() => setOpen(true)}
+          aria-label="Open Bolt, the AI sales assistant"
           className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-apex-accent text-white shadow-lg shadow-orange-500/25 transition-all hover:scale-110 hover:brightness-110 hover:shadow-orange-500/40 active:scale-95"
         >
           <Zap size={24} fill="currentColor" />
@@ -246,7 +247,7 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
 
       {/* Chat Panel */}
       {open && (
-        <div className="fixed bottom-0 right-0 z-50 flex h-[min(600px,90dvh)] w-full flex-col border-l border-t border-white/10 bg-apex-850 shadow-2xl shadow-black/60 sm:bottom-6 sm:right-6 sm:h-[560px] sm:w-[420px] sm:rounded-2xl sm:border">
+        <div className="fixed bottom-0 right-0 z-50 flex h-[min(600px,90dvh)] w-full flex-col border-l border-t border-white/10 bg-apex-850 shadow-2xl shadow-black/60 motion-safe:animate-modal-in sm:bottom-6 sm:right-6 sm:h-[560px] sm:w-[420px] sm:rounded-2xl sm:border">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <div className="flex items-center gap-2.5">
@@ -263,14 +264,16 @@ export function BoltChat({ leads, onAddLead }: BoltChatProps) {
             <div className="flex items-center gap-1">
               <button
                 onClick={clearChat}
-                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
+                className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
                 title="Clear chat"
+                aria-label="Clear chat"
               >
                 <Trash2 size={14} />
               </button>
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
+                aria-label="Close chat"
+                className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
               >
                 <X size={16} />
               </button>

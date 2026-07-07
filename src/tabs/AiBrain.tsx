@@ -408,6 +408,7 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
                           onClick={(e) => { e.stopPropagation(); onDeleteLead(lead.id, lead.co); }}
                           className="ml-3 rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-red-300 transition-colors hover:bg-red-500/20"
                           title="Delete this duplicate"
+                          aria-label={`Delete duplicate ${lead.co}`}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -427,6 +428,14 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
           <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 p-4 text-xs text-orange-300">
             Leads ranked by potential. Tier 1 + Named PM + Has Email + Active Need = call these first.
           </div>
+          {prioritized.length === 0 && (
+            <div className="rounded-xl bg-apex-850 ring-1 ring-white/10 px-8 py-12 text-center">
+              <div className="text-sm font-medium text-slate-200">No active leads to rank yet.</div>
+              <div className="mt-1 text-xs text-slate-400">
+                Add leads on the Leads tab and the Brain ranks them here automatically.
+              </div>
+            </div>
+          )}
           {prioritized.map((item, idx) => (
             <div
               key={item.lead.id}
@@ -584,6 +593,12 @@ export function AiBrain({ leads, onLeadClick, onDeleteLead, setStatus, handleAI 
           <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-xs text-violet-300">
             Leads missing 2+ key fields. Tier 1 leads shown first — use Research Contact to fill in gaps.
           </div>
+          {missingInfo.length === 0 && (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-center">
+              <div className="text-emerald-300 text-sm font-semibold">No gaps to fill</div>
+              <div className="text-xs text-slate-400 mt-1">Every lead has its key fields covered</div>
+            </div>
+          )}
           {missingInfo.slice(0, 30).map(({ lead, gaps }) => (
             <div key={lead.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-apex-850 p-3">
               <div className="flex-1 cursor-pointer" onClick={() => onLeadClick(lead.id)}>

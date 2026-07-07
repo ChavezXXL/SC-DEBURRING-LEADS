@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { X, Sparkles, Microscope, Loader2, UserPlus, Save } from 'lucide-react';
 import type { Lead, AiMode } from '../types';
 import { renderMarkdown } from '../utils/markdown';
+import { useModalFocus } from '../ui/useModalFocus';
 
 interface AiModalProps {
   aiModal: { lead: Lead; mode: AiMode };
@@ -89,13 +90,19 @@ export const AiModal: React.FC<AiModalProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [setAiModal]);
 
+  // No inputs here — focus starts on Close and returns to the trigger after.
+  const closeRef = useModalFocus<HTMLButtonElement>();
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm motion-safe:animate-fade-in"
       onClick={() => setAiModal(null)}
     >
       <div
-        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-apex-850 p-6 shadow-2xl shadow-black/60 md:p-8"
+        role="dialog"
+        aria-modal="true"
+        aria-label={aiModal.mode === 'pitch' ? 'AI pitch' : 'Contact research'}
+        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-apex-850 p-6 shadow-2xl shadow-black/60 motion-safe:animate-modal-in md:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-6 flex items-start justify-between">
@@ -116,8 +123,13 @@ export const AiModal: React.FC<AiModalProps> = ({
             </div>
           </div>
 
-          <button onClick={() => setAiModal(null)} className="text-slate-400 transition-colors hover:text-slate-200">
-            <X size={24} />
+          <button
+            ref={closeRef}
+            onClick={() => setAiModal(null)}
+            aria-label="Close"
+            className="-m-2 rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
+          >
+            <X size={20} />
           </button>
         </div>
 

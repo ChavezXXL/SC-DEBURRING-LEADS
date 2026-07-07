@@ -66,7 +66,7 @@ const LeadCardComponent: React.FC<LeadCardProps> = ({
       <LeadCardHeader lead={lead} isOpen={isOpen} setOpenId={setOpenId} />
 
       {isOpen && (
-        <div className="border-t border-white/10 bg-apex-900/40 px-4 pb-4 pt-2">
+        <div className="border-t border-white/10 bg-apex-900/40 px-4 pb-4 pt-2 motion-safe:animate-panel-in">
           <LeadCardActions
             lead={lead}
             cp={cp}

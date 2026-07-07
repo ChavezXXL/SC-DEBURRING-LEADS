@@ -89,6 +89,37 @@ export function LeadsTab({
   // re-filter + re-render of ~275 cards only fires after typing settles.
   const [qInput, setQInput] = useState(q);
   const debRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // Power shortcuts, Leads tab only: "/" focuses search, "n" opens Add Lead.
+  // Ignored while typing in any field so they never eat real input.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (
+        t &&
+        (t.tagName === 'INPUT' ||
+          t.tagName === 'TEXTAREA' ||
+          t.tagName === 'SELECT' ||
+          t.isContentEditable)
+      ) {
+        return;
+      }
+      // Dead while any dialog is up — shortcuts belong to the list, not modals.
+      if (document.querySelector('[role="dialog"]')) return;
+      if (e.key === '/') {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      } else if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        onAddLeadClick();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onAddLeadClick]);
 
   // Keep the box in sync when q is cleared/changed elsewhere (reset, sidebar).
   useEffect(() => {
@@ -127,7 +158,7 @@ export function LeadsTab({
           <h1 className="mb-1 text-2xl font-semibold tracking-tight text-slate-100">
             {hot5 ? "Today's Pipeline" : 'Leads'}
           </h1>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs tabular-nums text-slate-400">
             {filtered.length} of {visibleLeads.length} leads · {REGIONS.length - 1} regions ·{' '}
             {namedPMs} named purchasing managers
           </p>
@@ -139,6 +170,12 @@ export function LeadsTab({
             className="flex items-center gap-2 rounded-xl bg-apex-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-950/50 transition hover:brightness-110 active:scale-[0.99]"
           >
             + Add Lead
+            <kbd
+              aria-hidden
+              className="hidden rounded bg-white/15 px-1.5 py-0.5 text-[10px] font-semibold text-white/80 md:inline-block"
+            >
+              N
+            </kbd>
           </button>
         </div>
       </div>
@@ -171,11 +208,20 @@ export function LeadsTab({
         <div className="relative min-w-[200px] flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
           <input
+            ref={searchRef}
             value={qInput}
             onChange={(e) => setQInput(e.target.value)}
             placeholder="Search company, contact, city, parts..."
             className="w-full rounded-xl bg-apex-800 py-2 pl-9 pr-8 text-sm text-slate-100 placeholder-slate-500 ring-1 ring-white/10 transition-all focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
           />
+          {!qInput && (
+            <kbd
+              aria-hidden
+              className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded-md bg-white/5 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 ring-1 ring-white/10 md:block"
+            >
+              /
+            </kbd>
+          )}
           {qInput && (
             <button
               onClick={() => {

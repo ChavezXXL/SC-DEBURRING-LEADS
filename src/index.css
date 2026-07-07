@@ -38,6 +38,63 @@
       opacity: 0;
     }
   }
+
+  /* Interaction-layer micro-motion. Always applied with `motion-safe:` so
+     reduced-motion users get instant state changes instead. */
+  --animate-toast-in: toast-in 0.22s cubic-bezier(0.21, 1.02, 0.73, 1);
+  --animate-modal-in: modal-in 0.18s ease-out;
+  --animate-drawer-in: drawer-in 0.24s ease-out;
+  --animate-panel-in: panel-in 0.16s ease-out;
+  --animate-fade-in: fade-in 0.15s ease-out;
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  @keyframes modal-in {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes drawer-in {
+    from {
+      opacity: 0.5;
+      transform: translateX(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 }
 
 /* Native controls (select dropdowns, range sliders, color pickers, in-page
@@ -51,6 +108,25 @@
 :where(a, button, select, input, textarea, [role="button"]):focus-visible {
   outline: 2px solid rgba(242, 109, 33, 0.7);
   outline-offset: 2px;
+}
+
+/* Uniform press feedback — every real button dips to 98% while held, with a
+   150ms ease. `:where()` keeps specificity at zero, so any Tailwind utility
+   (transition-colors, active:scale-[0.99], …) on a specific button still wins.
+   Skipped entirely for reduced-motion users. */
+@media (prefers-reduced-motion: no-preference) {
+  :where(button, [role="button"]) {
+    transition-property: color, background-color, border-color, box-shadow,
+      transform, opacity, filter;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  :where(button, [role="button"]):active {
+    transform: scale(0.98);
+  }
+  :where(button):disabled:active {
+    transform: none;
+  }
 }
 
 /* Dark scrollbars — subtle graphite rails, chrome-grey thumbs. */

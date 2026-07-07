@@ -201,10 +201,10 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
               >
                 <div className="min-w-0">
                   <CoButton lead={lead} onLeadClick={onLeadClick} />
-                  <div className="mt-0.5 truncate text-xs text-slate-400">
+                  <div className="mt-0.5 truncate text-xs text-slate-400" title={lead.em}>
                     {lead.em}
                     {' · '}
-                    <span className="font-medium text-violet-300">
+                    <span className="font-medium tabular-nums text-violet-300">
                       {daysSince(lead)}d since contact
                     </span>
                   </div>
@@ -246,7 +246,7 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
                     <CoButton lead={lead} onLeadClick={onLeadClick} />
                     <TierPill t={lead.t} />
                   </div>
-                  <div className="mt-0.5 truncate text-xs text-slate-400">
+                  <div className="mt-0.5 truncate text-xs text-slate-400" title={lead.em}>
                     {lead.city}
                     {lead.city && lead.em ? ' · ' : ''}
                     {lead.em}
@@ -357,7 +357,7 @@ function CoButton({ lead, onLeadClick }: { lead: Lead; onLeadClick: (id: string)
     <button
       onClick={() => onLeadClick(lead.id)}
       className="block max-w-full truncate text-left text-sm font-semibold text-slate-100 transition-colors hover:text-orange-400"
-      title="Open the full card on the Leads tab"
+      title={`${lead.co} — open the full card on the Leads tab`}
     >
       {lead.co}
     </button>

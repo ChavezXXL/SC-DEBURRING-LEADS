@@ -6,6 +6,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
 import { TenantTheme } from './auth/TenantTheme';
+import { ToastProvider } from './ui/Toast';
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -19,9 +20,11 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
       <TenantTheme>
-        <AuthGate>
-          <App />
-        </AuthGate>
+        <ToastProvider>
+          <AuthGate>
+            <App />
+          </AuthGate>
+        </ToastProvider>
       </TenantTheme>
     </AuthProvider>
   </StrictMode>,

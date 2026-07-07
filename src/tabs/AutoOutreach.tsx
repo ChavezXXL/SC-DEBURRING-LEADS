@@ -7,6 +7,7 @@ import { db } from '../firebase';
 import { doc, onSnapshot, setDoc, collection, query, orderBy, limit } from 'firebase/firestore';
 import type { Lead, AutoOutreachSettings, OutreachLog } from '../types';
 import { generateOutreachEmail } from '../services/gemini';
+import { useToast } from '../ui/Toast';
 
 interface AutoOutreachProps {
   leads: Lead[];
@@ -25,6 +26,7 @@ const MODE_LABELS: Record<string, { label: string; desc: string }> = {
 };
 
 export function AutoOutreach({ leads }: AutoOutreachProps) {
+  const toast = useToast();
   const [settings, setSettings] = useState<AutoOutreachSettings>(DEFAULT_SETTINGS);
   const [logs, setLogs] = useState<OutreachLog[]>([]);
   const [saving, setSaving] = useState(false);
@@ -232,7 +234,10 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
                 key={lead.id}
                 className="flex items-center justify-between rounded-lg bg-apex-800 px-4 py-2.5 ring-1 ring-white/10"
               >
-                <div className="min-w-0 flex-1 truncate pr-3">
+                <div
+                  className="min-w-0 flex-1 truncate pr-3"
+                  title={`${lead.co} · ${lead.pm || lead.who || 'No contact'} · ${lead.em || 'No email'}`}
+                >
                   <span className="text-sm font-medium text-slate-200">{lead.co}</span>
                   <span className="ml-2 text-xs text-slate-400">
                     {lead.pm || lead.who || 'No contact'} · {lead.em || 'No email'}
@@ -316,6 +321,7 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(`Subject: ${previewEmail.subject}\n\n${previewEmail.body}`);
+                    toast('Copied');
                   } catch {}
                 }}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-apex-850 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-white/10"
@@ -347,7 +353,7 @@ export function AutoOutreach({ leads }: AutoOutreachProps) {
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-slate-200 truncate">
+                    <span className="text-sm font-medium text-slate-200 truncate" title={log.company}>
                       {log.company}
                     </span>
                     <span

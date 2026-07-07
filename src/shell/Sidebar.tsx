@@ -80,7 +80,7 @@ export function Sidebar({
         <span>{label}</span>
         {typeof badge === 'number' && (
           <span
-            className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium ${
+            className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium tabular-nums ${
               active
                 ? 'bg-apex-accent/15 text-orange-300'
                 : 'bg-white/5 text-slate-400'
@@ -153,7 +153,7 @@ export function Sidebar({
                 className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 transition-colors hover:bg-white/5"
               >
                 <span className="text-xs text-slate-400">{stat.label}</span>
-                <span className={`text-sm font-semibold ${stat.c}`}>{stat.val}</span>
+                <span className={`text-sm font-semibold tabular-nums ${stat.c}`}>{stat.val}</span>
               </div>
             ))}
           </div>
@@ -165,7 +165,7 @@ export function Sidebar({
             />
           </div>
 
-          <div className="mt-2 text-[10px] text-slate-500">
+          <div className="mt-2 text-[10px] tabular-nums text-slate-500">
             {Math.round((S.clients / Math.max(S.total, 1)) * 100)}% converted
           </div>
         </div>
@@ -191,7 +191,7 @@ export function Sidebar({
           <div className="rounded-xl bg-apex-850 ring-1 ring-white/10 px-3 py-2.5">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="truncate text-xs font-medium text-slate-200">
+                <div className="truncate text-xs font-medium text-slate-200" title={profile.email}>
                   {profile.email}
                 </div>
                 <div className="mt-0.5 text-[10px] uppercase tracking-wider text-slate-500">
@@ -201,8 +201,9 @@ export function Sidebar({
               {onSignOut && (
                 <button
                   onClick={onSignOut}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-slate-100 transition"
+                  className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-slate-100 transition"
                   title="Sign out"
+                  aria-label="Sign out"
                 >
                   <LogOut size={14} />
                 </button>
