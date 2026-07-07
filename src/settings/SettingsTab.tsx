@@ -14,6 +14,7 @@ import { apiFetch, isNotConfigured, ApiError } from '../services/api';
 import { ServerSetupCallout } from '../ui/ServerSetupCallout';
 import { useToast } from '../ui/Toast';
 import { COLD_TEMPLATE, WARM_TEMPLATE, type OutreachTemplate } from '../outreach/templates';
+import { downloadLeadsCsv } from '../leads/leadsCsv';
 import type { Lead } from '../types';
 
 /**
@@ -30,34 +31,6 @@ interface SettingsTabProps {
   /** Live tenant leads — App's single useLeads subscription, passed down
    * (no second Firestore listener). Powers the CSV export. */
   leads: Lead[];
-}
-
-/** Exact export column order — matches the lead schema fields that matter. */
-const CSV_COLUMNS = [
-  'co',
-  'city',
-  'r',
-  't',
-  'status',
-  'em',
-  'ph',
-  'web',
-  'pm',
-  'who',
-  'lastContactedAt',
-  'touchCount',
-] as const;
-
-/** RFC-4180 escaping: quote any field with commas, quotes, or newlines. */
-function csvEscape(value: unknown): string {
-  const s = value === undefined || value === null ? '' : String(value);
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-
-function buildLeadsCsv(leads: Lead[]): string {
-  const header = CSV_COLUMNS.join(',');
-  const rows = leads.map((l) => CSV_COLUMNS.map((c) => csvEscape(l[c])).join(','));
-  return [header, ...rows].join('\r\n');
 }
 
 export function SettingsTab({ leads }: SettingsTabProps) {
@@ -157,19 +130,7 @@ export function SettingsTab({ leads }: SettingsTabProps) {
   };
 
   const onExportCsv = () => {
-    //  BOM so Excel opens it as UTF-8 without mangling accents.
-    const bom = String.fromCharCode(0xfeff);
-    const blob = new Blob([bom + buildLeadsCsv(leads)], {
-      type: 'text/csv;charset=utf-8',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    downloadLeadsCsv(leads, `leads-${new Date().toISOString().slice(0, 10)}.csv`);
     toast(`Exported ${leads.length} lead${leads.length === 1 ? '' : 's'} to CSV`);
   };
 

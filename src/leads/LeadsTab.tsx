@@ -1,14 +1,27 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import {
+  Search,
+  X,
+  CheckSquare,
+  ChevronDown,
+  MailCheck,
+  PhoneCall,
+  Download,
+  Trash2,
+  Tag,
+} from 'lucide-react';
 import type { Lead, LeadStatus } from '../types';
 import { REGIONS, STATUS } from '../data';
 import { LeadCard } from './LeadCard';
 import { isDueFollowUp, isHiringSignal } from './useLeadFilters';
 import type { LeadFilterState, LeadFilterSetters } from './useLeadFilters';
+import { SORT_OPTIONS, type SortKey } from './useLeadSort';
 
 interface LeadsTabProps {
   visibleLeads: Lead[];
   filtered: Lead[];
+  /** The post-filter, post-SORT list actually rendered as cards. */
+  sorted: Lead[];
   filters: LeadFilterState;
   setters: LeadFilterSetters;
 
@@ -34,6 +47,26 @@ interface LeadsTabProps {
   markEmailed: (lead: Lead) => void | Promise<void>;
   logCall: (lead: Lead) => void | Promise<void>;
 
+  // Sort
+  sortKey: SortKey;
+  onSortChange: (k: SortKey) => void;
+
+  // Multi-select + bulk actions
+  selectedCount: number;
+  allSelected: boolean;
+  someSelected: boolean;
+  isSelected: (id: string) => boolean;
+  onToggleSelect: (id: string) => void;
+  onSelectAll: (ids: string[]) => void;
+  onClearSelection: () => void;
+  selectionMode: boolean;
+  onToggleSelectionMode: () => void;
+  onBulkMarkEmailed: (ids: string[]) => void;
+  onBulkLogCall: (ids: string[]) => void;
+  onBulkSetStatus: (ids: string[], st: LeadStatus) => void;
+  onBulkExport: (ids: string[]) => void;
+  onBulkDelete: (ids: string[]) => void;
+
   // Modal handlers (from App)
   onDelete: (id: string, co: string) => void;
   onAddLeadClick: () => void;
@@ -48,6 +81,7 @@ interface LeadsTabProps {
 export function LeadsTab({
   visibleLeads,
   filtered,
+  sorted,
   filters,
   setters,
   openId,
@@ -64,10 +98,36 @@ export function LeadsTab({
   setReminder,
   markEmailed,
   logCall,
+  sortKey,
+  onSortChange,
+  selectedCount,
+  allSelected,
+  someSelected,
+  isSelected,
+  onToggleSelect,
+  onSelectAll,
+  onClearSelection,
+  selectionMode,
+  onToggleSelectionMode,
+  onBulkMarkEmailed,
+  onBulkLogCall,
+  onBulkSetStatus,
+  onBulkExport,
+  onBulkDelete,
   onDelete,
   onAddLeadClick,
 }: LeadsTabProps) {
   const { regF, stF, tierF, pmOnly, remindersOnly, q, hot5, dueFollowUp, hiringOnly } = filters;
+
+  // Ids currently eligible for selection = the rendered (filtered+sorted) list.
+  const visibleIds = useMemo(() => sorted.map((l) => l.id), [sorted]);
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+  // Native "partial" tri-state for the select-all box (can't be set via prop).
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = someSelected;
+    }
+  }, [someSelected, allSelected, selectedCount]);
   const {
     setRegF,
     setStF,
@@ -266,6 +326,20 @@ export function LeadsTab({
           ))}
         </select>
 
+        <select
+          value={sortKey}
+          onChange={(e) => onSortChange(e.target.value as SortKey)}
+          aria-label="Sort leads"
+          title="Sort the list"
+          className="cursor-pointer rounded-xl bg-apex-800 px-3 py-2 text-xs text-slate-100 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-apex-accent/60"
+        >
+          {SORT_OPTIONS.map((o) => (
+            <option key={o.key} value={o.key}>
+              Sort: {o.label}
+            </option>
+          ))}
+        </select>
+
         <button
           onClick={() => {
             if (!hot5) resetAll();
@@ -348,6 +422,44 @@ export function LeadsTab({
         </button>
       </div>
 
+      {/* Selection controls — select-all (respects active filters) + a mobile
+          "Select" mode toggle that reveals the per-card checkboxes. */}
+      {sorted.length > 0 && (
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <label className="flex cursor-pointer select-none items-center gap-2 text-xs text-slate-400">
+            <input
+              ref={headerCheckboxRef}
+              type="checkbox"
+              checked={allSelected}
+              onChange={(e) =>
+                e.target.checked ? onSelectAll(visibleIds) : onClearSelection()
+              }
+              aria-label={
+                allSelected ? 'Clear selection' : `Select all ${sorted.length} leads`
+              }
+              className="h-4 w-4 cursor-pointer"
+              style={{ accentColor: '#F26D21' }}
+            />
+            {selectedCount > 0
+              ? `${selectedCount} selected`
+              : `Select all ${sorted.length}`}
+          </label>
+
+          <button
+            onClick={onToggleSelectionMode}
+            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-all sm:hidden ${
+              selectionMode
+                ? 'bg-apex-accent/15 text-orange-300 ring-1 ring-apex-accent/40'
+                : 'bg-apex-800 text-slate-300 ring-1 ring-white/10 hover:bg-white/10'
+            }`}
+            aria-pressed={selectionMode}
+          >
+            <CheckSquare size={14} />
+            {selectionMode ? 'Done' : 'Select'}
+          </button>
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         visibleLeads.length === 0 ? (
           // Brand-new account — no leads at all yet. Welcoming onboarding state.
@@ -386,8 +498,8 @@ export function LeadsTab({
           </div>
         )
       ) : (
-        <div className="flex flex-col gap-3">
-          {filtered.map((lead) => (
+        <div className={`flex flex-col gap-3 ${selectedCount > 0 ? 'pb-28' : ''}`}>
+          {sorted.map((lead) => (
             <LeadCard
               key={lead.id}
               lead={lead}
@@ -406,10 +518,166 @@ export function LeadsTab({
               qs={qs}
               onMarkEmailed={markEmailed}
               onLogCall={logCall}
+              selected={isSelected(lead.id)}
+              onToggleSelect={onToggleSelect}
+              selectionMode={selectionMode}
             />
           ))}
         </div>
       )}
+
+      {selectedCount > 0 && (
+        <BulkBar
+          count={selectedCount}
+          ids={visibleIds.filter((id) => isSelected(id))}
+          onMarkEmailed={onBulkMarkEmailed}
+          onLogCall={onBulkLogCall}
+          onSetStatus={onBulkSetStatus}
+          onExport={onBulkExport}
+          onDelete={onBulkDelete}
+          onClear={onClearSelection}
+        />
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sticky bulk action bar — appears once >=1 lead is selected. Dark apex-850
+// with the standard white/10 hairline, pinned to the bottom of the viewport so
+// it's reachable at 375px. All buttons are >=40px tall with aria-labels.
+// ---------------------------------------------------------------------------
+function BulkBar({
+  count,
+  ids,
+  onMarkEmailed,
+  onLogCall,
+  onSetStatus,
+  onExport,
+  onDelete,
+  onClear,
+}: {
+  count: number;
+  ids: string[];
+  onMarkEmailed: (ids: string[]) => void;
+  onLogCall: (ids: string[]) => void;
+  onSetStatus: (ids: string[], st: LeadStatus) => void;
+  onExport: (ids: string[]) => void;
+  onDelete: (ids: string[]) => void;
+  onClear: () => void;
+}) {
+  const [statusOpen, setStatusOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Click-away + Esc close the status menu.
+  useEffect(() => {
+    if (!statusOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setStatusOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setStatusOpen(false);
+    };
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [statusOpen]);
+
+  const btn =
+    'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-colors';
+
+  return (
+    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-3">
+      <div className="pointer-events-auto flex w-full max-w-3xl flex-wrap items-center gap-2 rounded-2xl bg-apex-850 p-2.5 shadow-2xl shadow-black/60 ring-1 ring-white/10">
+        <span className="ml-1 mr-1 inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-slate-100">
+          <span className="rounded-full bg-apex-accent/15 px-2 py-0.5 tabular-nums text-orange-300 ring-1 ring-apex-accent/30">
+            {count}
+          </span>
+          selected
+        </span>
+
+        <button
+          onClick={() => onMarkEmailed(ids)}
+          className={`${btn} border border-teal-500/20 bg-teal-500/10 text-teal-300 hover:bg-teal-500/20`}
+          aria-label={`Mark ${count} leads emailed`}
+        >
+          <MailCheck size={14} /> Mark emailed
+        </button>
+
+        <button
+          onClick={() => onLogCall(ids)}
+          className={`${btn} border border-emerald-500/20 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20`}
+          aria-label={`Log a call for ${count} leads`}
+        >
+          <PhoneCall size={14} /> Log call
+        </button>
+
+        {/* Set status ▾ */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setStatusOpen((v) => !v)}
+            className={`${btn} bg-apex-800 text-slate-200 ring-1 ring-white/10 hover:bg-white/10`}
+            aria-haspopup="menu"
+            aria-expanded={statusOpen}
+            aria-label="Set status for selected leads"
+          >
+            <Tag size={14} /> Set status <ChevronDown size={13} />
+          </button>
+          {statusOpen && (
+            <div
+              role="menu"
+              className="absolute bottom-full left-0 z-10 mb-2 max-h-64 w-44 overflow-auto rounded-xl bg-apex-850 p-1 shadow-2xl shadow-black/60 ring-1 ring-white/10"
+            >
+              {STATUS.map((s) => (
+                <button
+                  key={s.k}
+                  role="menuitem"
+                  onClick={() => {
+                    setStatusOpen(false);
+                    onSetStatus(ids, s.k);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-slate-200 transition-colors hover:bg-white/10"
+                >
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: s.dot }}
+                  />
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={() => onExport(ids)}
+          className={`${btn} bg-apex-800 text-slate-200 ring-1 ring-white/10 hover:bg-white/10`}
+          aria-label={`Export ${count} selected leads to CSV`}
+        >
+          <Download size={14} /> Export CSV
+        </button>
+
+        <button
+          onClick={() => onDelete(ids)}
+          className={`${btn} border border-red-500/25 bg-red-500/10 text-red-300 hover:bg-red-500/20`}
+          aria-label={`Delete ${count} selected leads`}
+        >
+          <Trash2 size={14} /> Delete
+        </button>
+
+        <button
+          onClick={onClear}
+          className={`${btn} ml-auto text-slate-400 hover:bg-white/10 hover:text-slate-100`}
+          aria-label="Clear selection"
+        >
+          <X size={14} /> Clear
+        </button>
+      </div>
     </div>
   );
 }

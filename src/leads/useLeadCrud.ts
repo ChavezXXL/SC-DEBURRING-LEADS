@@ -4,6 +4,7 @@ import {
   deleteField,
   doc,
   setDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Lead, LeadStatus } from '../types';
@@ -14,6 +15,68 @@ import {
 } from './firestore-errors';
 
 const FLASH_MS = 2000;
+
+// Firestore caps a single writeBatch at 500 ops; stay well under it.
+const BATCH_CHUNK = 400;
+
+/** Split ids into <=BATCH_CHUNK-sized groups so no batch exceeds the limit. */
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Shared field-builders — the SINGLE source of truth for what each write sets.
+// Both the single-lead handlers and their bulk counterparts call these, so the
+// per-lead field logic (stamps, touch bump, status guards, dated notes) can
+// never drift between the two paths. tenantId is never touched: every write is
+// a { merge: true } patch on the existing doc, so the stored tenantId stays.
+// ---------------------------------------------------------------------------
+
+/** Fields for "I emailed them" — bumps touch tracking, stamps notes, and only
+ *  ever UPGRADES status (new/called/voicemail → emailed; never downgrades). */
+function markEmailedFields(lead: Lead): Partial<Lead> {
+  const today = new Date().toISOString().slice(0, 10);
+  const stamp = `[${today}] Emailed (marked from app).`;
+  const fields: Partial<Lead> = {
+    lastContactedAt: new Date().toISOString(),
+    touchCount: (lead.touchCount || 0) + 1,
+    notes: lead.notes ? `${lead.notes}\n${stamp}` : stamp,
+  };
+  if (['new', 'called', 'voicemail'].includes(lead.status)) {
+    fields.status = 'emailed';
+  }
+  return fields;
+}
+
+/** Fields for "I called them" — bumps touch tracking, stamps notes, and only
+ *  ever UPGRADES status (new → called; never downgrades a warmer lead). */
+function logCallFields(lead: Lead): Partial<Lead> {
+  const today = new Date().toISOString().slice(0, 10);
+  const stamp = `[${today}] Called (logged from app).`;
+  const fields: Partial<Lead> = {
+    lastContactedAt: new Date().toISOString(),
+    touchCount: (lead.touchCount || 0) + 1,
+    notes: lead.notes ? `${lead.notes}\n${stamp}` : stamp,
+  };
+  if (lead.status === 'new') {
+    fields.status = 'called';
+  }
+  return fields;
+}
+
+/** Fields for a status change — auto-logs the change as a dated note, but only
+ *  when the status actually changes (matches the single-lead handler exactly). */
+function setStatusFields(lead: Lead | undefined, st: LeadStatus): Partial<Lead> {
+  const oldStatus = lead?.status || 'unknown';
+  if (oldStatus !== st) {
+    const stamp = `[${new Date().toLocaleDateString()} — Status: ${oldStatus} → ${st}]`;
+    const newNotes = lead?.notes ? lead.notes + '\n\n' + stamp : stamp;
+    return { status: st, notes: newNotes };
+  }
+  return { status: st };
+}
 
 interface UseLeadCrudArgs {
   /** Current leads array — used to compute status-change notes. */
@@ -104,18 +167,7 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
   const setStatus = async (id: string, st: LeadStatus) => {
     try {
       const lead = leads.find((l) => l.id === id);
-      const oldStatus = lead?.status || 'unknown';
-      if (oldStatus !== st) {
-        const stamp = `[${new Date().toLocaleDateString()} — Status: ${oldStatus} → ${st}]`;
-        const newNotes = lead?.notes ? lead.notes + '\n\n' + stamp : stamp;
-        await setDoc(
-          doc(db, 'leads', id),
-          { status: st, notes: newNotes },
-          { merge: true },
-        );
-      } else {
-        await setDoc(doc(db, 'leads', id), { status: st }, { merge: true });
-      }
+      await setDoc(doc(db, 'leads', id), setStatusFields(lead, st), { merge: true });
       flashSaved();
     } catch (e: any) {
       surface(e, OperationType.UPDATE, `leads/${id}`);
@@ -160,18 +212,8 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
   /** One-click "I emailed them" — bumps touch tracking, stamps the notes,
    * and only ever upgrades status (new/called/voicemail → emailed). */
   const markEmailed = async (lead: Lead) => {
-    const today = new Date().toISOString().slice(0, 10);
-    const stamp = `[${today}] Emailed (marked from app).`;
-    const fields: Partial<Lead> = {
-      lastContactedAt: new Date().toISOString(),
-      touchCount: (lead.touchCount || 0) + 1,
-      notes: lead.notes ? `${lead.notes}\n${stamp}` : stamp,
-    };
-    if (['new', 'called', 'voicemail'].includes(lead.status)) {
-      fields.status = 'emailed';
-    }
     try {
-      await setDoc(doc(db, 'leads', lead.id), fields, { merge: true });
+      await setDoc(doc(db, 'leads', lead.id), markEmailedFields(lead), { merge: true });
       flashSaved();
     } catch (e: any) {
       surface(e, OperationType.UPDATE, `leads/${lead.id}`);
@@ -182,18 +224,8 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
    * and only ever upgrades status (new → called; never downgrades an
    * emailed/interested/client lead back to called). */
   const logCall = async (lead: Lead) => {
-    const today = new Date().toISOString().slice(0, 10);
-    const stamp = `[${today}] Called (logged from app).`;
-    const fields: Partial<Lead> = {
-      lastContactedAt: new Date().toISOString(),
-      touchCount: (lead.touchCount || 0) + 1,
-      notes: lead.notes ? `${lead.notes}\n${stamp}` : stamp,
-    };
-    if (lead.status === 'new') {
-      fields.status = 'called';
-    }
     try {
-      await setDoc(doc(db, 'leads', lead.id), fields, { merge: true });
+      await setDoc(doc(db, 'leads', lead.id), logCallFields(lead), { merge: true });
       flashSaved();
     } catch (e: any) {
       surface(e, OperationType.UPDATE, `leads/${lead.id}`);
@@ -212,6 +244,81 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     flashSaved();
   };
 
+  // ---- BULK write paths ---------------------------------------------------
+  // Each mirrors its single-lead handler exactly by reusing the same shared
+  // field-builder per lead, then commits the patches in writeBatch chunks of
+  // <=400 ops. Every op is a { merge: true } set on the existing doc, so
+  // tenantId (and any field not in the patch) is preserved. Returns the number
+  // of leads actually changed so the caller can fire one accurate toast.
+
+  /** Look up the live leads for the given ids, dropping any that vanished. */
+  const resolve = (ids: string[]): Lead[] => {
+    const byId = new Map(leads.map((l) => [l.id, l]));
+    return ids.map((id) => byId.get(id)).filter((l): l is Lead => !!l);
+  };
+
+  /** Commit an array of [id, fields] patches in <=400-op batches. */
+  const commitPatches = async (
+    patches: [string, Partial<Lead>][],
+    path: string,
+  ): Promise<number> => {
+    if (patches.length === 0) return 0;
+    try {
+      for (const group of chunk(patches, BATCH_CHUNK)) {
+        const batch = writeBatch(db);
+        for (const [id, fields] of group) {
+          batch.set(doc(db, 'leads', id), fields, { merge: true });
+        }
+        await batch.commit();
+      }
+      flashSaved();
+      return patches.length;
+    } catch (e: any) {
+      surface(e, OperationType.WRITE, path);
+      return 0;
+    }
+  };
+
+  const bulkMarkEmailed = async (ids: string[]): Promise<number> => {
+    const patches = resolve(ids).map(
+      (lead) => [lead.id, markEmailedFields(lead)] as [string, Partial<Lead>],
+    );
+    return commitPatches(patches, 'leads (bulk markEmailed)');
+  };
+
+  const bulkLogCall = async (ids: string[]): Promise<number> => {
+    const patches = resolve(ids).map(
+      (lead) => [lead.id, logCallFields(lead)] as [string, Partial<Lead>],
+    );
+    return commitPatches(patches, 'leads (bulk logCall)');
+  };
+
+  /** Only writes leads whose status actually changes, so the returned count
+   *  reflects real moves (matches the single handler's "changed" semantics). */
+  const bulkSetStatus = async (ids: string[], st: LeadStatus): Promise<number> => {
+    const patches = resolve(ids)
+      .filter((lead) => lead.status !== st)
+      .map((lead) => [lead.id, setStatusFields(lead, st)] as [string, Partial<Lead>]);
+    return commitPatches(patches, 'leads (bulk setStatus)');
+  };
+
+  /** Marks every id deleted locally (identical to the single delete), then
+   *  best-effort batch-deletes the docs. Local marks stick even if rules block. */
+  const bulkDelete = async (ids: string[]): Promise<number> => {
+    ids.forEach((id) => markDeleted(id));
+    try {
+      for (const group of chunk(ids, BATCH_CHUNK)) {
+        const batch = writeBatch(db);
+        for (const id of group) batch.delete(doc(db, 'leads', id));
+        await batch.commit();
+      }
+    } catch {
+      /* security rules may block — local marks are enough */
+    }
+    flashSaved();
+    return ids.length;
+  };
+
   return {
     saved,
     appError,
@@ -224,5 +331,9 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     markEmailed,
     logCall,
     deleteLead,
+    bulkMarkEmailed,
+    bulkLogCall,
+    bulkSetStatus,
+    bulkDelete,
   };
 }

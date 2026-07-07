@@ -9,6 +9,9 @@ import { useAuth } from './auth/AuthContext';
 import { useLeads } from './leads/useLeads';
 import { useLeadCrud } from './leads/useLeadCrud';
 import { useLeadFilters } from './leads/useLeadFilters';
+import { useLeadSort } from './leads/useLeadSort';
+import { useLeadSelection } from './leads/useLeadSelection';
+import { downloadLeadsCsv } from './leads/leadsCsv';
 import { LeadsTab } from './leads/LeadsTab';
 import { AddLeadModal } from './leads/AddLeadModal';
 
@@ -27,6 +30,7 @@ const SettingsTab = lazy(() =>
 );
 
 import { DeleteModal } from './modals/DeleteModal';
+import { BulkDeleteModal } from './modals/BulkDeleteModal';
 
 const EMPTY_LEAD_FORM: Partial<Lead> = {
   co: '',
@@ -85,6 +89,10 @@ export default function App() {
   const { visibleLeads, loading, dbError, markDeleted } = useLeads(tenantId);
   const crud = useLeadCrud({ leads: visibleLeads, tenantId, markDeleted });
   const { state: filterState, setters: filterSetters, filtered } = useLeadFilters(visibleLeads);
+  // Sort applies AFTER filtering, BEFORE render. `sorted` is what the Leads tab
+  // actually renders (and what selection treats as the eligible set).
+  const { sortKey, onSortChange, sorted } = useLeadSort(filtered);
+  const selection = useLeadSelection(sorted.map((l) => l.id));
 
   // "Today" is the money screen — the day starts on the execution list.
   const [tab, setTab] = useState<TabKey>('today');
@@ -100,6 +108,8 @@ export default function App() {
   const [showAddLead, setShowAddLead] = useState(false);
   const [newLeadForm, setNewLeadForm] = useState<Partial<Lead>>({ ...EMPTY_LEAD_FORM });
   const [deleteModal, setDeleteModal] = useState<{ id: string; co: string } | null>(null);
+  // Bulk delete goes through a confirm modal; holds the ids awaiting confirmation.
+  const [bulkDeleteIds, setBulkDeleteIds] = useState<string[] | null>(null);
 
   // ---- handlers ----------------------------------------------------------
 
@@ -165,6 +175,60 @@ export default function App() {
     }
     return crud.setStatus(id, st);
   }, [crud, toast, visibleLeads]);
+
+  // ---- bulk actions --------------------------------------------------------
+  // Each fires ONE summarizing toast and clears the selection after a successful
+  // write. The per-lead field logic lives in crud (shared with the singles).
+
+  const clearSelection = selection.clear;
+
+  const handleBulkMarkEmailed = useCallback(async (ids: string[]) => {
+    const n = await crud.bulkMarkEmailed(ids);
+    if (n > 0) {
+      toast(`Marked ${n} emailed`);
+      clearSelection();
+    }
+  }, [crud, toast, clearSelection]);
+
+  const handleBulkLogCall = useCallback(async (ids: string[]) => {
+    const n = await crud.bulkLogCall(ids);
+    if (n > 0) {
+      toast(`Logged ${n} call${n === 1 ? '' : 's'}`);
+      clearSelection();
+    }
+  }, [crud, toast, clearSelection]);
+
+  const handleBulkSetStatus = useCallback(async (ids: string[], st: LeadStatus) => {
+    const n = await crud.bulkSetStatus(ids, st);
+    const label = STATUS.find((s) => s.k === st)?.label ?? st;
+    // n counts only leads that actually changed; all selected may already be there.
+    toast(n > 0 ? `Moved ${n} to ${label}` : `Already ${label}`);
+    if (n > 0) clearSelection();
+  }, [crud, toast, clearSelection]);
+
+  const handleBulkExport = useCallback((ids: string[]) => {
+    const set = new Set(ids);
+    const rows = visibleLeads.filter((l) => set.has(l.id));
+    if (rows.length === 0) return;
+    downloadLeadsCsv(rows, `leads-selected-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast(`Exported ${rows.length} lead${rows.length === 1 ? '' : 's'}`);
+    clearSelection();
+  }, [visibleLeads, toast, clearSelection]);
+
+  // Delete confirms first — the actual write happens in the modal's onConfirm.
+  const handleBulkDeleteRequest = useCallback((ids: string[]) => {
+    if (ids.length > 0) setBulkDeleteIds(ids);
+  }, []);
+
+  const handleBulkDeleteConfirm = useCallback(async () => {
+    const ids = bulkDeleteIds ?? [];
+    setBulkDeleteIds(null);
+    if (ids.length === 0) return;
+    if (openId && ids.includes(openId)) setOpenId(null);
+    const n = await crud.bulkDelete(ids);
+    toast(`${n} lead${n === 1 ? '' : 's'} deleted`);
+    clearSelection();
+  }, [bulkDeleteIds, crud, toast, clearSelection, openId]);
 
   /** Cross-tab "show me this lead" — switch to Leads, open the card, scroll to it. */
   const jumpToLead = useCallback((id: string) => {
@@ -284,6 +348,7 @@ export default function App() {
           <LeadsTab
             visibleLeads={visibleLeads}
             filtered={filtered}
+            sorted={sorted}
             filters={filterState}
             setters={filterSetters}
             openId={openId}
@@ -300,6 +365,22 @@ export default function App() {
             setReminder={crud.setReminder}
             markEmailed={handleMarkEmailed}
             logCall={handleLogCall}
+            sortKey={sortKey}
+            onSortChange={onSortChange}
+            selectedCount={selection.count}
+            allSelected={selection.allSelected}
+            someSelected={selection.someSelected}
+            isSelected={selection.isSelected}
+            onToggleSelect={selection.toggle}
+            onSelectAll={selection.selectAll}
+            onClearSelection={selection.clear}
+            selectionMode={selection.selectionMode}
+            onToggleSelectionMode={() => selection.setSelectionMode(!selection.selectionMode)}
+            onBulkMarkEmailed={handleBulkMarkEmailed}
+            onBulkLogCall={handleBulkLogCall}
+            onBulkSetStatus={handleBulkSetStatus}
+            onBulkExport={handleBulkExport}
+            onBulkDelete={handleBulkDeleteRequest}
             onDelete={(id, co) => setDeleteModal({ id, co })}
             onAddLeadClick={() => setShowAddLead(true)}
           />
@@ -327,6 +408,14 @@ export default function App() {
           deleteModal={deleteModal}
           setDeleteModal={setDeleteModal}
           handleDeleteLead={handleDelete}
+        />
+      )}
+
+      {bulkDeleteIds && (
+        <BulkDeleteModal
+          count={bulkDeleteIds.length}
+          onCancel={() => setBulkDeleteIds(null)}
+          onConfirm={handleBulkDeleteConfirm}
         />
       )}
 
