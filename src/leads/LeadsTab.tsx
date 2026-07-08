@@ -70,6 +70,7 @@ interface LeadsTabProps {
   // Modal handlers (from App)
   onDelete: (id: string, co: string) => void;
   onAddLeadClick: () => void;
+  onImportClick?: () => void;
 }
 
 /**
@@ -116,6 +117,7 @@ export function LeadsTab({
   onBulkDelete,
   onDelete,
   onAddLeadClick,
+  onImportClick,
 }: LeadsTabProps) {
   const { regF, stF, tierF, pmOnly, remindersOnly, q, hot5, dueFollowUp, hiringOnly } = filters;
 
@@ -220,7 +222,16 @@ export function LeadsTab({
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-2">
+          {onImportClick && (
+            <button
+              onClick={onImportClick}
+              className="flex items-center gap-2 rounded-xl bg-apex-850 px-3 py-2 text-sm font-medium text-slate-300 ring-1 ring-white/10 transition hover:bg-white/10 hover:text-slate-100"
+              title="Import leads from a CSV file"
+            >
+              Import
+            </button>
+          )}
           <button
             onClick={onAddLeadClick}
             className="flex items-center gap-2 rounded-xl bg-apex-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-950/50 transition hover:brightness-110 active:scale-[0.99]"

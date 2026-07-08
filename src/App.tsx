@@ -48,6 +48,9 @@ const AddLeadModal = lazy(() =>
 const BulkDeleteModal = lazy(() =>
   import('./modals/BulkDeleteModal').then((m) => ({ default: m.BulkDeleteModal })),
 );
+const ImportLeadsModal = lazy(() =>
+  import('./modals/ImportLeadsModal').then((m) => ({ default: m.ImportLeadsModal })),
+);
 
 import { DeleteModal } from './modals/DeleteModal';
 
@@ -214,6 +217,9 @@ export default function App() {
   const [deleteModal, setDeleteModal] = useState<{ id: string; co: string } | null>(null);
   // Bulk delete goes through a confirm modal; holds the ids awaiting confirmation.
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[] | null>(null);
+
+  // CSV import — onboard a whole lead list at once (dedupe + tenant stamp).
+  const [showImport, setShowImport] = useState(false);
 
   // ⌘K command palette — search leads, jump tabs, quick actions, workspaces.
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -531,6 +537,7 @@ export default function App() {
             onBulkDelete={handleBulkDeleteRequest}
             onDelete={(id, co) => setDeleteModal({ id, co })}
             onAddLeadClick={() => setShowAddLead(true)}
+            onImportClick={() => setShowImport(true)}
           />
         )}
 
@@ -582,6 +589,18 @@ export default function App() {
             setNewLeadForm={setNewLeadForm}
             setShowAddLead={setShowAddLead}
             handleAddLead={handleAddLead}
+          />
+        </Suspense>
+      )}
+
+      {showImport && (
+        <Suspense fallback={null}>
+          <ImportLeadsModal
+            open={showImport}
+            onClose={() => setShowImport(false)}
+            existingLeads={visibleLeads}
+            tenantId={tenantId}
+            onImported={(n) => toast(`Imported ${n} lead${n === 1 ? '' : 's'}`)}
           />
         </Suspense>
       )}

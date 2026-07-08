@@ -11,6 +11,7 @@ import {
   Settings as SettingsIcon,
   Plus,
   Download,
+  Upload,
   CornerDownLeft,
 } from 'lucide-react';
 import type { Lead, TabKey } from '../types';
@@ -25,6 +26,7 @@ interface CommandPaletteProps {
   onJumpToLead: (id: string) => void;
   onNavigate: (tab: TabKey) => void;
   onAddLead: () => void;
+  onImport: () => void;
   onExport: () => void;
   onSelectWorkspace: (id: string) => void;
   role?: 'super-admin' | 'owner' | 'member';
@@ -51,6 +53,7 @@ export function CommandPalette({
   onJumpToLead,
   onNavigate,
   onAddLead,
+  onImport,
   onExport,
   onSelectWorkspace,
   role,
@@ -111,6 +114,13 @@ export function CommandPalette({
         label: 'Add lead',
         icon: <Plus size={15} />,
         run: onAddLead,
+      },
+      {
+        id: 'act-import',
+        group: 'Actions',
+        label: 'Import leads (CSV)',
+        icon: <Upload size={15} />,
+        run: onImport,
       },
       {
         id: 'act-export',
