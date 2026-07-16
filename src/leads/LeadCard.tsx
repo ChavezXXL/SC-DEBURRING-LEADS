@@ -6,6 +6,7 @@ import { LeadCardActions } from './LeadCard/LeadCardActions';
 import { LeadCardDetails } from './LeadCard/LeadCardDetails';
 import { LeadCardTimeline } from './LeadCard/LeadCardTimeline';
 import { LeadCardFollowUp } from './LeadCard/LeadCardFollowUp';
+import { LeadCardValue } from './LeadCard/LeadCardValue';
 import { LeadCardNotes } from './LeadCard/LeadCardNotes';
 import { LeadCardStatus } from './LeadCard/LeadCardStatus';
 import { QuickEmail } from './LeadCard/QuickEmail';
@@ -29,6 +30,7 @@ interface LeadCardProps {
     indeed: (city: string) => string;
   };
   setReminder: (id: string, reminderDate: string | null) => void;
+  setValue: (id: string, value: number | null) => void;
   onMarkEmailed?: (lead: Lead) => void;
   onLogCall?: (lead: Lead) => void;
   /** Multi-select: this card's selected bit (a plain boolean derived from the
@@ -54,6 +56,7 @@ const LeadCardComponent: React.FC<LeadCardProps> = ({
   copy,
   qs,
   setReminder,
+  setValue,
   onMarkEmailed,
   onLogCall,
   selected = false,
@@ -130,6 +133,7 @@ const LeadCardComponent: React.FC<LeadCardProps> = ({
             />
           )}
           <LeadCardDetails lead={lead} />
+          <LeadCardValue lead={lead} setValue={setValue} />
           <LeadCardFollowUp lead={lead} setReminder={setReminder} />
           <LeadCardTimeline lead={lead} />
           <LeadCardNotes

@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Lead, LeadStatus } from '../types';
+import { todayYmd } from '../utils/leadActivity';
 import {
   OperationType,
   extractErrorMessage,
@@ -71,8 +72,11 @@ function logCallFields(lead: Lead): Partial<Lead> {
 function setStatusFields(lead: Lead | undefined, st: LeadStatus): Partial<Lead> {
   const oldStatus = lead?.status || 'unknown';
   if (oldStatus !== st) {
-    const stamp = `[${new Date().toLocaleDateString()} — Status: ${oldStatus} → ${st}]`;
-    const newNotes = lead?.notes ? lead.notes + '\n\n' + stamp : stamp;
+    // Local calendar day (Pacific for this shop) in ISO form — toLocaleDateString()
+    // was locale-shaped, and a bare toISOString() would UTC-shift an evening change
+    // to tomorrow. todayYmd() is the app's canonical local YYYY-MM-DD.
+    const stamp = `[${todayYmd()}] Status: ${oldStatus} → ${st}.`;
+    const newNotes = lead?.notes ? lead.notes + '\n' + stamp : stamp;
     return { status: st, notes: newNotes };
   }
   return { status: st };
@@ -221,6 +225,34 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     }
   };
 
+  /**
+   * Set or clear a lead's estimated deal value ($/mo). Same shape as
+   * setReminder: a { merge: true } patch (tenantId preserved) plus a dated
+   * timeline line in `notes` so sizing changes show in the activity timeline.
+   */
+  const setValue = async (id: string, value: number | null) => {
+    try {
+      const lead = leads.find((l) => l.id === id);
+      const today = todayYmd();
+      if (value === null) {
+        const stamp = `[${today}] Deal value cleared.`;
+        const notes = lead?.notes ? `${lead.notes}\n${stamp}` : stamp;
+        await setDoc(
+          doc(db, 'leads', id),
+          { value: deleteField(), notes },
+          { merge: true },
+        );
+      } else {
+        const stamp = `[${today}] Deal value set to $${value.toLocaleString('en-US')}/mo.`;
+        const notes = lead?.notes ? `${lead.notes}\n${stamp}` : stamp;
+        await setDoc(doc(db, 'leads', id), { value, notes }, { merge: true });
+      }
+      flashSaved();
+    } catch (e: any) {
+      surface(e, OperationType.UPDATE, `leads/${id}`);
+    }
+  };
+
   /** One-click "I emailed them" — bumps touch tracking, stamps the notes,
    * and only ever upgrades status (new/called/voicemail → emailed). */
   const markEmailed = async (lead: Lead) => {
@@ -340,6 +372,7 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     updateLead,
     saveNote,
     setReminder,
+    setValue,
     markEmailed,
     logCall,
     deleteLead,

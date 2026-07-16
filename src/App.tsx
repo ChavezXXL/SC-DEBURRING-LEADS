@@ -517,6 +517,7 @@ export default function App() {
             setStatus={handleSetStatus}
             saveNote={handleSaveNote}
             setReminder={crud.setReminder}
+            setValue={crud.setValue}
             markEmailed={handleMarkEmailed}
             logCall={handleLogCall}
             sortKey={sortKey}

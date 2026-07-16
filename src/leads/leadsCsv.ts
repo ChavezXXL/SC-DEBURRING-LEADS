@@ -19,6 +19,7 @@ export const CSV_COLUMNS = [
   'web',
   'pm',
   'who',
+  'value',
   'lastContactedAt',
   'touchCount',
 ] as const;

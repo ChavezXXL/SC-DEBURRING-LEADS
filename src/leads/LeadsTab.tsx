@@ -44,6 +44,7 @@ interface LeadsTabProps {
   setStatus: (id: string, st: LeadStatus) => void | Promise<void>;
   saveNote: (id: string, notes: string) => void | Promise<void>;
   setReminder: (id: string, d: string | null) => void | Promise<void>;
+  setValue: (id: string, value: number | null) => void | Promise<void>;
   markEmailed: (lead: Lead) => void | Promise<void>;
   logCall: (lead: Lead) => void | Promise<void>;
 
@@ -97,6 +98,7 @@ export function LeadsTab({
   setStatus,
   saveNote,
   setReminder,
+  setValue,
   markEmailed,
   logCall,
   sortKey,
@@ -523,6 +525,7 @@ export function LeadsTab({
               setStatus={setStatus}
               saveNote={saveNote}
               setReminder={setReminder}
+              setValue={setValue}
               setDeleteModal={(m) => m && onDelete(m.id, m.co)}
               cp={cp}
               copy={copy}

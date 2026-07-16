@@ -39,6 +39,9 @@ export interface Lead {
   lastContactedAt?: string;
   /** Total touches across all channels. Increment when sending email, logging a call, etc. */
   touchCount?: number;
+  /** Estimated deal value in $/month once this lead becomes a recurring account.
+   * Powers the pipeline column totals. Optional — unset means "not sized yet". */
+  value?: number;
 }
 
 export interface StatusDef {
