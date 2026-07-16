@@ -8,6 +8,7 @@ import {
   LogOut,
   Shield,
   Settings as SettingsIcon,
+  SearchCheck,
 } from 'lucide-react';
 import type { Lead, TabKey, Tenant, UserProfile } from '../types';
 import { FancyLogo } from './FancyLogo';
@@ -18,6 +19,7 @@ interface SidebarProps {
   tab: TabKey;
   setTab: (tab: TabKey) => void;
   leads: Lead[];
+  researchPendingCount?: number;
   saved: boolean;
   onPipelineClick?: (filterType: string) => void;
   // Multi-tenant: shown at bottom of sidebar
@@ -38,6 +40,7 @@ export function Sidebar({
   tab,
   setTab,
   leads,
+  researchPendingCount = 0,
   saved,
   onPipelineClick,
   tenant,
@@ -120,6 +123,8 @@ export function Sidebar({
         <nav className="mb-8 space-y-1">
           {navItem('today', 'Today', ListTodo)}
           {navItem('leads', 'Leads', LayoutDashboard, leads.length)}
+          {(profile?.role === 'owner' || profile?.role === 'super-admin') &&
+            navItem('research', 'Research Queue', SearchCheck, researchPendingCount)}
           {navItem('outreach', 'Outreach', MessageSquare)}
           {navItem('pipeline', 'Pipeline', Kanban)}
           {(profile?.role === 'owner' || profile?.role === 'super-admin') &&

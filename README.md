@@ -41,6 +41,18 @@ Pages Functions live under `functions/`. SPA routing is handled by Pages automat
 
 The daily auto-outreach worker is a separate Cloudflare Worker at `workers/auto-outreach/`. Deploy it independently with `npx wrangler deploy` from that directory. See the wrangler.toml for required secrets.
 
+### Research approval queue
+
+Publicly researched companies can be staged for owner review without entering the active sales pipeline or triggering outreach. Research candidates use `status: "research_pending"`; the CRM excludes that status from Leads, Today, Pipeline, exports, and the auto-outreach worker.
+
+1. Copy `docs/research-candidates.example.json` and replace the example with sourced research.
+2. Validate the file with `npm run research:import -- ./research-candidates.json --validate-only`.
+3. Preview against the live CRM with `npm run research:import -- ./research-candidates.json`.
+4. Review the duplicate report.
+5. Add `--commit` only when the queue contents are approved for staging.
+
+The importer requires at least one public source URL, deduplicates by company, email, and website, and always sets `queued_for_outreach: false`. Approving a company in the Research Queue changes its status to `new`; rejecting it keeps it outside the active CRM.
+
 ## Push This Branch to GitHub
 
 I can commit changes in this environment, but pushing to GitHub requires your repository remote + auth token/SSH key.

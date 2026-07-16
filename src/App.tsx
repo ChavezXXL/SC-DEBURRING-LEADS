@@ -19,6 +19,7 @@ import { FancyLogo } from './shell/FancyLogo';
 import { TabSkeleton } from './shell/TabSkeleton';
 
 import { TodayTab } from './tabs/TodayTab';
+import { useResearchQueue } from './research/useResearchQueue';
 
 // Code-splitting: only Today + Leads (the two most-used screens) ship in the
 // entry chunk. Everything else is a separate chunk fetched on first open, so
@@ -28,6 +29,9 @@ const OutreachTab = lazy(() =>
 );
 const PipelineTab = lazy(() =>
   import('./tabs/PipelineTab').then((m) => ({ default: m.PipelineTab })),
+);
+const ResearchQueueTab = lazy(() =>
+  import('./research/ResearchQueueTab').then((m) => ({ default: m.ResearchQueueTab })),
 );
 const AdminPanel = lazy(() =>
   import('./admin/AdminPanel').then((m) => ({ default: m.AdminPanel })),
@@ -101,8 +105,9 @@ export default function App() {
   // writes are always tenant-stamped even if the tenant doc failed to load.
   const tenantId = tenant?.id ?? profile?.tenantId;
 
-  const { visibleLeads, loading, dbError, markDeleted } = useLeads(tenantId);
+  const { visibleLeads, researchLeads, loading, dbError, markDeleted } = useLeads(tenantId);
   const crud = useLeadCrud({ leads: visibleLeads, tenantId, markDeleted });
+  const researchQueue = useResearchQueue({ tenantId, activeLeads: visibleLeads });
   const { state: filterState, setters: filterSetters, filtered } = useLeadFilters(visibleLeads);
   // Sort applies AFTER filtering, BEFORE render. `sorted` is what the Leads tab
   // actually renders (and what selection treats as the eligible set).
@@ -245,6 +250,21 @@ export default function App() {
     clearSelection();
   }, [bulkDeleteIds, crud, toast, clearSelection, openId]);
 
+  const handleApproveResearch = async (lead: Lead) => {
+    const ok = await researchQueue.approve(lead);
+    if (ok) toast(`Approved to Leads — ${lead.co}`);
+  };
+
+  const handleRejectResearch = async (lead: Lead) => {
+    const ok = await researchQueue.reject(lead);
+    if (ok) toast(`Rejected — ${lead.co}`);
+  };
+
+  const handleRestoreResearch = async (lead: Lead) => {
+    const ok = await researchQueue.restore(lead);
+    if (ok) toast(`Restored for review — ${lead.co}`);
+  };
+
   /** Cross-tab "show me this lead" — switch to Leads, open the card, scroll to it. */
   const jumpToLead = useCallback((id: string) => {
     setTab('leads');
@@ -309,6 +329,7 @@ export default function App() {
         tab={tab}
         setTab={setTab}
         leads={visibleLeads}
+        researchPendingCount={researchLeads.filter((lead) => lead.status === 'research_pending').length}
         saved={crud.saved}
         tenant={tenant}
         profile={profile}
@@ -400,6 +421,23 @@ export default function App() {
             onAddLeadClick={() => setShowAddLead(true)}
           />
         )}
+
+        {tab === 'research' &&
+          (profile?.role === 'owner' || profile?.role === 'super-admin') && (
+            <Suspense fallback={<TabSkeleton />}>
+              <ResearchQueueTab
+                candidates={researchLeads}
+                activeLeads={visibleLeads}
+                busyId={researchQueue.busyId}
+                error={researchQueue.error}
+                clearError={researchQueue.clearError}
+                approve={handleApproveResearch}
+                reject={handleRejectResearch}
+                restore={handleRestoreResearch}
+                onLeadClick={jumpToLead}
+              />
+            </Suspense>
+          )}
 
         {tab === 'outreach' && (
           <Suspense fallback={<TabSkeleton />}>

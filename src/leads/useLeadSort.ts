@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { Lead } from '../types';
+import type { Lead, LeadStatus } from '../types';
 import { STATUS } from '../data';
 
 /**
@@ -31,7 +31,7 @@ export const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 
 // Pipeline order for the "Status" sort: index into the STATUS array (new → …
 // → client), so leads sort in the same order the status chips are laid out.
-const STATUS_ORDER = new Map(STATUS.map((s, i) => [s.k, i]));
+const STATUS_ORDER = new Map<LeadStatus, number>(STATUS.map((s, i) => [s.k, i]));
 
 /** lastContactedAt as epoch ms; missing/invalid → NaN so callers can push last. */
 function contactedMs(l: Lead): number {
