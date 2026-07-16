@@ -20,8 +20,11 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
     voicemail: [],
     interested: [],
     quote: [],
+    sample: [],
+    po: [],
     dead: [],
     client: [],
+    anchor: [],
   };
 
   leads.forEach((lead) => {

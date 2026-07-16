@@ -10,8 +10,11 @@ export const STATUS: StatusDef[] = [
   {k:"voicemail",label:"Voicemail",dot:"#6b7280",bg:"rgba(156,163,175,0.12)",tx:"#d1d5db"},
   {k:"interested",label:"Interested",dot:"#10b981",bg:"rgba(16,185,129,0.12)",tx:"#6ee7b7"},
   {k:"quote",label:"Quote Sent",dot:"#06b6d4",bg:"rgba(6,182,212,0.12)",tx:"#67e8f9"},
-  {k:"dead",label:"Dead",dot:"#ef4444",bg:"rgba(239,68,68,0.12)",tx:"#fca5a5"},
+  {k:"sample",label:"Sample Lot",dot:"#fb923c",bg:"rgba(251,146,60,0.12)",tx:"#fdba74"},
+  {k:"po",label:"First PO",dot:"#84cc16",bg:"rgba(132,204,22,0.12)",tx:"#bef264"},
   {k:"client",label:"CLIENT",dot:"#f59e0b",bg:"rgba(245,158,11,0.16)",tx:"#fde68a"},
+  {k:"anchor",label:"ANCHOR",dot:"#e5e7eb",bg:"rgba(229,231,235,0.14)",tx:"#f9fafb"},
+  {k:"dead",label:"Dead",dot:"#ef4444",bg:"rgba(239,68,68,0.12)",tx:"#fca5a5"},
 ];
 
 export const REGIONS = [

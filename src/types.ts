@@ -6,8 +6,11 @@ export type LeadStatus =
   | 'voicemail'
   | 'interested'
   | 'quote'
+  | 'sample'
+  | 'po'
   | 'dead'
-  | 'client';
+  | 'client'
+  | 'anchor';
 
 export interface Lead {
   id: string;

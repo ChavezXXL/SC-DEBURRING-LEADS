@@ -312,6 +312,10 @@ export const onRequestPost = async ({ request, env }: CtxArg): Promise<Response>
       ...(body.primaryColor ? { primaryColor: body.primaryColor } : {}),
       createdAt: now,
       plan: 'trial',
+      // Explicit — Firestore rules do `tenant.disabled != true`, and the rules
+      // engine ERRORS (denies) on a missing field, which locks the new owner
+      // out of their own leads. Always write it.
+      disabled: false,
     });
 
     // 5) Create the user profile (role: owner of this tenant)

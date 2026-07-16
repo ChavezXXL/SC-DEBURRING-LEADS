@@ -49,7 +49,9 @@ async function main() {
   });
 
   console.log(`Client list: ${CLIENTS.length} names. CRM leads matching: ${matches.length}`);
-  const toFlip = matches.filter(m => m.status !== 'client');
+  // 'anchor' (2026-07-10 ladder status: a client at ≥$10K/mo standing work) is
+  // client-equivalent — never downgrade it back to plain 'client'.
+  const toFlip = matches.filter(m => m.status !== 'client' && m.status !== 'anchor');
   console.log(`Already status=client: ${matches.length - toFlip.length}`);
   console.log(`Would flip to client: ${toFlip.length}`);
   toFlip.forEach(m => console.log(`  ${commit ? '>' : '~'} ${m.co}  (was: ${m.status})`));
