@@ -6,6 +6,7 @@ import {
   Check,
   Kanban,
   LogOut,
+  Rocket,
   Shield,
   Settings as SettingsIcon,
   Search as SearchIcon,
@@ -165,6 +166,17 @@ export function Sidebar({
           {(profile?.role === 'owner' || profile?.role === 'super-admin') &&
             navItem('settings', 'Settings', SettingsIcon)}
           {profile?.role === 'super-admin' && navItem('admin', 'Admin', Shield)}
+          {/* Cross-link to the 90-day Growth Command app (reads this CRM live). */}
+          <a
+            href="https://sc-growth-command-7k4m.pages.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-slate-100"
+          >
+            <Rocket size={16} />
+            <span>Growth Command</span>
+            <span className="ml-auto text-[10px] font-medium text-slate-500">↗</span>
+          </a>
         </nav>
 
         {/* Pipeline status — hidden in the tenant-less Platform Console */}
