@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Lead, LeadStatus } from '../types';
+import type { Lead, LeadStatus, PipelineLeadStatus } from '../types';
 import { STATUS } from '../data';
 import { Calendar, MapPin, User } from 'lucide-react';
 
@@ -12,7 +12,7 @@ interface PipelineTabProps {
 
 export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps) {
   // Group leads by status
-  const leadsByStatus: Record<LeadStatus, Lead[]> = {
+  const leadsByStatus: Record<PipelineLeadStatus, Lead[]> = {
     new: [],
     called: [],
     emailed: [],
@@ -25,8 +25,8 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
   };
 
   leads.forEach((lead) => {
-    if (leadsByStatus[lead.status]) {
-      leadsByStatus[lead.status].push(lead);
+    if (lead.status in leadsByStatus) {
+      leadsByStatus[lead.status as PipelineLeadStatus].push(lead);
     }
   });
 

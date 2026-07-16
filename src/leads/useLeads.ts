@@ -130,9 +130,31 @@ export function useLeads(tenantId: string | undefined) {
     return () => unsub();
   }, [tenantId]);
 
-  // Filter out client-side-deleted leads from the visible list.
+  // Research candidates share the tenant-scoped leads collection so the queue
+  // works with the existing Firestore rules. They stay completely out of the
+  // active CRM until an owner approves them and changes the status to `new`.
+  const researchLeads = useMemo(
+    () =>
+      leads
+        .filter((l) =>
+          l.status === 'research_pending' || l.status === 'research_rejected',
+        )
+        .sort((a, b) =>
+          (b.researchCreatedAt || '').localeCompare(a.researchCreatedAt || ''),
+        ),
+    [leads],
+  );
+
+  // Filter out client-side-deleted leads and unapproved research candidates
+  // from every existing dashboard, pipeline, export, and outreach surface.
   const visibleLeads = useMemo(
-    () => leads.filter((l) => !deletedIds.has(l.id)),
+    () =>
+      leads.filter(
+        (l) =>
+          !deletedIds.has(l.id) &&
+          l.status !== 'research_pending' &&
+          l.status !== 'research_rejected',
+      ),
     [leads, deletedIds],
   );
 
@@ -145,5 +167,5 @@ export function useLeads(tenantId: string | undefined) {
     } catch {}
   };
 
-  return { leads, visibleLeads, loading, dbError, markDeleted };
+  return { leads, visibleLeads, researchLeads, loading, dbError, markDeleted };
 }

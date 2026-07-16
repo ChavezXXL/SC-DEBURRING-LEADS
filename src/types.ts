@@ -1,4 +1,6 @@
 export type LeadStatus =
+  | 'research_pending'
+  | 'research_rejected'
   | 'new'
   | 'called'
   | 'emailed'
@@ -8,6 +10,11 @@ export type LeadStatus =
   | 'quote'
   | 'dead'
   | 'client';
+
+export type PipelineLeadStatus = Exclude<
+  LeadStatus,
+  'research_pending' | 'research_rejected'
+>;
 
 export interface Lead {
   id: string;
@@ -36,10 +43,20 @@ export interface Lead {
   lastContactedAt?: string;
   /** Total touches across all channels. Increment when sending email, logging a call, etc. */
   touchCount?: number;
+  /** Public-research context. These fields are populated while a company is
+   * waiting in the Research Queue and remain as provenance after approval. */
+  researchSignal?: string;
+  researchSignalDate?: string;
+  researchWhy?: string;
+  researchSourceUrls?: string[];
+  researchNextStep?: string;
+  researchCreatedAt?: string;
+  researchUpdatedAt?: string;
+  researchDecisionAt?: string;
 }
 
 export interface StatusDef {
-  k: LeadStatus;
+  k: PipelineLeadStatus;
   label: string;
   dot: string;
   bg: string;
@@ -60,7 +77,14 @@ export interface ObjectionDef {
   a: string;
 }
 
-export type TabKey = 'today' | 'leads' | 'outreach' | 'pipeline' | 'admin' | 'settings';
+export type TabKey =
+  | 'today'
+  | 'leads'
+  | 'research'
+  | 'outreach'
+  | 'pipeline'
+  | 'admin'
+  | 'settings';
 
 /**
  * A tenant = one business that logs into the CRM.
