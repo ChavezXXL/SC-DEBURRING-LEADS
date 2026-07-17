@@ -9,6 +9,7 @@ import {
   Shield,
   Settings as SettingsIcon,
   SearchCheck,
+  Route,
 } from 'lucide-react';
 import type { Lead, TabKey, Tenant, UserProfile } from '../types';
 import { FancyLogo } from './FancyLogo';
@@ -123,6 +124,7 @@ export function Sidebar({
         <nav className="mb-8 space-y-1">
           {navItem('today', 'Today', ListTodo)}
           {navItem('leads', 'Leads', LayoutDashboard, leads.length)}
+          {navItem('field-route', 'Field Route', Route)}
           {(profile?.role === 'owner' || profile?.role === 'super-admin') &&
             navItem('research', 'Research Queue', SearchCheck, researchPendingCount)}
           {navItem('outreach', 'Outreach', MessageSquare)}

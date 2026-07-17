@@ -33,6 +33,9 @@ const PipelineTab = lazy(() =>
 const ResearchQueueTab = lazy(() =>
   import('./research/ResearchQueueTab').then((m) => ({ default: m.ResearchQueueTab })),
 );
+const FieldRouteTab = lazy(() =>
+  import('./tabs/FieldRouteTab').then((m) => ({ default: m.FieldRouteTab })),
+);
 const AdminPanel = lazy(() =>
   import('./admin/AdminPanel').then((m) => ({ default: m.AdminPanel })),
 );
@@ -54,6 +57,7 @@ import { DeleteModal } from './modals/DeleteModal';
 const EMPTY_LEAD_FORM: Partial<Lead> = {
   co: '',
   city: '',
+  address: '',
   who: '',
   role: '',
   pm: '',
@@ -265,6 +269,12 @@ export default function App() {
     if (ok) toast(`Restored for review — ${lead.co}`);
   };
 
+  const handleUpdateLeadAddress = useCallback(async (id: string, address: string) => {
+    await crud.updateLead(id, { address: address.trim() });
+    const lead = visibleLeads.find((item) => item.id === id);
+    toast(`Address saved${lead ? ` — ${lead.co}` : ''}`);
+  }, [crud, toast, visibleLeads]);
+
   /** Cross-tab "show me this lead" — switch to Leads, open the card, scroll to it. */
   const jumpToLead = useCallback((id: string) => {
     setTab('leads');
@@ -442,6 +452,15 @@ export default function App() {
         {tab === 'outreach' && (
           <Suspense fallback={<TabSkeleton />}>
             <OutreachTab />
+          </Suspense>
+        )}
+        {tab === 'field-route' && (
+          <Suspense fallback={<TabSkeleton />}>
+            <FieldRouteTab
+              leads={visibleLeads}
+              onLeadClick={jumpToLead}
+              onUpdateAddress={handleUpdateLeadAddress}
+            />
           </Suspense>
         )}
         {tab === 'pipeline' && (

@@ -39,6 +39,22 @@ export const LeadCardDetails: React.FC<LeadCardDetailsProps> = ({ lead }) => {
         </div>
       )}
 
+      {lead.address && (
+        <div className="col-span-1 md:col-span-2">
+          <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-500">
+            Street Address
+          </div>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.address)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs font-semibold text-sky-300 hover:text-sky-200"
+          >
+            {lead.address}
+          </a>
+        </div>
+      )}
+
       {lead.em && (
         <div className="col-span-1 md:col-span-2">
           <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-500">

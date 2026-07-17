@@ -87,6 +87,21 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({
             />
           </div>
 
+          <div className="sm:col-span-2">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">
+              Street Address
+            </label>
+            <input
+              value={newLeadForm.address ?? ''}
+              onChange={(e) => setNewLeadForm({ ...newLeadForm, address: e.target.value })}
+              className="w-full rounded-lg border border-white/10 bg-apex-800 p-3 text-sm text-slate-100 placeholder-slate-500 focus:border-apex-accent/60 focus:outline-none"
+              placeholder="12345 Industry Way, Valencia, CA 91355"
+            />
+            <div className="mt-1.5 text-[10px] text-slate-500">
+              Add the exact address for accurate field routes. Company + city is used as a fallback.
+            </div>
+          </div>
+
           <div>
             <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">
               Region
