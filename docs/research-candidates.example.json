@@ -1,0 +1,18 @@
+[
+  {
+    "co": "Example Aerospace Company",
+    "city": "El Segundo",
+    "r": "South Bay",
+    "t": 1,
+    "web": "https://example.com",
+    "role": "Operations or Purchasing Manager",
+    "parts": "Precision-machined aerospace components",
+    "researchSignal": "Example only: the company announced a new production award.",
+    "researchSignalDate": "2026-07-16",
+    "researchWhy": "A production ramp may create overflow finishing and deburring work.",
+    "researchSourceUrls": [
+      "https://example.com/news"
+    ],
+    "researchNextStep": "Verify the program and identify the appropriate operations contact."
+  }
+]

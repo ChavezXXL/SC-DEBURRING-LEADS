@@ -1,4 +1,6 @@
 export type LeadStatus =
+  | 'research_pending'
+  | 'research_rejected'
   | 'new'
   | 'called'
   | 'emailed'
@@ -11,6 +13,18 @@ export type LeadStatus =
   | 'dead'
   | 'client'
   | 'anchor';
+
+export type PipelineLeadStatus = Exclude<
+  LeadStatus,
+  'research_pending' | 'research_rejected'
+>;
+
+export type VisitOutcome =
+  | 'Met buyer'
+  | 'Left capability packet'
+  | 'Asked to return'
+  | 'No access'
+  | 'Not a fit';
 
 export interface Lead {
   id: string;
@@ -48,10 +62,24 @@ export interface Lead {
   /** Estimated deal value in $/month once this lead becomes a recurring account.
    * Powers the pipeline column totals. Optional — unset means "not sized yet". */
   value?: number;
+  /** Most recent in-person field-sales result. */
+  lastVisitOutcome?: VisitOutcome;
+  /** ISO timestamp for the most recent in-person visit. */
+  lastVisitedAt?: string;
+  /** Public-research context. These fields are populated while a company is
+   * waiting in the Research Queue and remain as provenance after approval. */
+  researchSignal?: string;
+  researchSignalDate?: string;
+  researchWhy?: string;
+  researchSourceUrls?: string[];
+  researchNextStep?: string;
+  researchCreatedAt?: string;
+  researchUpdatedAt?: string;
+  researchDecisionAt?: string;
 }
 
 export interface StatusDef {
-  k: LeadStatus;
+  k: PipelineLeadStatus;
   label: string;
   dot: string;
   bg: string;
@@ -72,7 +100,15 @@ export interface ObjectionDef {
   a: string;
 }
 
-export type TabKey = 'today' | 'leads' | 'field-route' | 'outreach' | 'pipeline' | 'admin' | 'settings';
+export type TabKey =
+  | 'today'
+  | 'leads'
+  | 'research'
+  | 'field-route'
+  | 'outreach'
+  | 'pipeline'
+  | 'admin'
+  | 'settings';
 
 /**
  * A tenant = one business that logs into the CRM.

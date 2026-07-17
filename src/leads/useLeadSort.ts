@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { Lead } from '../types';
+import type { Lead, LeadStatus } from '../types';
 import { STATUS } from '../data';
+import { compareLeadScore } from '../utils/leadScore';
 
 /**
  * Sort control for the Leads list. Applied AFTER filtering, BEFORE render.
@@ -17,6 +18,7 @@ export type SortKey =
   | 'activity-desc'
   | 'activity-asc'
   | 'company-az'
+  | 'score'
   | 'tier'
   | 'status';
 
@@ -25,13 +27,14 @@ export const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'activity-desc', label: 'Newest activity' },
   { key: 'activity-asc', label: 'Oldest activity' },
   { key: 'company-az', label: 'Company A–Z' },
+  { key: 'score', label: 'Best opportunity' },
   { key: 'tier', label: 'Tier (T1 first)' },
   { key: 'status', label: 'Status (pipeline)' },
 ];
 
 // Pipeline order for the "Status" sort: index into the STATUS array (new → …
 // → client), so leads sort in the same order the status chips are laid out.
-const STATUS_ORDER = new Map(STATUS.map((s, i) => [s.k, i]));
+const STATUS_ORDER = new Map<LeadStatus, number>(STATUS.map((s, i) => [s.k, i]));
 
 /** lastContactedAt as epoch ms; missing/invalid → NaN so callers can push last. */
 function contactedMs(l: Lead): number {
@@ -76,6 +79,9 @@ export function useLeadSort(filtered: Lead[]) {
         break;
       case 'company-az':
         list.sort(byCompany);
+        break;
+      case 'score':
+        list.sort(compareLeadScore);
         break;
       case 'tier':
         list.sort((a, b) => a.t - b.t || byCompany(a, b));

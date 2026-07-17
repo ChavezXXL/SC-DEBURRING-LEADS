@@ -5,6 +5,7 @@ import { isDueFollowUp, isHiringSignal } from '../leads/useLeadFilters';
 import { isReminderDue, parseStampDate, relativeDay, absoluteDate, reminderState } from '../utils/leadActivity';
 import { buildGmailUrl } from '../outreach/templates';
 import { OverviewPanel } from './OverviewPanel';
+import { compareLeadScore, getLeadScore } from '../utils/leadScore';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -42,9 +43,9 @@ interface TodayTabProps {
 export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabProps) {
   const now = Date.now();
 
-  const { stats, hotCalls, checkIns, bumps, ready, scheduled } = useMemo(() => {
+  const { stats, topOpportunities, hotCalls, checkIns, bumps, ready, scheduled } = useMemo(() => {
     const tierFirst = (a: Lead, b: Lead) =>
-      a.t !== b.t ? a.t - b.t : (a.co || '').localeCompare(b.co || '');
+      compareLeadScore(a, b);
 
     // reminderDate as epoch ms (local midnight); missing sorts last.
     const reminderMs = (l: Lead): number => {
@@ -62,6 +63,10 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
         bumpsDue: leads.filter((l) => isDueFollowUp(l)).length,
         scheduledDue: leads.filter((l) => isReminderDue(l)).length,
       },
+      topOpportunities: leads
+        .filter((l) => !['client', 'dead'].includes(l.status))
+        .sort(compareLeadScore)
+        .slice(0, 5),
       // Manually-scheduled follow-ups that have come due (reminderDate <= today).
       // Most overdue first. Distinct from bumps (auto "emailed, went quiet").
       scheduled: leads
@@ -135,6 +140,43 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
           highlight={stats.scheduledDue > 0}
         />
       </div>
+
+      <Section
+        title="Best opportunities now"
+        hint="Ranked from the facts already saved in the CRM. Work the top of this list first."
+      >
+        <div className="divide-y divide-white/5">
+          {topOpportunities.map((lead) => {
+            const opportunity = getLeadScore(lead);
+            return (
+              <div
+                key={lead.id}
+                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <CoButton lead={lead} onLeadClick={onLeadClick} />
+                    <TierPill t={lead.t} />
+                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-300 ring-1 ring-emerald-500/30">
+                      {opportunity.score}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-xs text-slate-400">{opportunity.nextAction}</div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {lead.ph && <BigPhone ph={lead.ph} />}
+                  <button
+                    onClick={() => onLeadClick(lead.id)}
+                    className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/10"
+                  >
+                    Open lead
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Section>
 
       {/* CALLS TO MAKE */}
       <Section title="Calls to make">

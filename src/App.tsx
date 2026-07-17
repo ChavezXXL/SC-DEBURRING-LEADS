@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Menu, X, Loader2, LayoutGrid, ArrowRight, Search } from 'lucide-react';
 
-import type { Lead, TabKey, LeadStatus } from './types';
+import type { Lead, TabKey, LeadStatus, VisitOutcome } from './types';
 import { STATUS } from './data';
 import { useToast } from './ui/Toast';
 
@@ -23,6 +23,7 @@ import { FancyLogo } from './shell/FancyLogo';
 import { TabSkeleton } from './shell/TabSkeleton';
 
 import { TodayTab } from './tabs/TodayTab';
+import { useResearchQueue } from './research/useResearchQueue';
 
 // Code-splitting: only Today + Leads (the two most-used screens) ship in the
 // entry chunk. Everything else is a separate chunk fetched on first open, so
@@ -32,6 +33,9 @@ const OutreachTab = lazy(() =>
 );
 const PipelineTab = lazy(() =>
   import('./tabs/PipelineTab').then((m) => ({ default: m.PipelineTab })),
+);
+const ResearchQueueTab = lazy(() =>
+  import('./research/ResearchQueueTab').then((m) => ({ default: m.ResearchQueueTab })),
 );
 const FieldRouteTab = lazy(() =>
   import('./tabs/FieldRouteTab').then((m) => ({ default: m.FieldRouteTab })),
@@ -164,10 +168,11 @@ export default function App() {
   // lead writes are always tenant-stamped even if the tenant doc failed to load.
   const tenantId = effectiveTenantId ?? (isSuperAdmin ? undefined : profile?.tenantId);
 
-  const { visibleLeads, loading, dbError, markDeleted } = useLeads(tenantId, {
+  const { visibleLeads, researchLeads, loading, dbError, markDeleted } = useLeads(tenantId, {
     skip: isPlatformConsole,
   });
   const crud = useLeadCrud({ leads: visibleLeads, tenantId, markDeleted });
+  const researchQueue = useResearchQueue({ tenantId, activeLeads: visibleLeads });
   const { state: filterState, setters: filterSetters, filtered } = useLeadFilters(visibleLeads);
   // Sort applies AFTER filtering, BEFORE render. `sorted` is what the Leads tab
   // actually renders (and what selection treats as the eligible set).
@@ -369,11 +374,31 @@ export default function App() {
     clearSelection();
   }, [bulkDeleteIds, crud, toast, clearSelection, openId]);
 
+  const handleApproveResearch = async (lead: Lead) => {
+    const ok = await researchQueue.approve(lead);
+    if (ok) toast(`Approved to Leads — ${lead.co}`);
+  };
+
+  const handleRejectResearch = async (lead: Lead) => {
+    const ok = await researchQueue.reject(lead);
+    if (ok) toast(`Rejected — ${lead.co}`);
+  };
+
+  const handleRestoreResearch = async (lead: Lead) => {
+    const ok = await researchQueue.restore(lead);
+    if (ok) toast(`Restored for review — ${lead.co}`);
+  };
+
   const handleUpdateLeadAddress = useCallback(async (id: string, address: string) => {
     await crud.updateLead(id, { address: address.trim() });
     const lead = visibleLeads.find((item) => item.id === id);
     toast(`Address saved${lead ? ` — ${lead.co}` : ''}`);
   }, [crud, toast, visibleLeads]);
+
+  const handleLogVisit = useCallback(async (lead: Lead, outcome: VisitOutcome) => {
+    await crud.logVisit(lead, outcome);
+    toast(`Visit logged — ${lead.co}`);
+  }, [crud, toast]);
 
   /** Cross-tab "show me this lead" — switch to Leads, open the card, scroll to it. */
   const jumpToLead = useCallback((id: string) => {
@@ -448,6 +473,7 @@ export default function App() {
         tab={tab}
         setTab={setTab}
         leads={visibleLeads}
+        researchPendingCount={researchLeads.filter((lead) => lead.status === 'research_pending').length}
         saved={crud.saved}
         tenant={activeTenant}
         profile={profile}
@@ -552,6 +578,24 @@ export default function App() {
           />
         )}
 
+        {!isPlatformConsole &&
+          tab === 'research' &&
+          (profile?.role === 'owner' || profile?.role === 'super-admin') && (
+            <Suspense fallback={<TabSkeleton />}>
+              <ResearchQueueTab
+                candidates={researchLeads}
+                activeLeads={visibleLeads}
+                busyId={researchQueue.busyId}
+                error={researchQueue.error}
+                clearError={researchQueue.clearError}
+                approve={handleApproveResearch}
+                reject={handleRejectResearch}
+                restore={handleRestoreResearch}
+                onLeadClick={jumpToLead}
+              />
+            </Suspense>
+          )}
+
         {!isPlatformConsole && tab === 'outreach' && (
           <Suspense fallback={<TabSkeleton />}>
             <OutreachTab />
@@ -563,6 +607,7 @@ export default function App() {
               leads={visibleLeads}
               onLeadClick={jumpToLead}
               onUpdateAddress={handleUpdateLeadAddress}
+              onLogVisit={handleLogVisit}
             />
           </Suspense>
         )}

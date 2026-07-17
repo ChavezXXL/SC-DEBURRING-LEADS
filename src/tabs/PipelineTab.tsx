@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import type { Lead, LeadStatus } from '../types';
+import type { Lead, LeadStatus, PipelineLeadStatus } from '../types';
 import { STATUS } from '../data';
 import { Calendar, DollarSign, MapPin, User } from 'lucide-react';
 import { reminderState } from '../utils/leadActivity';
@@ -65,21 +65,24 @@ export function PipelineTab({ leads, onLeadClick, setStatus }: PipelineTabProps)
   };
 
   // Group leads by status + sum deal values per column and for the summary bar.
+  // Research candidates (research_pending/rejected) are not pipeline stages, so
+  // the record is keyed by PipelineLeadStatus and the guard below skips them.
   const { leadsByStatus, valueByStatus, inPlay, won } = useMemo(() => {
-    const byStatus: Record<LeadStatus, Lead[]> = {
+    const byStatus: Record<PipelineLeadStatus, Lead[]> = {
       new: [], called: [], emailed: [], visited: [], voicemail: [],
       interested: [], quote: [], sample: [], po: [], dead: [], client: [], anchor: [],
     };
-    const valByStatus = {} as Record<LeadStatus, number>;
+    const valByStatus = {} as Record<PipelineLeadStatus, number>;
     let inPlaySum = 0;
     let wonSum = 0;
     leads.forEach((lead) => {
-      if (!byStatus[lead.status]) return;
-      byStatus[lead.status].push(lead);
+      const st = lead.status as PipelineLeadStatus;
+      if (!byStatus[st]) return;
+      byStatus[st].push(lead);
       const v = typeof lead.value === 'number' && Number.isFinite(lead.value) ? lead.value : 0;
-      valByStatus[lead.status] = (valByStatus[lead.status] || 0) + v;
-      if (WON_STATUSES.includes(lead.status)) wonSum += v;
-      else if (lead.status !== 'dead') inPlaySum += v;
+      valByStatus[st] = (valByStatus[st] || 0) + v;
+      if (WON_STATUSES.includes(st)) wonSum += v;
+      else if (st !== 'dead') inPlaySum += v;
     });
     return { leadsByStatus: byStatus, valueByStatus: valByStatus, inPlay: inPlaySum, won: wonSum };
   }, [leads]);

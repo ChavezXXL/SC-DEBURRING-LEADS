@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Lead } from '../../types';
+import { getLeadScore } from '../../utils/leadScore';
 
 interface LeadCardDetailsProps {
   lead: Lead;
@@ -7,9 +8,22 @@ interface LeadCardDetailsProps {
 
 export const LeadCardDetails: React.FC<LeadCardDetailsProps> = ({ lead }) => {
   const hasPM = !!lead.pm;
+  const opportunity = getLeadScore(lead);
 
   return (
     <div className="mb-4 grid grid-cols-1 gap-5 rounded-xl border border-white/10 bg-apex-800 p-5 md:grid-cols-2">
+      <div className="col-span-1 rounded-lg bg-orange-500/[0.06] p-3 ring-1 ring-orange-500/20 md:col-span-2">
+        <div className="mb-1 text-[10px] font-bold font-mono uppercase tracking-widest text-orange-300/80">
+          Next Best Action · Score {opportunity.score}
+        </div>
+        <div className="text-xs font-semibold text-slate-200">{opportunity.nextAction}</div>
+        {opportunity.reasons.length > 0 && (
+          <div className="mt-1.5 text-[10px] leading-relaxed text-slate-500">
+            {opportunity.reasons.join(' · ')}
+          </div>
+        )}
+      </div>
+
       {hasPM && (
         <div className="col-span-1 md:col-span-2">
           <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-500">
@@ -52,6 +66,22 @@ export const LeadCardDetails: React.FC<LeadCardDetailsProps> = ({ lead }) => {
             Phone
           </div>
           <div className="text-xs text-slate-300">{lead.ph}</div>
+        </div>
+      )}
+
+      {lead.address && (
+        <div className="col-span-1 md:col-span-2">
+          <div className="mb-1 text-[11px] font-bold font-mono uppercase tracking-widest text-slate-500">
+            Street Address
+          </div>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.address)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs font-semibold text-sky-300 hover:text-sky-200"
+          >
+            {lead.address}
+          </a>
         </div>
       )}
 
