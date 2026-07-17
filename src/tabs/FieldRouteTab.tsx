@@ -15,10 +15,13 @@ import {
   X,
 } from 'lucide-react';
 import type { Lead } from '../types';
+import { RouteMap, type MapPoint } from './RouteMap';
 
 const SHOP_ADDRESS = '12734 Branford St, Pacoima, CA 91331';
 const SHOP_COORDS: [number, number] = [34.2625, -118.427];
 const MAX_ROUTE_STOPS = 8;
+/** Stable identity so the map's rebuild effect doesn't fire on every render. */
+const MAP_SHOP = { coords: SHOP_COORDS, label: 'SC Deburring' };
 
 type Coords = [number, number];
 type ViewMode = 'prospects' | 'clients' | 'all';
@@ -126,6 +129,20 @@ function leadDestination(lead: Lead): string {
   return lead.address?.trim() || `${lead.co}, ${lead.city}, CA`;
 }
 
+/** Turn a lead into a map pin, or null when we can't place it anywhere. */
+function leadToPoint(lead: Lead): MapPoint | null {
+  const coords = coordsForLead(lead);
+  if (!coords) return null;
+  return {
+    id: lead.id,
+    coords,
+    label: lead.co,
+    city: lead.city,
+    tier: lead.t,
+    exact: typeof lead.lat === 'number' && typeof lead.lng === 'number',
+  };
+}
+
 function optimizeStops(stops: Lead[]): Lead[] {
   const remaining = [...stops];
   const ordered: Lead[] = [];
@@ -187,8 +204,13 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRout
       })
       .sort((a, b) => {
         if (a.t !== b.t) return a.t - b.t;
-        const distance = distanceFromShop(a) - distanceFromShop(b);
-        return Number.isFinite(distance) && distance !== 0 ? distance : a.co.localeCompare(b.co);
+        const da = distanceFromShop(a);
+        const db = distanceFromShop(b);
+        // Un-placeable leads (Infinity) sort last, not by name above nearer ones.
+        if (da !== db) {
+          return (Number.isFinite(da) ? da : Infinity) - (Number.isFinite(db) ? db : Infinity);
+        }
+        return a.co.localeCompare(b.co);
       });
   }, [area, leads, search, viewMode]);
 
@@ -206,6 +228,24 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRout
   const routeLeads = useMemo(
     () => routeIds.map((id) => leads.find((lead) => lead.id === id)).filter(Boolean) as Lead[],
     [leads, routeIds],
+  );
+
+  const mapPoints = useMemo(
+    () => filtered.map(leadToPoint).filter(Boolean) as MapPoint[],
+    [filtered],
+  );
+  const routeStops = useMemo(
+    () =>
+      routeLeads
+        // Number by position in the full route so the map's pin numbers stay in
+        // step with the sidebar and the Google Maps URL, even if a stop can't be
+        // geocoded and is dropped from the map.
+        .map((lead, i) => {
+          const point = leadToPoint(lead);
+          return point ? { ...point, stopNo: i + 1 } : null;
+        })
+        .filter(Boolean) as MapPoint[],
+    [routeLeads],
   );
 
   const selectedLead = leads.find((lead) => lead.id === selectedLeadId) ?? filtered[0] ?? null;
@@ -232,7 +272,6 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRout
   }, [routeLeads]);
 
   const mapQuery = selectedLead ? leadDestination(selectedLead) : SHOP_ADDRESS;
-  const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;
 
   const setOptimizedRoute = (stops: Lead[]) => {
     const ordered = optimizeStops(stops.slice(0, MAX_ROUTE_STOPS));
@@ -305,7 +344,7 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRout
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-100 md:text-3xl">Field Route</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
-            Group nearby aerospace companies, build the day in the right order, and open the full run in Google Maps.
+            See every company on the live map, group the nearby ones, and order the day the smart way. Hand the finished route to Google Maps only when you're ready to drive.
           </p>
         </div>
 
@@ -438,13 +477,24 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRout
                 Full map <ExternalLink size={13} />
               </a>
             </div>
-            <iframe
-              title="Selected company map"
-              src={mapUrl}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="h-[360px] w-full border-0 md:h-[460px]"
+            <RouteMap
+              shop={MAP_SHOP}
+              points={mapPoints}
+              route={routeStops}
+              selectedId={selectedLead?.id ?? null}
+              onSelect={setSelectedLeadId}
+              className="h-[380px] w-full md:h-[480px]"
             />
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-white/10 px-4 py-2.5 text-[10px] text-slate-400">
+              <LegendDot color="#10b981" label="Shop" />
+              <LegendDot color="#f97316" label="Priority prospect" />
+              <LegendDot color="#3b82f6" label="Tier 2" />
+              <span className="inline-flex items-center gap-1.5">
+                <span className="grid h-4 w-4 place-items-center rounded-full bg-orange-500 text-[8px] font-bold text-black">1</span>
+                Route stop
+              </span>
+              <span className="ml-auto text-slate-600">Tap a pin to preview · scroll to zoom is off, use the map buttons</span>
+            </div>
           </div>
 
           <div className="rounded-2xl bg-apex-850 p-4 ring-1 ring-white/10">
@@ -638,6 +688,18 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRout
         </div>
       </div>
     </div>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span
+        className="h-2.5 w-2.5 rounded-full ring-2 ring-black/40"
+        style={{ background: color }}
+      />
+      {label}
+    </span>
   );
 }
 
