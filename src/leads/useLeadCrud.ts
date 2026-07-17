@@ -7,7 +7,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Lead, LeadStatus } from '../types';
+import type { Lead, LeadStatus, VisitOutcome } from '../types';
 import {
   OperationType,
   extractErrorMessage,
@@ -76,6 +76,21 @@ function setStatusFields(lead: Lead | undefined, st: LeadStatus): Partial<Lead> 
     return { status: st, notes: newNotes };
   }
   return { status: st };
+}
+
+const VISIT_FOLLOW_UP_DAYS: Record<VisitOutcome, number | null> = {
+  'Met buyer': 2,
+  'Left capability packet': 3,
+  'Asked to return': 7,
+  'No access': 7,
+  'Not a fit': null,
+};
+
+function localYmd(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 interface UseLeadCrudArgs {
@@ -247,6 +262,42 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     }
   };
 
+  /** Log an in-person field-sales visit and schedule the natural next touch.
+   * Warm stages are never downgraded to "visited". Choosing "Not a fit" is
+   * explicit and moves the lead out of active prospecting. */
+  const logVisit = async (lead: Lead, outcome: VisitOutcome) => {
+    try {
+      const now = new Date();
+      const today = localYmd(now);
+      const stamp = `[${today}] Visit — ${outcome}.`;
+      const fields: Partial<Lead> = {
+        lastVisitedAt: now.toISOString(),
+        lastVisitOutcome: outcome,
+        lastContactedAt: now.toISOString(),
+        touchCount: (lead.touchCount || 0) + 1,
+        notes: lead.notes ? `${lead.notes}\n${stamp}` : stamp,
+      };
+
+      if (outcome === 'Not a fit') {
+        fields.status = 'dead';
+      } else if (['new', 'called', 'emailed', 'voicemail'].includes(lead.status)) {
+        fields.status = 'visited';
+      }
+
+      const followUpDays = VISIT_FOLLOW_UP_DAYS[outcome];
+      if (followUpDays !== null) {
+        const followUp = new Date(now);
+        followUp.setDate(followUp.getDate() + followUpDays);
+        fields.reminderDate = localYmd(followUp);
+      }
+
+      await setDoc(doc(db, 'leads', lead.id), fields, { merge: true });
+      flashSaved();
+    } catch (e: any) {
+      surface(e, OperationType.UPDATE, `leads/${lead.id}`);
+    }
+  };
+
   /** Always marks deleted locally + tries server delete (best effort).
    *  Returns immediately so the UI can restore scroll position. */
   const deleteLead = async (id: string) => {
@@ -345,6 +396,7 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     setReminder,
     markEmailed,
     logCall,
+    logVisit,
     deleteLead,
     bulkMarkEmailed,
     bulkLogCall,
