@@ -26,6 +26,12 @@ export interface Lead {
   r: string;
   co: string;
   city: string;
+  /** Full street address used by the Field Route planner. Legacy leads may
+   * only have a city; Google Maps falls back to company + city in that case. */
+  address?: string;
+  /** Optional verified coordinates. City centroids are used until these are populated. */
+  lat?: number;
+  lng?: number;
   ph: string;
   em: string;
   web: string;
@@ -81,6 +87,7 @@ export type TabKey =
   | 'today'
   | 'leads'
   | 'research'
+  | 'field-route'
   | 'outreach'
   | 'pipeline'
   | 'admin'
