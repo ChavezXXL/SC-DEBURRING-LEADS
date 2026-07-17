@@ -5,6 +5,7 @@ import {
   CheckSquare,
   ChevronDown,
   MailCheck,
+  Navigation,
   PhoneCall,
   Download,
   Trash2,
@@ -544,6 +545,7 @@ export function LeadsTab({
         <BulkBar
           count={selectedCount}
           ids={visibleIds.filter((id) => isSelected(id))}
+          leads={visibleLeads}
           onMarkEmailed={onBulkMarkEmailed}
           onLogCall={onBulkLogCall}
           onSetStatus={onBulkSetStatus}
@@ -564,6 +566,7 @@ export function LeadsTab({
 function BulkBar({
   count,
   ids,
+  leads,
   onMarkEmailed,
   onLogCall,
   onSetStatus,
@@ -573,6 +576,7 @@ function BulkBar({
 }: {
   count: number;
   ids: string[];
+  leads: Lead[];
   onMarkEmailed: (ids: string[]) => void;
   onLogCall: (ids: string[]) => void;
   onSetStatus: (ids: string[], st: LeadStatus) => void;
@@ -629,6 +633,31 @@ function BulkBar({
           aria-label={`Log a call for ${count} leads`}
         >
           <PhoneCall size={14} /> Log call
+        </button>
+
+        {/* Door-knocking route: opens Google Maps with the selected shops as
+            stops (searched by "Company, City, CA" — no address data or paid
+            API needed). Maps deep links cap at ~10 stops; extras are dropped. */}
+        <button
+          onClick={() => {
+            const sel = ids
+              .map((id) => leads.find((l) => l.id === id))
+              .filter((l): l is Lead => !!l && !!l.co);
+            if (!sel.length) return;
+            const stops = sel.slice(0, 10).map((l) => `${l.co}, ${l.city || 'Los Angeles'}, CA`);
+            const dest = encodeURIComponent(stops[stops.length - 1]);
+            const way = stops.slice(0, -1).map(encodeURIComponent).join('%7C');
+            window.open(
+              `https://www.google.com/maps/dir/?api=1&destination=${dest}${way ? `&waypoints=${way}` : ''}&travelmode=driving`,
+              '_blank',
+              'noopener',
+            );
+          }}
+          className={`${btn} border border-sky-500/20 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20`}
+          aria-label={`Open a driving route to ${count} selected shops in Google Maps`}
+          title={count > 10 ? 'Maps allows 10 stops — the first 10 selected are used' : 'Open a driving route in Google Maps'}
+        >
+          <Navigation size={14} /> Route
         </button>
 
         {/* Set status ▾ */}
