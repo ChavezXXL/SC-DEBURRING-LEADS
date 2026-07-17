@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useCallback, useState } from 'react';
 import { Menu, X, Loader2 } from 'lucide-react';
 
-import type { Lead, TabKey, LeadStatus } from './types';
+import type { Lead, TabKey, LeadStatus, VisitOutcome } from './types';
 import { STATUS } from './data';
 import { useToast } from './ui/Toast';
 
@@ -275,6 +275,11 @@ export default function App() {
     toast(`Address saved${lead ? ` — ${lead.co}` : ''}`);
   }, [crud, toast, visibleLeads]);
 
+  const handleLogVisit = useCallback(async (lead: Lead, outcome: VisitOutcome) => {
+    await crud.logVisit(lead, outcome);
+    toast(`Visit logged — ${lead.co}`);
+  }, [crud, toast]);
+
   /** Cross-tab "show me this lead" — switch to Leads, open the card, scroll to it. */
   const jumpToLead = useCallback((id: string) => {
     setTab('leads');
@@ -460,6 +465,7 @@ export default function App() {
               leads={visibleLeads}
               onLeadClick={jumpToLead}
               onUpdateAddress={handleUpdateLeadAddress}
+              onLogVisit={handleLogVisit}
             />
           </Suspense>
         )}
