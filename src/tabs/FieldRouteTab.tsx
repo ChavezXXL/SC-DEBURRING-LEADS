@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -175,33 +175,44 @@ function optimizeStops(stops: Lead[]): Lead[] {
   return ordered;
 }
 
+function loadRouteIds(key: string): string[] {
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(saved) ? saved.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 interface FieldRouteTabProps {
   leads: Lead[];
+  /** Active tenant id — scopes the saved route so a workspace switch neither
+   * wipes it nor leaks one tenant's route into another. */
+  workspaceKey?: string;
   onLeadClick: (id: string) => void;
   onUpdateAddress: (id: string, address: string) => Promise<void>;
   onLogVisit: (lead: Lead, outcome: VisitOutcome) => Promise<void>;
 }
 
-export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress, onLogVisit }: FieldRouteTabProps) {
+export function FieldRouteTab({
+  leads,
+  workspaceKey,
+  onLeadClick,
+  onUpdateAddress,
+  onLogVisit,
+}: FieldRouteTabProps) {
   const [area, setArea] = useState('All Regions');
   const [viewMode, setViewMode] = useState<ViewMode>('prospects');
   const [search, setSearch] = useState('');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   // The planned route survives a reload/app switch — field days are long.
-  const [routeIds, setRouteIds] = useState<string[]>(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('sc_field_route_ids') || '[]');
-      return Array.isArray(saved) ? saved.filter((id): id is string => typeof id === 'string') : [];
-    } catch {
-      return [];
-    }
-  });
+  const storageKey = `sc_field_route_ids:${workspaceKey || 'default'}`;
+  const [routeIds, setRouteIds] = useState<string[]>(() => loadRouteIds(storageKey));
+  const storageKeyRef = useRef(storageKey);
   const [notice, setNotice] = useState('');
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [addressDraft, setAddressDraft] = useState('');
-  const [savingAddress, setSavingAddress] = useState(false);
   const [loggingVisitId, setLoggingVisitId] = useState<string | null>(null);
-  const [visitBusy, setVisitBusy] = useState(false);
 
   // Opportunity scores are regex-heavy; compute once per leads snapshot instead
   // of inside sort comparators (which would re-score on every comparison).
@@ -223,8 +234,10 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress, onLogVisit 
     return leads
       .filter((lead) => {
         if (lead.status === 'dead') return false;
-        if (viewMode === 'prospects' && lead.status === 'client') return false;
-        if (viewMode === 'clients' && lead.status !== 'client') return false;
+        // Anchor accounts ARE clients — never show them as cold prospects.
+        const isClient = lead.status === 'client' || lead.status === 'anchor';
+        if (viewMode === 'prospects' && isClient) return false;
+        if (viewMode === 'clients' && !isClient) return false;
         if (area !== 'All Regions' && lead.r !== area) return false;
         if (!needle) return true;
         return [lead.co, lead.city, lead.address, lead.r, lead.pm]
@@ -258,7 +271,12 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress, onLogVisit 
   }, [filtered]);
 
   const routeLeads = useMemo(
-    () => routeIds.map((id) => leads.find((lead) => lead.id === id)).filter(Boolean) as Lead[],
+    () =>
+      routeIds
+        .map((id) => leads.find((lead) => lead.id === id))
+        // A stop marked dead from any other tab (Pipeline drag, Leads card)
+        // must leave the route too, not just the in-tab "Not a fit" flow.
+        .filter((lead): lead is Lead => !!lead && lead.status !== 'dead'),
     [leads, routeIds],
   );
 
@@ -282,18 +300,31 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress, onLogVisit 
 
   const selectedLead = leads.find((lead) => lead.id === selectedLeadId) ?? filtered[0] ?? null;
 
+  // Reload the saved route when the workspace changes. Declared BEFORE the
+  // persist effect so the new tenant's stored route is read before any write.
+  useEffect(() => {
+    if (storageKeyRef.current === storageKey) return;
+    storageKeyRef.current = storageKey;
+    setRouteIds(loadRouteIds(storageKey));
+  }, [storageKey]);
+
   useEffect(() => {
     // Don't prune while leads are still loading — that would wipe the
     // localStorage-restored route before Firestore delivers the first snapshot.
     if (!leads.length) return;
-    setRouteIds((ids) => ids.filter((id) => leads.some((lead) => lead.id === id)));
+    setRouteIds((ids) =>
+      ids.filter((id) => {
+        const lead = leads.find((l) => l.id === id);
+        return !!lead && lead.status !== 'dead';
+      }),
+    );
   }, [leads]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('sc_field_route_ids', JSON.stringify(routeIds));
+      localStorage.setItem(storageKey, JSON.stringify(routeIds));
     } catch {}
-  }, [routeIds]);
+  }, [routeIds, storageKey]);
 
   useEffect(() => {
     if (!selectedLeadId && filtered[0]) setSelectedLeadId(filtered[0].id);
@@ -367,32 +398,32 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress, onLogVisit 
     setAddressDraft(lead.address || '');
   };
 
-  const saveAddress = async (lead: Lead) => {
-    if (!addressDraft.trim()) return;
-    setSavingAddress(true);
-    try {
-      await onUpdateAddress(lead.id, addressDraft);
-      setEditingAddressId(null);
-      setNotice(`Exact address saved for ${lead.co}.`);
-    } finally {
-      setSavingAddress(false);
-    }
+  // Both writes are OPTIMISTIC: feedback lands immediately and the Firestore
+  // write runs behind it. Awaiting first would wedge the whole flow in the
+  // field-tab's core scenario — standing in a shop with no signal, where a
+  // Firestore promise simply never settles. Latency compensation shows the
+  // change locally either way; a real failure surfaces as an error notice.
+  const saveAddress = (lead: Lead) => {
+    const address = addressDraft.trim();
+    if (!address) return;
+    setEditingAddressId(null);
+    setNotice(`Exact address saved for ${lead.co}.`);
+    onUpdateAddress(lead.id, address).catch(() => {
+      setNotice(`Could not save the address for ${lead.co} — check the connection and try again.`);
+    });
   };
 
-  const logVisitOutcome = async (lead: Lead, outcome: VisitOutcome) => {
-    setVisitBusy(true);
-    try {
-      await onLogVisit(lead, outcome);
-      setLoggingVisitId(null);
-      if (outcome === 'Not a fit') {
-        setNotice(`${lead.co} was moved out of active prospecting.`);
-        setRouteIds((ids) => ids.filter((id) => id !== lead.id));
-      } else {
-        setNotice(`${outcome} logged for ${lead.co}. Follow-up was added automatically.`);
-      }
-    } finally {
-      setVisitBusy(false);
+  const logVisitOutcome = (lead: Lead, outcome: VisitOutcome) => {
+    setLoggingVisitId(null);
+    if (outcome === 'Not a fit') {
+      setNotice(`${lead.co} was moved out of active prospecting.`);
+      setRouteIds((ids) => ids.filter((id) => id !== lead.id));
+    } else {
+      setNotice(`${outcome} logged for ${lead.co}. Follow-up was added automatically.`);
     }
+    onLogVisit(lead, outcome).catch(() => {
+      setNotice(`Could not save the visit for ${lead.co} — check the connection and log it again.`);
+    });
   };
 
   return (
@@ -618,18 +649,18 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress, onLogVisit 
                           value={addressDraft}
                           onChange={(event) => setAddressDraft(event.target.value)}
                           onKeyDown={(event) => {
-                            if (event.key === 'Enter') void saveAddress(lead);
+                            if (event.key === 'Enter') saveAddress(lead);
                             if (event.key === 'Escape') setEditingAddressId(null);
                           }}
                           placeholder="Full street address"
                           className="min-w-0 flex-1 rounded-lg border border-white/10 bg-apex-900 px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:border-apex-accent/60 focus:outline-none"
                         />
                         <button
-                          onClick={() => void saveAddress(lead)}
-                          disabled={!addressDraft.trim() || savingAddress}
+                          onClick={() => saveAddress(lead)}
+                          disabled={!addressDraft.trim()}
                           className="rounded-lg bg-apex-accent px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
                         >
-                          {savingAddress ? 'Saving…' : 'Save address'}
+                          Save address
                         </button>
                         <button onClick={() => setEditingAddressId(null)} className="rounded-lg px-2 py-2 text-xs text-slate-500 hover:text-slate-200">Cancel</button>
                       </div>
@@ -717,9 +748,8 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress, onLogVisit 
                         {VISIT_OUTCOMES.map((outcome) => (
                           <button
                             key={outcome}
-                            onClick={() => void logVisitOutcome(lead, outcome)}
-                            disabled={visitBusy}
-                            className={`rounded-lg px-2 py-1.5 text-[10px] font-semibold ring-1 transition disabled:opacity-50 ${
+                            onClick={() => logVisitOutcome(lead, outcome)}
+                            className={`rounded-lg px-2 py-1.5 text-[10px] font-semibold ring-1 transition ${
                               outcome === 'Not a fit'
                                 ? 'bg-red-500/10 text-red-300 ring-red-500/25 hover:bg-red-500/20'
                                 : 'bg-white/5 text-slate-300 ring-white/10 hover:bg-white/10'

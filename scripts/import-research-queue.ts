@@ -125,8 +125,11 @@ async function main() {
     }
     const db = getFirestore();
     api = {
+      // Dedup against the FULL collection, not just this tenant: legacy docs
+      // missing tenantId have existed in this database before, and a
+      // tenant-filtered read would let the same company be staged again.
       getAll: async () =>
-        (await db.collection('leads').where('tenantId', '==', TENANT_ID).get()).docs.map((d) => ({
+        (await db.collection('leads').get()).docs.map((d) => ({
           id: d.id,
           ...d.data(),
         })),
@@ -149,6 +152,9 @@ async function main() {
     const app = initializeApp(firebaseConfig);
     await signInWithEmailAndPassword(getAuth(app), user, pass);
     const db = getFirestore(app);
+    console.warn(
+      'Note: signed-in mode can only read tenant-tagged leads, so any legacy doc missing tenantId is invisible to dedup. Prefer GOOGLE_APPLICATION_CREDENTIALS for full-collection dedup.',
+    );
     api = {
       getAll: async () =>
         (await getDocs(query(collection(db, 'leads'), where('tenantId', '==', TENANT_ID)))).docs.map(

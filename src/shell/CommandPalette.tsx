@@ -12,6 +12,8 @@ import {
   Plus,
   Download,
   Upload,
+  Route,
+  SearchCheck,
   CornerDownLeft,
 } from 'lucide-react';
 import type { Lead, TabKey } from '../types';
@@ -135,6 +137,13 @@ export function CommandPalette({
     const navDefs: Array<{ key: TabKey; label: string; icon: React.ReactNode; roles?: string[] }> = [
       { key: 'today', label: 'Go to Today', icon: <ListTodo size={15} /> },
       { key: 'leads', label: 'Go to Leads', icon: <LayoutDashboard size={15} /> },
+      { key: 'field-route', label: 'Go to Field Route', icon: <Route size={15} /> },
+      {
+        key: 'research',
+        label: 'Go to Research Queue',
+        icon: <SearchCheck size={15} />,
+        roles: ['owner', 'super-admin'],
+      },
       { key: 'pipeline', label: 'Go to Pipeline', icon: <Kanban size={15} /> },
       { key: 'outreach', label: 'Go to Outreach', icon: <MessageSquare size={15} /> },
       {
@@ -195,6 +204,7 @@ export function CommandPalette({
     onJumpToLead,
     onNavigate,
     onAddLead,
+    onImport,
     onExport,
     onSelectWorkspace,
   ]);

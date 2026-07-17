@@ -79,7 +79,16 @@ const EMPTY_LEAD_FORM: Partial<Lead> = {
 };
 
 // PWA shortcut deep links: /?tab=leads etc. Parsed once at module load.
-const VALID_TABS: TabKey[] = ['today', 'leads', 'outreach', 'pipeline', 'admin', 'settings'];
+const VALID_TABS: TabKey[] = [
+  'today',
+  'leads',
+  'research',
+  'field-route',
+  'outreach',
+  'pipeline',
+  'admin',
+  'settings',
+];
 const URL_TAB: TabKey | null = (() => {
   try {
     const t = new URLSearchParams(window.location.search).get('tab') as TabKey | null;
@@ -168,11 +177,21 @@ export default function App() {
   // lead writes are always tenant-stamped even if the tenant doc failed to load.
   const tenantId = effectiveTenantId ?? (isSuperAdmin ? undefined : profile?.tenantId);
 
-  const { visibleLeads, researchLeads, loading, dbError, markDeleted } = useLeads(tenantId, {
+  const { leads, visibleLeads, researchLeads, loading, dbError, markDeleted } = useLeads(tenantId, {
     skip: isPlatformConsole,
   });
   const crud = useLeadCrud({ leads: visibleLeads, tenantId, markDeleted });
-  const researchQueue = useResearchQueue({ tenantId, activeLeads: visibleLeads });
+  // Dedup universe = RAW leads, not visibleLeads: a client-side-deleted lead
+  // whose server delete was blocked still exists in Firestore, so approving a
+  // same-company candidate would create a real duplicate doc.
+  const dedupLeads = useMemo(
+    () =>
+      leads.filter(
+        (l) => l.status !== 'research_pending' && l.status !== 'research_rejected',
+      ),
+    [leads],
+  );
+  const researchQueue = useResearchQueue({ tenantId, activeLeads: dedupLeads });
   const { state: filterState, setters: filterSetters, filtered } = useLeadFilters(visibleLeads);
   // Sort applies AFTER filtering, BEFORE render. `sorted` is what the Leads tab
   // actually renders (and what selection treats as the eligible set).
@@ -190,6 +209,7 @@ export default function App() {
     if (!profile) return;
     if (tab === 'admin' && profile.role !== 'super-admin') setTab('today');
     if (tab === 'settings' && profile.role === 'member') setTab('today');
+    if (tab === 'research' && profile.role === 'member') setTab('today');
   }, [tab, profile]);
 
   // Switch workspace (super-admin only): land on Admin for the Platform Console,
@@ -521,7 +541,12 @@ export default function App() {
         )}
 
         {isPlatformConsole &&
-          (tab === 'today' || tab === 'leads' || tab === 'pipeline' || tab === 'outreach') && (
+          (tab === 'today' ||
+            tab === 'leads' ||
+            tab === 'research' ||
+            tab === 'field-route' ||
+            tab === 'pipeline' ||
+            tab === 'outreach') && (
             <PlatformConsoleEmpty onManage={() => setTab('admin')} />
           )}
 
@@ -605,6 +630,7 @@ export default function App() {
           <Suspense fallback={<TabSkeleton />}>
             <FieldRouteTab
               leads={visibleLeads}
+              workspaceKey={tenantId}
               onLeadClick={jumpToLead}
               onUpdateAddress={handleUpdateLeadAddress}
               onLogVisit={handleLogVisit}
@@ -690,6 +716,7 @@ export default function App() {
           setMobileMenuOpen(false);
         }}
         onAddLead={() => setShowAddLead(true)}
+        onImport={() => setShowImport(true)}
         onExport={handleExportAll}
         onSelectWorkspace={selectWorkspace}
         role={profile?.role}

@@ -24,7 +24,10 @@ function combinedSignal(lead: Lead): string {
 }
 
 export function nextLeadAction(lead: Lead): string {
+  if (lead.status === 'anchor') return 'Protect the anchor — check in and ask for the next part';
   if (lead.status === 'client') return 'Ask for another recurring part or a referral';
+  if (lead.status === 'po') return 'Confirm the first PO ran clean and ask for the next release';
+  if (lead.status === 'sample') return 'Follow up on the sample lot and ask for the PO';
   if (lead.status === 'quote') return 'Follow up on the open quote';
   if (lead.status === 'interested') return 'Ask for a drawing, quantity and trial lot';
   if (lead.status === 'visited') return 'Follow up on the visit and ask for one part';
@@ -51,7 +54,7 @@ export function getLeadScore(lead: Lead): LeadScore {
   const signal = combinedSignal(lead);
   let score = 0;
 
-  if (lead.status === 'client') {
+  if (lead.status === 'client' || lead.status === 'anchor') {
     score += 35;
     reasons.push('Existing relationship');
   } else if (lead.t === 1) {
@@ -96,6 +99,10 @@ export function getLeadScore(lead: Lead): LeadScore {
 
   if (lead.status === 'interested') score += 18;
   if (lead.status === 'quote') score += 22;
+  // Sample and first-PO leads are past the quote stage — the hottest
+  // non-client stops on a field day.
+  if (lead.status === 'sample') score += 26;
+  if (lead.status === 'po') score += 30;
 
   return {
     score: Math.min(100, score),

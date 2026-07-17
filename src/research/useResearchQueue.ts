@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Lead } from '../types';
 
@@ -80,16 +80,12 @@ export function useResearchQueue({ tenantId, activeLeads }: UseResearchQueueArgs
     const notes = candidate.notes ? `${candidate.notes}\n${stamp}` : stamp;
 
     return run(candidate, () =>
-      setDoc(
-        doc(db, 'leads', candidate.id),
-        {
+      updateDoc(doc(db, 'leads', candidate.id), {
           status: 'new',
           notes,
           researchDecisionAt: now,
           researchUpdatedAt: now,
-        },
-        { merge: true },
-      ),
+        }),
     );
   };
 
@@ -100,16 +96,12 @@ export function useResearchQueue({ tenantId, activeLeads }: UseResearchQueueArgs
     const notes = candidate.notes ? `${candidate.notes}\n${stamp}` : stamp;
 
     return run(candidate, () =>
-      setDoc(
-        doc(db, 'leads', candidate.id),
-        {
+      updateDoc(doc(db, 'leads', candidate.id), {
           status: 'research_rejected',
           notes,
           researchDecisionAt: now,
           researchUpdatedAt: now,
-        },
-        { merge: true },
-      ),
+        }),
     );
   };
 
@@ -120,16 +112,12 @@ export function useResearchQueue({ tenantId, activeLeads }: UseResearchQueueArgs
     const notes = candidate.notes ? `${candidate.notes}\n${stamp}` : stamp;
 
     return run(candidate, () =>
-      setDoc(
-        doc(db, 'leads', candidate.id),
-        {
+      updateDoc(doc(db, 'leads', candidate.id), {
           status: 'research_pending',
           notes,
           researchDecisionAt: '',
           researchUpdatedAt: now,
-        },
-        { merge: true },
-      ),
+        }),
     );
   };
 
