@@ -1,0 +1,662 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ArrowDown,
+  ArrowUp,
+  Building2,
+  Check,
+  ExternalLink,
+  LocateFixed,
+  MapPin,
+  Navigation,
+  Pencil,
+  Route,
+  Search,
+  Sparkles,
+  X,
+} from 'lucide-react';
+import type { Lead } from '../types';
+
+const SHOP_ADDRESS = '12734 Branford St, Pacoima, CA 91331';
+const SHOP_COORDS: [number, number] = [34.2625, -118.427];
+const MAX_ROUTE_STOPS = 8;
+
+type Coords = [number, number];
+type ViewMode = 'prospects' | 'clients' | 'all';
+
+const CITY_COORDS: Record<string, Coords> = {
+  anaheim: [33.8366, -117.9143],
+  brea: [33.9167, -117.9001],
+  burbank: [34.1808, -118.309],
+  camarillo: [34.2164, -119.0376],
+  'canoga park': [34.2011, -118.5981],
+  'canyon country': [34.4233, -118.472],
+  cerritos: [33.8583, -118.0648],
+  chatsworth: [34.2572, -118.6012],
+  commerce: [34.0006, -118.1598],
+  compton: [33.8958, -118.2201],
+  'costa mesa': [33.6411, -117.9187],
+  downey: [33.9401, -118.1332],
+  'el segundo': [33.9192, -118.4165],
+  fullerton: [33.8704, -117.9242],
+  gardena: [33.8883, -118.3089],
+  glendale: [34.1425, -118.2551],
+  hawthorne: [33.9164, -118.3526],
+  irvine: [33.6846, -117.8265],
+  lancaster: [34.6868, -118.1542],
+  'long beach': [33.7701, -118.1937],
+  monrovia: [34.1443, -118.0019],
+  moorpark: [34.2856, -118.882],
+  newhall: [34.3864, -118.5301],
+  norwalk: [33.9022, -118.0817],
+  'north hollywood': [34.187, -118.3813],
+  northridge: [34.2381, -118.5301],
+  oxnard: [34.1975, -119.1771],
+  pacoima: SHOP_COORDS,
+  palmdale: [34.5794, -118.1165],
+  paramount: [33.8895, -118.1598],
+  placentia: [33.8722, -117.8703],
+  'san fernando': [34.2819, -118.439],
+  'san gabriel': [34.0961, -118.1058],
+  'santa ana': [33.7455, -117.8677],
+  'santa clarita': [34.3917, -118.5426],
+  'santa fe springs': [33.9472, -118.0853],
+  saugus: [34.4114, -118.5363],
+  'simi valley': [34.2694, -118.7815],
+  'south el monte': [34.0519, -118.0467],
+  'sun valley': [34.2175, -118.3704],
+  sylmar: [34.3078, -118.4492],
+  'thousand oaks': [34.1706, -118.8376],
+  torrance: [33.8358, -118.3406],
+  valencia: [34.4568, -118.5759],
+  'van nuys': [34.1899, -118.4514],
+};
+
+const REGION_COORDS: Record<string, Coords> = {
+  'Sun Valley / Pacoima': SHOP_COORDS,
+  'San Fernando Valley': [34.238, -118.53],
+  'Glendale / Burbank': [34.169, -118.282],
+  'South LA / Commerce': [34.001, -118.16],
+  'Gardena / South Bay': [33.87, -118.33],
+  'Long Beach / Paramount': [33.83, -118.18],
+  'Santa Fe Springs': [33.9472, -118.0853],
+  'Santa Clarita / Valencia': [34.424, -118.559],
+  'Simi Valley': [34.2694, -118.7815],
+  'Moorpark / Ventura': [34.27, -118.95],
+  Oxnard: [34.1975, -119.1771],
+  'Brea / OC': [33.89, -117.9],
+  'San Gabriel Valley / Chino': [34.05, -117.98],
+  'Antelope Valley': [34.63, -118.135],
+  'Orange County': [33.72, -117.84],
+  'Los Angeles Central': [34.0522, -118.2437],
+};
+
+function normalizeCity(city: string): string {
+  return city
+    .toLowerCase()
+    .replace(/,?\s+ca(?:lifornia)?(?:\s+\d{5})?$/i, '')
+    .trim();
+}
+
+function coordsForLead(lead: Lead): Coords | null {
+  if (typeof lead.lat === 'number' && typeof lead.lng === 'number') {
+    return [lead.lat, lead.lng];
+  }
+  return CITY_COORDS[normalizeCity(lead.city)] ?? REGION_COORDS[lead.r] ?? null;
+}
+
+function milesBetween(a: Coords, b: Coords): number {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const earthMiles = 3958.8;
+  const dLat = toRad(b[0] - a[0]);
+  const dLng = toRad(b[1] - a[1]);
+  const lat1 = toRad(a[0]);
+  const lat2 = toRad(b[0]);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * earthMiles * Math.asin(Math.sqrt(h));
+}
+
+function distanceFromShop(lead: Lead): number {
+  const coords = coordsForLead(lead);
+  return coords ? milesBetween(SHOP_COORDS, coords) : Number.POSITIVE_INFINITY;
+}
+
+function leadDestination(lead: Lead): string {
+  return lead.address?.trim() || `${lead.co}, ${lead.city}, CA`;
+}
+
+function optimizeStops(stops: Lead[]): Lead[] {
+  const remaining = [...stops];
+  const ordered: Lead[] = [];
+  let current = SHOP_COORDS;
+
+  while (remaining.length) {
+    remaining.sort((a, b) => {
+      const aCoords = coordsForLead(a);
+      const bCoords = coordsForLead(b);
+      const aDistance = aCoords ? milesBetween(current, aCoords) : Number.POSITIVE_INFINITY;
+      const bDistance = bCoords ? milesBetween(current, bCoords) : Number.POSITIVE_INFINITY;
+      if (aDistance !== bDistance) return aDistance - bDistance;
+      if (a.t !== b.t) return a.t - b.t;
+      return a.co.localeCompare(b.co);
+    });
+    const next = remaining.shift()!;
+    ordered.push(next);
+    current = coordsForLead(next) ?? current;
+  }
+
+  return ordered;
+}
+
+interface FieldRouteTabProps {
+  leads: Lead[];
+  onLeadClick: (id: string) => void;
+  onUpdateAddress: (id: string, address: string) => Promise<void>;
+}
+
+export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRouteTabProps) {
+  const [area, setArea] = useState('All Regions');
+  const [viewMode, setViewMode] = useState<ViewMode>('prospects');
+  const [search, setSearch] = useState('');
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [routeIds, setRouteIds] = useState<string[]>([]);
+  const [notice, setNotice] = useState('');
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [addressDraft, setAddressDraft] = useState('');
+  const [savingAddress, setSavingAddress] = useState(false);
+
+  const regions = useMemo(() => {
+    const counts = new Map<string, number>();
+    leads.forEach((lead) => counts.set(lead.r || 'Other', (counts.get(lead.r || 'Other') || 0) + 1));
+    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [leads]);
+
+  const filtered = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    return leads
+      .filter((lead) => {
+        if (lead.status === 'dead') return false;
+        if (viewMode === 'prospects' && lead.status === 'client') return false;
+        if (viewMode === 'clients' && lead.status !== 'client') return false;
+        if (area !== 'All Regions' && lead.r !== area) return false;
+        if (!needle) return true;
+        return [lead.co, lead.city, lead.address, lead.r, lead.pm]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(needle));
+      })
+      .sort((a, b) => {
+        if (a.t !== b.t) return a.t - b.t;
+        const distance = distanceFromShop(a) - distanceFromShop(b);
+        return Number.isFinite(distance) && distance !== 0 ? distance : a.co.localeCompare(b.co);
+      });
+  }, [area, leads, search, viewMode]);
+
+  const cityClusters = useMemo(() => {
+    const grouped = new Map<string, Lead[]>();
+    filtered.forEach((lead) => {
+      const city = lead.city || 'Unknown city';
+      grouped.set(city, [...(grouped.get(city) || []), lead]);
+    });
+    return [...grouped.entries()].sort(
+      (a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]),
+    );
+  }, [filtered]);
+
+  const routeLeads = useMemo(
+    () => routeIds.map((id) => leads.find((lead) => lead.id === id)).filter(Boolean) as Lead[],
+    [leads, routeIds],
+  );
+
+  const selectedLead = leads.find((lead) => lead.id === selectedLeadId) ?? filtered[0] ?? null;
+
+  useEffect(() => {
+    setRouteIds((ids) => ids.filter((id) => leads.some((lead) => lead.id === id)));
+  }, [leads]);
+
+  useEffect(() => {
+    if (!selectedLeadId && filtered[0]) setSelectedLeadId(filtered[0].id);
+  }, [filtered, selectedLeadId]);
+
+  const routeUrl = useMemo(() => {
+    if (!routeLeads.length) return '';
+    const ordered = routeLeads.map(leadDestination);
+    const params = new URLSearchParams({
+      api: '1',
+      origin: SHOP_ADDRESS,
+      destination: ordered[ordered.length - 1],
+      travelmode: 'driving',
+    });
+    if (ordered.length > 1) params.set('waypoints', ordered.slice(0, -1).join('|'));
+    return `https://www.google.com/maps/dir/?${params.toString()}`;
+  }, [routeLeads]);
+
+  const mapQuery = selectedLead ? leadDestination(selectedLead) : SHOP_ADDRESS;
+  const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;
+
+  const setOptimizedRoute = (stops: Lead[]) => {
+    const ordered = optimizeStops(stops.slice(0, MAX_ROUTE_STOPS));
+    setRouteIds(ordered.map((lead) => lead.id));
+    setNotice(
+      stops.length > MAX_ROUTE_STOPS
+        ? `Routes are capped at ${MAX_ROUTE_STOPS} stops here. The closest priorities were used.`
+        : 'Route ordered from the Pacoima shop to the nearest next stop.',
+    );
+  };
+
+  const toggleStop = (lead: Lead) => {
+    if (routeIds.includes(lead.id)) {
+      setRouteIds((ids) => ids.filter((id) => id !== lead.id));
+      setNotice('');
+      return;
+    }
+    if (routeIds.length >= MAX_ROUTE_STOPS) {
+      setNotice(`Keep each field run to ${MAX_ROUTE_STOPS} stops. Start a second route for the rest.`);
+      return;
+    }
+    setOptimizedRoute([...routeLeads, lead]);
+  };
+
+  const buildPriorityRoute = () => {
+    const priorities = [...filtered]
+      .sort((a, b) => a.t - b.t || distanceFromShop(a) - distanceFromShop(b))
+      .slice(0, 6);
+    if (!priorities.length) {
+      setNotice('No companies match this area and filter yet.');
+      return;
+    }
+    setOptimizedRoute(priorities);
+  };
+
+  const moveStop = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= routeIds.length) return;
+    setRouteIds((ids) => {
+      const copy = [...ids];
+      [copy[index], copy[nextIndex]] = [copy[nextIndex], copy[index]];
+      return copy;
+    });
+    setNotice('Manual stop order saved for this route.');
+  };
+
+  const startAddressEdit = (lead: Lead) => {
+    setEditingAddressId(lead.id);
+    setAddressDraft(lead.address || '');
+  };
+
+  const saveAddress = async (lead: Lead) => {
+    if (!addressDraft.trim()) return;
+    setSavingAddress(true);
+    try {
+      await onUpdateAddress(lead.id, addressDraft);
+      setEditingAddressId(null);
+      setNotice(`Exact address saved for ${lead.co}.`);
+    } finally {
+      setSavingAddress(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-7xl space-y-6 pb-16">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-orange-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-orange-300 ring-1 ring-orange-500/30">
+            <Route size={13} /> Field sales
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-100 md:text-3xl">Field Route</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
+            Group nearby aerospace companies, build the day in the right order, and open the full run in Google Maps.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={buildPriorityRoute}
+            className="inline-flex items-center gap-2 rounded-xl bg-apex-accent px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-950/40 transition hover:brightness-110"
+          >
+            <Sparkles size={16} /> Build priority route
+          </button>
+          <a
+            href={routeUrl || undefined}
+            target="_blank"
+            rel="noreferrer"
+            aria-disabled={!routeUrl}
+            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ring-1 transition ${
+              routeUrl
+                ? 'bg-white/5 text-slate-100 ring-white/15 hover:bg-white/10'
+                : 'pointer-events-none bg-white/[0.03] text-slate-600 ring-white/5'
+            }`}
+          >
+            <Navigation size={16} /> Open route in Google Maps
+          </a>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Metric label="In this view" value={filtered.length} detail="companies" />
+        <Metric
+          label="Priority"
+          value={filtered.filter((lead) => lead.t === 1).length}
+          detail="Tier 1 stops"
+          valueClass="text-orange-300"
+        />
+        <Metric
+          label="Today's route"
+          value={routeLeads.length}
+          detail={`of ${MAX_ROUTE_STOPS} stops`}
+          valueClass="text-emerald-300"
+        />
+      </div>
+
+      <div className="rounded-2xl bg-apex-850 p-4 ring-1 ring-white/10 md:p-5">
+        <div className="grid gap-3 lg:grid-cols-[1fr_260px_320px]">
+          <label className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search company, city, address, or contact"
+              className="w-full rounded-xl border border-white/10 bg-apex-800 py-3 pl-10 pr-3 text-sm text-slate-100 placeholder-slate-500 focus:border-apex-accent/60 focus:outline-none"
+            />
+          </label>
+          <select
+            value={area}
+            onChange={(event) => {
+              setArea(event.target.value);
+              setSearch('');
+            }}
+            className="rounded-xl border border-white/10 bg-apex-800 px-3 py-3 text-sm text-slate-100 focus:border-apex-accent/60 focus:outline-none"
+          >
+            <option>All Regions</option>
+            {regions.map(([region, count]) => (
+              <option key={region} value={region}>{region} ({count})</option>
+            ))}
+          </select>
+          <div className="grid grid-cols-3 rounded-xl bg-apex-800 p-1 ring-1 ring-white/10">
+            {(['prospects', 'clients', 'all'] as ViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`rounded-lg px-2 py-2 text-xs font-semibold capitalize transition ${
+                  viewMode === mode ? 'bg-white/10 text-slate-100' : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {cityClusters.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">Nearby clusters</span>
+            {cityClusters.slice(0, 7).map(([city, companies]) => (
+              <button
+                key={city}
+                onClick={() => setSearch(city)}
+                className="rounded-full bg-white/5 px-3 py-1.5 text-xs text-slate-300 ring-1 ring-white/10 transition hover:bg-white/10 hover:text-white"
+              >
+                {city} <span className="ml-1 text-orange-300">{companies.length}</span>
+              </button>
+            ))}
+            {(search || area !== 'All Regions') && (
+              <button
+                onClick={() => {
+                  setSearch('');
+                  setArea('All Regions');
+                }}
+                className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-xs text-slate-500 hover:text-slate-200"
+              >
+                <X size={12} /> Reset
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {notice && (
+        <div className="flex items-start justify-between gap-3 rounded-xl bg-amber-500/10 px-4 py-3 text-sm text-amber-200 ring-1 ring-amber-500/25">
+          <span>{notice}</span>
+          <button onClick={() => setNotice('')} aria-label="Dismiss"><X size={15} /></button>
+        </div>
+      )}
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
+        <div className="space-y-4">
+          <div className="overflow-hidden rounded-2xl bg-apex-850 ring-1 ring-white/10">
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-slate-200">{selectedLead?.co || 'SC Deburring'}</div>
+                <div className="truncate text-[10px] text-slate-500">{mapQuery}</div>
+              </div>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-sky-300 hover:text-sky-200"
+              >
+                Full map <ExternalLink size={13} />
+              </a>
+            </div>
+            <iframe
+              title="Selected company map"
+              src={mapUrl}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="h-[360px] w-full border-0 md:h-[460px]"
+            />
+          </div>
+
+          <div className="rounded-2xl bg-apex-850 p-4 ring-1 ring-white/10">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-100">Companies in this area</h2>
+                <p className="mt-0.5 text-[11px] text-slate-500">Preview a company, then add it to the day.</p>
+              </div>
+              <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] text-slate-400 ring-1 ring-white/10">{filtered.length}</span>
+            </div>
+
+            <div className="max-h-[660px] space-y-2 overflow-y-auto pr-1">
+              {filtered.map((lead) => {
+                const inRoute = routeIds.includes(lead.id);
+                const distance = distanceFromShop(lead);
+                const editing = editingAddressId === lead.id;
+                return (
+                  <div
+                    key={lead.id}
+                    className={`rounded-xl border p-3 transition ${
+                      selectedLead?.id === lead.id
+                        ? 'border-orange-500/40 bg-orange-500/[0.06]'
+                        : 'border-white/10 bg-apex-800 hover:border-white/20'
+                    }`}
+                  >
+                    <div className="flex gap-3">
+                      <button onClick={() => setSelectedLeadId(lead.id)} className="min-w-0 flex-1 text-left">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="truncate text-sm font-semibold text-slate-100">{lead.co}</span>
+                          <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${lead.t === 1 ? 'bg-orange-500/15 text-orange-300' : 'bg-blue-500/15 text-blue-300'}`}>T{lead.t}</span>
+                          <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] uppercase text-slate-400">{lead.status}</span>
+                        </div>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
+                          <span className="inline-flex items-center gap-1"><MapPin size={11} /> {lead.city}</span>
+                          {Number.isFinite(distance) && <span>{distance.toFixed(1)} mi from shop</span>}
+                          {lead.pm && <span>{lead.pm}</span>}
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => toggleStop(lead)}
+                        className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold ring-1 transition ${
+                          inRoute
+                            ? 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/30'
+                            : 'bg-white/5 text-slate-300 ring-white/10 hover:bg-white/10'
+                        }`}
+                      >
+                        {inRoute ? <Check size={13} /> : <Navigation size={13} />}
+                        {inRoute ? 'Added' : 'Add'}
+                      </button>
+                    </div>
+
+                    {editing ? (
+                      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                        <input
+                          autoFocus
+                          value={addressDraft}
+                          onChange={(event) => setAddressDraft(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') void saveAddress(lead);
+                            if (event.key === 'Escape') setEditingAddressId(null);
+                          }}
+                          placeholder="Full street address"
+                          className="min-w-0 flex-1 rounded-lg border border-white/10 bg-apex-900 px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:border-apex-accent/60 focus:outline-none"
+                        />
+                        <button
+                          onClick={() => void saveAddress(lead)}
+                          disabled={!addressDraft.trim() || savingAddress}
+                          className="rounded-lg bg-apex-accent px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                        >
+                          {savingAddress ? 'Saving…' : 'Save address'}
+                        </button>
+                        <button onClick={() => setEditingAddressId(null)} className="rounded-lg px-2 py-2 text-xs text-slate-500 hover:text-slate-200">Cancel</button>
+                      </div>
+                    ) : (
+                      <div className="mt-2 flex items-center justify-between gap-3 border-t border-white/5 pt-2">
+                        <span className={`truncate text-[10px] ${lead.address ? 'text-slate-400' : 'text-amber-400/80'}`}>
+                          {lead.address || 'City-level route — add the exact street address'}
+                        </span>
+                        <button
+                          onClick={() => startAddressEdit(lead)}
+                          className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold text-sky-300 hover:text-sky-200"
+                        >
+                          <Pencil size={10} /> {lead.address ? 'Edit' : 'Add address'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {!filtered.length && (
+                <div className="rounded-xl border border-dashed border-white/10 px-6 py-12 text-center">
+                  <Building2 className="mx-auto mb-3 text-slate-600" size={28} />
+                  <div className="text-sm font-semibold text-slate-300">No companies found</div>
+                  <div className="mt-1 text-xs text-slate-500">Change the area, search, or prospect filter.</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 xl:sticky xl:top-0 xl:self-start">
+          <div className="rounded-2xl bg-apex-850 p-4 ring-1 ring-white/10 md:p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-100"><Navigation size={16} className="text-orange-300" /> Today's stops</div>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-500">Starts in Pacoima. Auto-order, then move anything manually.</p>
+              </div>
+              {routeLeads.length > 0 && (
+                <button onClick={() => { setRouteIds([]); setNotice(''); }} className="text-[10px] font-semibold text-slate-500 hover:text-red-300">Clear</button>
+              )}
+            </div>
+
+            <div className="mt-4 rounded-xl bg-apex-800 p-3 ring-1 ring-white/10">
+              <div className="flex items-start gap-2">
+                <LocateFixed className="mt-0.5 shrink-0 text-emerald-300" size={14} />
+                <div>
+                  <div className="text-xs font-semibold text-slate-200">Start — SC Deburring</div>
+                  <div className="mt-0.5 text-[10px] leading-relaxed text-slate-500">{SHOP_ADDRESS}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 space-y-2">
+              {routeLeads.map((lead, index) => (
+                <div key={lead.id} className="rounded-xl bg-apex-800 p-3 ring-1 ring-white/10">
+                  <div className="flex items-start gap-2.5">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-[10px] font-bold text-orange-300 ring-1 ring-orange-500/30">{index + 1}</div>
+                    <button onClick={() => setSelectedLeadId(lead.id)} className="min-w-0 flex-1 text-left">
+                      <div className="truncate text-xs font-semibold text-slate-200">{lead.co}</div>
+                      <div className="mt-0.5 truncate text-[10px] text-slate-500">{lead.address || `${lead.city} — address not verified`}</div>
+                    </button>
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <button onClick={() => moveStop(index, -1)} disabled={index === 0} aria-label="Move stop up" className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-slate-200 disabled:opacity-20"><ArrowUp size={13} /></button>
+                      <button onClick={() => moveStop(index, 1)} disabled={index === routeLeads.length - 1} aria-label="Move stop down" className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-slate-200 disabled:opacity-20"><ArrowDown size={13} /></button>
+                      <button onClick={() => toggleStop(lead)} aria-label="Remove stop" className="rounded p-1 text-slate-500 hover:bg-red-500/10 hover:text-red-300"><X size={13} /></button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {!routeLeads.length && (
+                <div className="rounded-xl border border-dashed border-white/10 px-4 py-8 text-center">
+                  <Route className="mx-auto mb-2 text-slate-600" size={24} />
+                  <div className="text-xs font-semibold text-slate-400">No stops selected</div>
+                  <div className="mt-1 text-[10px] leading-relaxed text-slate-600">Choose a region and build a priority route, or add companies one by one.</div>
+                </div>
+              )}
+            </div>
+
+            {routeLeads.length > 1 && (
+              <button
+                onClick={() => setOptimizedRoute(routeLeads)}
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/5 px-3 py-2.5 text-xs font-semibold text-slate-300 ring-1 ring-white/10 transition hover:bg-white/10"
+              >
+                <Sparkles size={14} /> Re-optimize stop order
+              </button>
+            )}
+
+            <a
+              href={routeUrl || undefined}
+              target="_blank"
+              rel="noreferrer"
+              aria-disabled={!routeUrl}
+              className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                routeUrl
+                  ? 'bg-emerald-500 text-emerald-950 hover:bg-emerald-400'
+                  : 'pointer-events-none bg-white/5 text-slate-600'
+              }`}
+            >
+              <Navigation size={16} /> Start this route
+            </a>
+          </div>
+
+          <div className="rounded-2xl bg-sky-500/[0.06] p-4 ring-1 ring-sky-500/20">
+            <div className="flex gap-3">
+              <MapPin className="mt-0.5 shrink-0 text-sky-300" size={17} />
+              <div>
+                <div className="text-xs font-semibold text-sky-200">Make the route exact</div>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
+                  Existing leads can route by company and city. Add the street address as you verify each prospect and the route becomes exact.
+                </p>
+                {selectedLead && (
+                  <button onClick={() => onLeadClick(selectedLead.id)} className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold text-sky-300 hover:text-sky-200">
+                    Open {selectedLead.co} in CRM <ExternalLink size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  detail,
+  valueClass = 'text-slate-100',
+}: {
+  label: string;
+  value: number;
+  detail: string;
+  valueClass?: string;
+}) {
+  return (
+    <div className="rounded-2xl bg-apex-850 p-4 ring-1 ring-white/10">
+      <div className="text-[10px] uppercase tracking-widest text-slate-500">{label}</div>
+      <div className={`mt-1 text-2xl font-bold ${valueClass}`}>{value}</div>
+      <div className="text-xs text-slate-400">{detail}</div>
+    </div>
+  );
+}
