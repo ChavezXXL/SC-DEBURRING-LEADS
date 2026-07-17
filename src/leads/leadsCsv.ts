@@ -10,6 +10,7 @@ import type { Lead } from '../types';
 /** Exact export column order — matches the lead schema fields that matter. */
 export const CSV_COLUMNS = [
   'co',
+  'address',
   'city',
   'r',
   't',

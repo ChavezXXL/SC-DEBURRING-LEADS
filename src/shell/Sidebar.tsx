@@ -6,6 +6,7 @@ import {
   Check,
   Kanban,
   LogOut,
+  Route,
   Rocket,
   Shield,
   Settings as SettingsIcon,
@@ -161,6 +162,7 @@ export function Sidebar({
         <nav className="mb-8 space-y-1">
           {navItem('today', 'Today', ListTodo)}
           {navItem('leads', 'Leads', LayoutDashboard, leads.length)}
+          {navItem('field-route', 'Field Route', Route)}
           {navItem('outreach', 'Outreach', MessageSquare)}
           {navItem('pipeline', 'Pipeline', Kanban)}
           {(profile?.role === 'owner' || profile?.role === 'super-admin') &&

@@ -3,6 +3,7 @@ import {
   ListTodo,
   LayoutDashboard,
   Kanban,
+  Route,
   MessageSquare,
   Shield,
   Settings as SettingsIcon,
@@ -34,6 +35,7 @@ export function MobileNav({ tab, setTab, role, dueCount = 0, hidden }: MobileNav
   }> = [
     { key: 'today', label: 'Today', Icon: ListTodo, badge: dueCount },
     { key: 'leads', label: 'Leads', Icon: LayoutDashboard },
+    { key: 'field-route', label: 'Route', Icon: Route },
     { key: 'pipeline', label: 'Pipeline', Icon: Kanban },
   ];
   if (role === 'super-admin') {

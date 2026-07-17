@@ -22,6 +22,12 @@ export interface Lead {
   r: string;
   co: string;
   city: string;
+  /** Full street address for the Field Route planner. Legacy leads may only
+   * have a city; the planner falls back to company + city in that case. */
+  address?: string;
+  /** Optional verified coordinates. City/region centroids are used until set. */
+  lat?: number;
+  lng?: number;
   ph: string;
   em: string;
   web: string;
@@ -66,7 +72,7 @@ export interface ObjectionDef {
   a: string;
 }
 
-export type TabKey = 'today' | 'leads' | 'outreach' | 'pipeline' | 'admin' | 'settings';
+export type TabKey = 'today' | 'leads' | 'field-route' | 'outreach' | 'pipeline' | 'admin' | 'settings';
 
 /**
  * A tenant = one business that logs into the CRM.
