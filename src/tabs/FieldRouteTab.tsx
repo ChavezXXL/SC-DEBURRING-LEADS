@@ -14,7 +14,8 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import type { Lead } from '../types';
+import type { Lead, VisitOutcome } from '../types';
+import { compareLeadScore, getLeadScore } from '../utils/leadScore';
 
 const SHOP_ADDRESS = '12734 Branford St, Pacoima, CA 91331';
 const SHOP_COORDS: [number, number] = [34.2625, -118.427];
@@ -22,6 +23,14 @@ const MAX_ROUTE_STOPS = 8;
 
 type Coords = [number, number];
 type ViewMode = 'prospects' | 'clients' | 'all';
+
+const VISIT_OUTCOMES: VisitOutcome[] = [
+  'Met buyer',
+  'Left capability packet',
+  'Asked to return',
+  'No access',
+  'Not a fit',
+];
 
 const CITY_COORDS: Record<string, Coords> = {
   anaheim: [33.8366, -117.9143],
@@ -153,18 +162,28 @@ interface FieldRouteTabProps {
   leads: Lead[];
   onLeadClick: (id: string) => void;
   onUpdateAddress: (id: string, address: string) => Promise<void>;
+  onLogVisit: (lead: Lead, outcome: VisitOutcome) => Promise<void>;
 }
 
-export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRouteTabProps) {
+export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress, onLogVisit }: FieldRouteTabProps) {
   const [area, setArea] = useState('All Regions');
   const [viewMode, setViewMode] = useState<ViewMode>('prospects');
   const [search, setSearch] = useState('');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
-  const [routeIds, setRouteIds] = useState<string[]>([]);
+  const [routeIds, setRouteIds] = useState<string[]>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('sc_field_route_ids') || '[]');
+      return Array.isArray(saved) ? saved.filter((id): id is string => typeof id === 'string') : [];
+    } catch {
+      return [];
+    }
+  });
   const [notice, setNotice] = useState('');
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [addressDraft, setAddressDraft] = useState('');
   const [savingAddress, setSavingAddress] = useState(false);
+  const [loggingVisitId, setLoggingVisitId] = useState<string | null>(null);
+  const [visitBusy, setVisitBusy] = useState(false);
 
   const regions = useMemo(() => {
     const counts = new Map<string, number>();
@@ -186,7 +205,8 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRout
           .some((value) => String(value).toLowerCase().includes(needle));
       })
       .sort((a, b) => {
-        if (a.t !== b.t) return a.t - b.t;
+        const scoreDifference = getLeadScore(b).score - getLeadScore(a).score;
+        if (scoreDifference !== 0) return scoreDifference;
         const distance = distanceFromShop(a) - distanceFromShop(b);
         return Number.isFinite(distance) && distance !== 0 ? distance : a.co.localeCompare(b.co);
       });
@@ -213,6 +233,12 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRout
   useEffect(() => {
     setRouteIds((ids) => ids.filter((id) => leads.some((lead) => lead.id === id)));
   }, [leads]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sc_field_route_ids', JSON.stringify(routeIds));
+    } catch {}
+  }, [routeIds]);
 
   useEffect(() => {
     if (!selectedLeadId && filtered[0]) setSelectedLeadId(filtered[0].id);
@@ -259,7 +285,7 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRout
 
   const buildPriorityRoute = () => {
     const priorities = [...filtered]
-      .sort((a, b) => a.t - b.t || distanceFromShop(a) - distanceFromShop(b))
+      .sort(compareLeadScore)
       .slice(0, 6);
     if (!priorities.length) {
       setNotice('No companies match this area and filter yet.');
@@ -293,6 +319,22 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRout
       setNotice(`Exact address saved for ${lead.co}.`);
     } finally {
       setSavingAddress(false);
+    }
+  };
+
+  const logVisitOutcome = async (lead: Lead, outcome: VisitOutcome) => {
+    setVisitBusy(true);
+    try {
+      await onLogVisit(lead, outcome);
+      setLoggingVisitId(null);
+      if (outcome === 'Not a fit') {
+        setNotice(`${lead.co} was moved out of active prospecting.`);
+        setRouteIds((ids) => ids.filter((id) => id !== lead.id));
+      } else {
+        setNotice(`${outcome} logged for ${lead.co}. Follow-up was added automatically.`);
+      }
+    } finally {
+      setVisitBusy(false);
     }
   };
 
@@ -461,6 +503,7 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRout
                 const inRoute = routeIds.includes(lead.id);
                 const distance = distanceFromShop(lead);
                 const editing = editingAddressId === lead.id;
+                const opportunity = getLeadScore(lead);
                 return (
                   <div
                     key={lead.id}
@@ -475,12 +518,16 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRout
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="truncate text-sm font-semibold text-slate-100">{lead.co}</span>
                           <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${lead.t === 1 ? 'bg-orange-500/15 text-orange-300' : 'bg-blue-500/15 text-blue-300'}`}>T{lead.t}</span>
+                          <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${opportunity.score >= 75 ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/10 text-amber-300'}`}>{opportunity.score}</span>
                           <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] uppercase text-slate-400">{lead.status}</span>
                         </div>
                         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
                           <span className="inline-flex items-center gap-1"><MapPin size={11} /> {lead.city}</span>
                           {Number.isFinite(distance) && <span>{distance.toFixed(1)} mi from shop</span>}
                           {lead.pm && <span>{lead.pm}</span>}
+                        </div>
+                        <div className="mt-1.5 truncate text-[10px] font-medium text-orange-300/90">
+                          Next: {opportunity.nextAction}
                         </div>
                       </button>
                       <button
@@ -569,22 +616,55 @@ export function FieldRouteTab({ leads, onLeadClick, onUpdateAddress }: FieldRout
             </div>
 
             <div className="mt-3 space-y-2">
-              {routeLeads.map((lead, index) => (
-                <div key={lead.id} className="rounded-xl bg-apex-800 p-3 ring-1 ring-white/10">
-                  <div className="flex items-start gap-2.5">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-[10px] font-bold text-orange-300 ring-1 ring-orange-500/30">{index + 1}</div>
-                    <button onClick={() => setSelectedLeadId(lead.id)} className="min-w-0 flex-1 text-left">
-                      <div className="truncate text-xs font-semibold text-slate-200">{lead.co}</div>
-                      <div className="mt-0.5 truncate text-[10px] text-slate-500">{lead.address || `${lead.city} — address not verified`}</div>
-                    </button>
-                    <div className="flex shrink-0 items-center gap-0.5">
-                      <button onClick={() => moveStop(index, -1)} disabled={index === 0} aria-label="Move stop up" className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-slate-200 disabled:opacity-20"><ArrowUp size={13} /></button>
-                      <button onClick={() => moveStop(index, 1)} disabled={index === routeLeads.length - 1} aria-label="Move stop down" className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-slate-200 disabled:opacity-20"><ArrowDown size={13} /></button>
-                      <button onClick={() => toggleStop(lead)} aria-label="Remove stop" className="rounded p-1 text-slate-500 hover:bg-red-500/10 hover:text-red-300"><X size={13} /></button>
+              {routeLeads.map((lead, index) => {
+                const opportunity = getLeadScore(lead);
+                const logging = loggingVisitId === lead.id;
+                return (
+                  <div key={lead.id} className="rounded-xl bg-apex-800 p-3 ring-1 ring-white/10">
+                    <div className="flex items-start gap-2.5">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-[10px] font-bold text-orange-300 ring-1 ring-orange-500/30">{index + 1}</div>
+                      <button onClick={() => setSelectedLeadId(lead.id)} className="min-w-0 flex-1 text-left">
+                        <div className="flex items-center gap-1.5">
+                          <div className="truncate text-xs font-semibold text-slate-200">{lead.co}</div>
+                          <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-300">{opportunity.score}</span>
+                        </div>
+                        <div className="mt-0.5 truncate text-[10px] text-slate-500">{lead.address || `${lead.city} — address not verified`}</div>
+                      </button>
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        <button onClick={() => moveStop(index, -1)} disabled={index === 0} aria-label="Move stop up" className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-slate-200 disabled:opacity-20"><ArrowUp size={13} /></button>
+                        <button onClick={() => moveStop(index, 1)} disabled={index === routeLeads.length - 1} aria-label="Move stop down" className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-slate-200 disabled:opacity-20"><ArrowDown size={13} /></button>
+                        <button onClick={() => toggleStop(lead)} aria-label="Remove stop" className="rounded p-1 text-slate-500 hover:bg-red-500/10 hover:text-red-300"><X size={13} /></button>
+                      </div>
                     </div>
+
+                    <button
+                      onClick={() => setLoggingVisitId(logging ? null : lead.id)}
+                      className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-violet-300 hover:text-violet-200"
+                    >
+                      <Check size={11} /> {logging ? 'Cancel visit log' : 'Log visit outcome'}
+                    </button>
+
+                    {logging && (
+                      <div className="mt-2 flex flex-wrap gap-1.5 border-t border-white/5 pt-2">
+                        {VISIT_OUTCOMES.map((outcome) => (
+                          <button
+                            key={outcome}
+                            onClick={() => void logVisitOutcome(lead, outcome)}
+                            disabled={visitBusy}
+                            className={`rounded-lg px-2 py-1.5 text-[10px] font-semibold ring-1 transition disabled:opacity-50 ${
+                              outcome === 'Not a fit'
+                                ? 'bg-red-500/10 text-red-300 ring-red-500/25 hover:bg-red-500/20'
+                                : 'bg-white/5 text-slate-300 ring-white/10 hover:bg-white/10'
+                            }`}
+                          >
+                            {outcome}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {!routeLeads.length && (
                 <div className="rounded-xl border border-dashed border-white/10 px-4 py-8 text-center">
