@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { Lead, LeadStatus } from '../types';
 import { STATUS } from '../data';
+import { compareLeadScore } from '../utils/leadScore';
 
 /**
  * Sort control for the Leads list. Applied AFTER filtering, BEFORE render.
@@ -17,6 +18,7 @@ export type SortKey =
   | 'activity-desc'
   | 'activity-asc'
   | 'company-az'
+  | 'score'
   | 'tier'
   | 'status';
 
@@ -25,6 +27,7 @@ export const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'activity-desc', label: 'Newest activity' },
   { key: 'activity-asc', label: 'Oldest activity' },
   { key: 'company-az', label: 'Company A–Z' },
+  { key: 'score', label: 'Best opportunity' },
   { key: 'tier', label: 'Tier (T1 first)' },
   { key: 'status', label: 'Status (pipeline)' },
 ];
@@ -76,6 +79,9 @@ export function useLeadSort(filtered: Lead[]) {
         break;
       case 'company-az':
         list.sort(byCompany);
+        break;
+      case 'score':
+        list.sort(compareLeadScore);
         break;
       case 'tier':
         list.sort((a, b) => a.t - b.t || byCompany(a, b));
