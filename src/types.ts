@@ -16,6 +16,13 @@ export type PipelineLeadStatus = Exclude<
   'research_pending' | 'research_rejected'
 >;
 
+export type VisitOutcome =
+  | 'Met buyer'
+  | 'Left capability packet'
+  | 'Asked to return'
+  | 'No access'
+  | 'Not a fit';
+
 export interface Lead {
   id: string;
   /** Multi-tenant scoping. Each tenant only sees leads with their tenantId.
@@ -49,6 +56,10 @@ export interface Lead {
   lastContactedAt?: string;
   /** Total touches across all channels. Increment when sending email, logging a call, etc. */
   touchCount?: number;
+  /** Most recent in-person field-sales result. */
+  lastVisitOutcome?: VisitOutcome;
+  /** ISO timestamp for the most recent in-person visit. */
+  lastVisitedAt?: string;
   /** Public-research context. These fields are populated while a company is
    * waiting in the Research Queue and remain as provenance after approval. */
   researchSignal?: string;
