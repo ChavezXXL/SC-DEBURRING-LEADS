@@ -3,6 +3,7 @@ import { Menu, X, Loader2, LayoutGrid, ArrowRight, Search } from 'lucide-react';
 
 import type { Lead, TabKey, LeadStatus, VisitOutcome } from './types';
 import { STATUS } from './data';
+import { isReminderDue } from './utils/leadActivity';
 import { useToast } from './ui/Toast';
 
 import { useAuth } from './auth/AuthContext';
@@ -263,11 +264,13 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Reminders due today or earlier — badge on the mobile Today tab.
-  const dueCount = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    return visibleLeads.filter((l) => l.reminderDate && l.reminderDate <= today).length;
-  }, [visibleLeads]);
+  // Reminders due today or earlier — badge on the mobile Today tab. Uses the
+  // same local-midnight predicate as the Today list (a UTC date string counted
+  // tomorrow's reminders as due every Pacific evening).
+  const dueCount = useMemo(
+    () => visibleLeads.filter((l) => isReminderDue(l)).length,
+    [visibleLeads],
+  );
 
   const handleExportAll = useCallback(() => {
     if (visibleLeads.length === 0) return;
@@ -689,7 +692,10 @@ export default function App() {
           <ImportLeadsModal
             open={showImport}
             onClose={() => setShowImport(false)}
-            existingLeads={visibleLeads}
+            /* Dedup against the FULL collection, not the visible view: research
+               candidates and soft-deleted-but-still-live docs must block a
+               re-import or the importer creates duplicate lead docs. */
+            existingLeads={leads}
             tenantId={tenantId}
             onImported={(n) => toast(`Imported ${n} lead${n === 1 ? '' : 's'}`)}
           />

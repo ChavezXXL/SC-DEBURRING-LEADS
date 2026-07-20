@@ -40,9 +40,11 @@ service cloud.firestore {
     }
 
     // If the tenant is flagged disabled, all reads/writes for users in that
-    // tenant are blocked (super-admin can still override).
+    // tenant are blocked (super-admin can still override). `.get('disabled',
+    // false)` so a tenant doc that predates the field is treated as active
+    // instead of erroring the whole rule (which reads as deny).
     function tenantIsActive() {
-      return isSuperAdmin() || myTenant().disabled != true;
+      return isSuperAdmin() || myTenant().get('disabled', false) != true;
     }
 
     function belongsToMyTenant(doc) {
@@ -60,20 +62,17 @@ service cloud.firestore {
       allow read: if isSignedIn() && (request.auth.uid == uid || isSuperAdmin());
       allow list: if isSuperAdmin();
 
-      // Creating a user profile is allowed during the first-time AuthContext
-      // bootstrap — but only with role "member" or by a super-admin.
-      // Server-side enforcement: role/tenantId in the new doc must match
-      // either the bootstrap super-admin email or default member.
+      // Creating a user profile from the client is allowed ONLY for the
+      // master-admin bootstrap (the platform operator's very first sign-in).
+      // Every real client user is provisioned server-side by
+      // create-tenant-account (service account bypasses rules), so there is no
+      // legitimate client-side "member" self-provision — allowing it let ANY
+      // signed-in account grant itself membership in ANY tenant.
       allow create: if isSignedIn()
         && request.auth.uid == uid
         && request.resource.data.uid == uid
-        && (
-          // Bootstrap path: super-admin email creates own super-admin profile
-          (request.auth.token.email == 'scprecisiondeburring@gmail.com'
-            && request.resource.data.role == 'super-admin')
-          // Default path: new user gets role "member"
-          || request.resource.data.role == 'member'
-        );
+        && request.auth.token.email == 'apexgrowthgroupllc@gmail.com'
+        && request.resource.data.role == 'super-admin';
 
       // Updates: a user can update their own display name, but cannot change
       // their role or tenantId. Super-admin can change anything.
@@ -102,15 +101,16 @@ service cloud.firestore {
     // Write: must stamp the lead with your tenantId; cannot change tenantId
     // afterwards; super-admin can do whatever.
     match /leads/{leadId} {
+      // `read` covers both get and list. For a query (list), Firestore only
+      // approves it when every possible result satisfies this rule — so a
+      // non-super-admin MUST constrain the query with `where tenantId == mine`
+      // (which the app always does). There is deliberately NO separate
+      // `allow list` — one existed and, referencing no `resource`, blanket-
+      // approved ANY leads query = a full cross-tenant read leak.
       allow read: if isSignedIn() && tenantIsActive() && (
         isSuperAdmin()
         || (resource != null && belongsToMyTenant(resource))
       );
-
-      allow list: if isSignedIn() && tenantIsActive();
-      // ^ list is gated further by the client-side query's `where tenantId == X`.
-      // Without that where-clause, the security rules will deny non-matching
-      // docs at fetch time. Super-admin lists everything.
 
       allow create: if isSignedIn() && tenantIsActive()
         && (isSuperAdmin() || writeBelongsToMyTenant());

@@ -75,36 +75,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (profSnap.exists()) {
           prof = profSnap.data() as UserProfile;
         } else {
-          // First-time login: if this is the bootstrap super-admin, create
-          // their profile + the sc-deburring tenant if missing.
-          const isSuperAdmin =
+          const isMasterAdmin =
             fbUser.email?.toLowerCase() === BOOTSTRAP_SUPER_ADMIN_EMAIL;
 
+          if (!isMasterAdmin) {
+            // No profile and not the master admin → this account was never
+            // provisioned. Do NOT self-assign into a tenant: that quietly gave
+            // any signed-in account full access to SC Deburring's data. Every
+            // real user is created server-side by create-tenant-account.
+            setProfile(null);
+            setTenant(null);
+            setError(
+              'This account has no access yet. Ask your administrator to add you, then sign in again.',
+            );
+            setLoading(false);
+            return;
+          }
+
+          // Master-admin's first sign-in: create the tenant-less Platform
+          // Console super-admin profile, and the SC Deburring tenant if missing.
           prof = {
             uid: fbUser.uid,
             email: fbUser.email || '',
-            // Master admin bootstraps into the tenant-less Platform Console;
-            // any other brand-new login defaults to the SC Deburring tenant.
-            tenantId: isSuperAdmin ? PLATFORM_WORKSPACE : BOOTSTRAP_TENANT_ID,
-            role: isSuperAdmin ? 'super-admin' : 'member',
+            tenantId: PLATFORM_WORKSPACE,
+            role: 'super-admin',
             displayName: fbUser.displayName || undefined,
             createdAt: new Date().toISOString(),
           };
           await setDoc(doc(db, 'users', fbUser.uid), prof);
 
-          if (isSuperAdmin) {
-            const tenantRef = doc(db, 'tenants', BOOTSTRAP_TENANT_ID);
-            const tSnap = await getDoc(tenantRef);
-            if (!tSnap.exists()) {
-              const t: Tenant = {
-                id: BOOTSTRAP_TENANT_ID,
-                name: BOOTSTRAP_TENANT_NAME,
-                ownerEmail: fbUser.email || '',
-                createdAt: new Date().toISOString(),
-                plan: 'internal',
-              };
-              await setDoc(tenantRef, t);
-            }
+          const tenantRef = doc(db, 'tenants', BOOTSTRAP_TENANT_ID);
+          const tSnap = await getDoc(tenantRef);
+          if (!tSnap.exists()) {
+            const t: Tenant = {
+              id: BOOTSTRAP_TENANT_ID,
+              name: BOOTSTRAP_TENANT_NAME,
+              ownerEmail: fbUser.email || '',
+              createdAt: new Date().toISOString(),
+              plan: 'internal',
+              disabled: false,
+            };
+            await setDoc(tenantRef, t);
           }
         }
         setProfile(prof);

@@ -3,12 +3,13 @@ import {
   deleteDoc,
   deleteField,
   doc,
+  getDoc,
   setDoc,
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Lead, LeadStatus, VisitOutcome } from '../types';
-import { todayYmd } from '../utils/leadActivity';
+import { todayYmd, isReminderDue, isClientLead } from '../utils/leadActivity';
 import {
   OperationType,
   extractErrorMessage,
@@ -16,6 +17,10 @@ import {
 } from './firestore-errors';
 
 const FLASH_MS = 2000;
+
+/** A dated activity-stamp line, e.g. "[2026-07-20] Called…". Used to detect
+ * timeline stamps that landed on the server while a note editor was open. */
+const STAMP_LINE_RE = /^\s*\[\d{4}-\d{2}-\d{2}\]/;
 
 // Firestore caps a single writeBatch at 500 ops; stay well under it.
 const BATCH_CHUNK = 400;
@@ -38,7 +43,7 @@ function chunk<T>(arr: T[], size: number): T[][] {
 /** Fields for "I emailed them" — bumps touch tracking, stamps notes, and only
  *  ever UPGRADES status (new/called/voicemail → emailed; never downgrades). */
 function markEmailedFields(lead: Lead): Partial<Lead> {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayYmd();
   const stamp = `[${today}] Emailed (marked from app).`;
   const fields: Partial<Lead> = {
     lastContactedAt: new Date().toISOString(),
@@ -54,7 +59,7 @@ function markEmailedFields(lead: Lead): Partial<Lead> {
 /** Fields for "I called them" — bumps touch tracking, stamps notes, and only
  *  ever UPGRADES status (new → called; never downgrades a warmer lead). */
 function logCallFields(lead: Lead): Partial<Lead> {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayYmd();
   const stamp = `[${today}] Called (logged from app).`;
   const fields: Partial<Lead> = {
     lastContactedAt: new Date().toISOString(),
@@ -207,7 +212,19 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
 
   const saveNote = async (id: string, notes: string) => {
     try {
-      await setDoc(doc(db, 'leads', id), { notes }, { merge: true });
+      const ref = doc(db, 'leads', id);
+      // The editor seeds its draft from a snapshot of `notes` and never resyncs.
+      // Meanwhile call/email/status/reminder/value/visit writes all APPEND dated
+      // stamps to the same `notes` field. Blindly writing the draft would erase
+      // any stamp that landed while the editor was open. So re-attach any
+      // server-side stamp lines the draft doesn't already contain.
+      const snap = await getDoc(ref);
+      const serverNotes: string = (snap.exists() ? (snap.data() as any).notes : '') || '';
+      const missingStamps = serverNotes
+        .split('\n')
+        .filter((line) => STAMP_LINE_RE.test(line) && !notes.includes(line.trim()));
+      const merged = missingStamps.length ? `${notes}\n${missingStamps.join('\n')}` : notes;
+      await setDoc(ref, { notes: merged }, { merge: true });
       flashSaved();
     } catch (e: any) {
       surface(e, OperationType.UPDATE, `leads/${id}`);
@@ -223,7 +240,7 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
   const setReminder = async (id: string, reminderDate: string | null) => {
     try {
       const lead = leads.find((l) => l.id === id);
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayYmd();
       if (reminderDate === null) {
         const stamp = `[${today}] Follow-up cleared.`;
         const notes = lead?.notes ? `${lead.notes}\n${stamp}` : stamp;
@@ -275,7 +292,11 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
    * and only ever upgrades status (new/called/voicemail → emailed). */
   const markEmailed = async (lead: Lead) => {
     try {
-      await setDoc(doc(db, 'leads', lead.id), markEmailedFields(lead), { merge: true });
+      const fields: Record<string, unknown> = { ...markEmailedFields(lead) };
+      // Logging this contact completes a due follow-up — clear it so it leaves
+      // the "Follow-ups scheduled" list instead of sitting there overdue.
+      if (isReminderDue(lead)) fields.reminderDate = deleteField();
+      await setDoc(doc(db, 'leads', lead.id), fields, { merge: true });
       flashSaved();
     } catch (e: any) {
       surface(e, OperationType.UPDATE, `leads/${lead.id}`);
@@ -287,7 +308,9 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
    * emailed/interested/client lead back to called). */
   const logCall = async (lead: Lead) => {
     try {
-      await setDoc(doc(db, 'leads', lead.id), logCallFields(lead), { merge: true });
+      const fields: Record<string, unknown> = { ...logCallFields(lead) };
+      if (isReminderDue(lead)) fields.reminderDate = deleteField();
+      await setDoc(doc(db, 'leads', lead.id), fields, { merge: true });
       flashSaved();
     } catch (e: any) {
       surface(e, OperationType.UPDATE, `leads/${lead.id}`);
@@ -310,7 +333,9 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
         notes: lead.notes ? `${lead.notes}\n${stamp}` : stamp,
       };
 
-      if (outcome === 'Not a fit') {
+      if (outcome === 'Not a fit' && !isClientLead(lead)) {
+        // Never auto-kill a customer on a field-visit tap. Client/anchor
+        // accounts only leave via an explicit status change.
         fields.status = 'dead';
       } else if (['new', 'called', 'emailed', 'voicemail'].includes(lead.status)) {
         fields.status = 'visited';

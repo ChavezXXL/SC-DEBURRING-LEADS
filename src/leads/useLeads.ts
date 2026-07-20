@@ -81,6 +81,12 @@ export function useLeads(tenantId: string | undefined, opts?: { skip?: boolean }
     // other tenants' docs into the cache). AuthGate is showing Login/loading.
     if (REQUIRE_AUTH && !tenantId) return;
 
+    // A super-admin switching workspaces changes tenantId — clear the previous
+    // client's rows and show the loader so their leads never linger under the
+    // newly-selected client's name/branding until the first snapshot arrives.
+    setLeads([]);
+    setLoading(true);
+
     const leadsRef = collection(db, 'leads');
     const leadsQuery = tenantId
       ? query(leadsRef, where('tenantId', '==', tenantId))
@@ -168,12 +174,17 @@ export function useLeads(tenantId: string | undefined, opts?: { skip?: boolean }
   );
 
   const markDeleted = (id: string) => {
-    const next = new Set(deletedIds);
-    next.add(id);
-    setDeletedIds(next);
-    try {
-      localStorage.setItem('sc_deleted_leads', JSON.stringify([...next]));
-    } catch {}
+    // Functional update: a bulk delete calls this in a loop, and reading the
+    // stale `deletedIds` closure each time meant only the LAST id stuck (every
+    // call rebuilt the set from the same base). Composing off `prev` fixes it.
+    setDeletedIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      try {
+        localStorage.setItem('sc_deleted_leads', JSON.stringify([...next]));
+      } catch {}
+      return next;
+    });
   };
 
   return { leads, visibleLeads, researchLeads, loading, dbError, markDeleted };
