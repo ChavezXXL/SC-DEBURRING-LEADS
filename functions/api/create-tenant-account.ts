@@ -46,7 +46,7 @@ interface Body {
   primaryColor?: string;
 }
 
-// ----- JWT signing & helpers (shared shape with workers/auto-outreach) -----
+// ----- JWT signing & helpers (service-account JWT -> Google OAuth) -----
 
 function base64urlEncode(buffer: ArrayBuffer | Uint8Array): string {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
