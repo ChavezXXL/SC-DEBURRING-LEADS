@@ -2,6 +2,7 @@ import React from 'react';
 import { Phone, PhoneCall, Mail, MailCheck, MailPlus, Copy, Globe, Search, Briefcase, ClipboardList, Send } from 'lucide-react';
 import type { Lead } from '../../types';
 import { buildGmailUrl, isWarmLead } from '../../outreach/templates';
+import { isClientLead } from '../../utils/leadActivity';
 
 interface LeadCardActionsProps {
   lead: Lead;
@@ -84,9 +85,9 @@ export const LeadCardActions: React.FC<LeadCardActionsProps> = ({ lead, cp, copy
               </button>
             )}
 
-            {lead.status === 'client' && (
+            {isClientLead(lead) && (
               <span className="inline-flex items-center self-center rounded-full bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-amber-300 ring-1 ring-amber-500/40">
-                CLIENT
+                {lead.status === 'anchor' ? 'ANCHOR' : 'CLIENT'}
               </span>
             )}
           </>

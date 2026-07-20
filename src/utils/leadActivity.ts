@@ -13,6 +13,14 @@ import type { Lead } from '../types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** True for accounts that are already customers — a standing `client` OR a
+ * top-tier `anchor` (e.g. the shop's biggest recurring account). Use this
+ * everywhere instead of `status === 'client'` so anchor accounts are counted
+ * as clients for check-ins/funnel and never treated as cold prospects. */
+export function isClientLead(lead: Pick<Lead, 'status'>): boolean {
+  return lead.status === 'client' || lead.status === 'anchor';
+}
+
 /** A local YYYY-MM-DD string for `d` (matches how reminderDate is stored). */
 export function toYmd(d: Date): string {
   const y = d.getFullYear();

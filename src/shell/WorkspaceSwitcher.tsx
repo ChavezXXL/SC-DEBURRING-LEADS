@@ -119,21 +119,16 @@ export function WorkspaceSwitcher({ workspaceId, onSelect }: Props) {
   );
 }
 
-function MenuRow({
-  active,
-  icon,
-  title,
-  sub,
-  accent,
-  onClick,
-}: {
+interface MenuRowProps {
   active: boolean;
   icon: React.ReactNode;
   title: string;
   sub: string;
   accent?: boolean;
   onClick: () => void;
-}) {
+}
+
+const MenuRow: React.FC<MenuRowProps> = ({ active, icon, title, sub, accent, onClick }) => {
   return (
     <button
       onClick={onClick}
@@ -155,4 +150,4 @@ function MenuRow({
       {active && <Check size={13} className="shrink-0 text-orange-300" />}
     </button>
   );
-}
+};

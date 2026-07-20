@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import { TrendingUp, CalendarClock, Flame, MailCheck } from 'lucide-react';
 import type { Lead } from '../types';
 import { isDueFollowUp, isHiringSignal } from '../leads/useLeadFilters';
+import { isClientLead } from '../utils/leadActivity';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -60,7 +61,7 @@ export function OverviewPanel({ leads }: OverviewPanelProps) {
     for (const l of leads) {
       if (isContacted(l)) contacted++;
       if (isEngaged(l)) engaged++;
-      if (l.status === 'client') clients++;
+      if (isClientLead(l)) clients++;
       if (contactedAtMs(l) > 0 && now - contactedAtMs(l) < 7 * DAY_MS) touchedThisWeek++;
       if (isDueFollowUp(l, now)) dueNow++;
       if (isHiringSignal(l)) hot++;

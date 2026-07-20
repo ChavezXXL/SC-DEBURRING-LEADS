@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { Lead, VisitOutcome } from '../types';
 import { getLeadScore, type LeadScore } from '../utils/leadScore';
+import { isClientLead } from '../utils/leadActivity';
 import { RouteMap, type MapPoint } from './RouteMap';
 
 const SHOP_ADDRESS = '12734 Branford St, Pacoima, CA 91331';
@@ -235,7 +236,7 @@ export function FieldRouteTab({
       .filter((lead) => {
         if (lead.status === 'dead') return false;
         // Anchor accounts ARE clients — never show them as cold prospects.
-        const isClient = lead.status === 'client' || lead.status === 'anchor';
+        const isClient = isClientLead(lead);
         if (viewMode === 'prospects' && isClient) return false;
         if (viewMode === 'clients' && !isClient) return false;
         if (area !== 'All Regions' && lead.r !== area) return false;

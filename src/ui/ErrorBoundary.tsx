@@ -1,4 +1,4 @@
-import React, { Component, ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -12,7 +12,10 @@ interface State {
  * branded dark recovery screen instead of a blank white page — one tap reloads.
  * The error itself still hits the console for debugging.
  */
-export class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends React.Component<Props, State> {
+  // Ambient re-declares so the subclass sees the base instance members even
+  // when a duplicate @types/react in the tree keeps them from flowing through.
+  declare props: Readonly<Props>;
   state: State = { error: null };
 
   static getDerivedStateFromError(error: Error): State {

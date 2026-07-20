@@ -136,7 +136,7 @@ export function useLeadFilters(
       if (dueFollowUp && !isDueFollowUp(l, now)) return false;
       if (hiringOnly && !isHiringSignal(l)) return false;
       if (stF === 'active') {
-        if (['new', 'dead', 'client'].includes(l.status)) return false;
+        if (['new', 'dead', 'client', 'anchor'].includes(l.status)) return false;
       } else if (stF !== 'all' && l.status !== stF) {
         return false;
       }

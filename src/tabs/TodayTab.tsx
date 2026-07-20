@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Phone, PhoneCall, MailCheck, MailPlus, MessagesSquare, CalendarClock } from 'lucide-react';
 import type { Lead } from '../types';
 import { isDueFollowUp, isHiringSignal } from '../leads/useLeadFilters';
-import { isReminderDue, parseStampDate, relativeDay, absoluteDate, reminderState } from '../utils/leadActivity';
+import { isReminderDue, isClientLead, parseStampDate, relativeDay, absoluteDate, reminderState } from '../utils/leadActivity';
 import { buildGmailUrl } from '../outreach/templates';
 import { OverviewPanel } from './OverviewPanel';
 import { compareLeadScore, getLeadScore } from '../utils/leadScore';
@@ -59,12 +59,12 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
         fresh: leads.filter((l) => l.status === 'new').length,
         emailed: leads.filter((l) => l.status === 'emailed').length,
         warm: leads.filter((l) => l.status === 'interested' || l.status === 'quote').length,
-        clients: leads.filter((l) => l.status === 'client').length,
+        clients: leads.filter(isClientLead).length,
         bumpsDue: leads.filter((l) => isDueFollowUp(l)).length,
         scheduledDue: leads.filter((l) => isReminderDue(l)).length,
       },
       topOpportunities: leads
-        .filter((l) => !['client', 'dead'].includes(l.status))
+        .filter((l) => !isClientLead(l) && l.status !== 'dead')
         .sort(compareLeadScore)
         .slice(0, 5),
       // Manually-scheduled follow-ups that have come due (reminderDate <= today).
@@ -80,7 +80,7 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
         )
         .sort(tierFirst),
       checkIns: leads
-        .filter((l) => l.status === 'client')
+        .filter(isClientLead)
         .sort((a, b) => contactedAtMs(a) - contactedAtMs(b))
         .slice(0, 2),
       bumps: leads

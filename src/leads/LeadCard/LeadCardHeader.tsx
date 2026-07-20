@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, User, MapPin, CalendarClock } from 'lucide-reac
 import type { Lead } from '../../types';
 import { STATUS } from '../../data';
 import { isHiringSignal } from '../useLeadFilters';
-import { parseStampDate, relativeDay, absoluteDate, reminderState } from '../../utils/leadActivity';
+import { parseStampDate, relativeDay, absoluteDate, reminderState, isClientLead } from '../../utils/leadActivity';
 import { getLeadScore } from '../../utils/leadScore';
 
 interface LeadCardHeaderProps {
@@ -14,7 +14,7 @@ interface LeadCardHeaderProps {
 
 export const LeadCardHeader: React.FC<LeadCardHeaderProps> = ({ lead, isOpen, setOpenId }) => {
   const st = STATUS.find((s) => s.k === lead.status) || STATUS[0];
-  const isClient = lead.status === 'client';
+  const isClient = isClientLead(lead);
   const hasPM = !!lead.pm;
   const opportunity = getLeadScore(lead);
 

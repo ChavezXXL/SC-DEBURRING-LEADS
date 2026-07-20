@@ -16,6 +16,7 @@ import {
 import type { Lead, TabKey, Tenant, UserProfile } from '../types';
 import { FancyLogo } from './FancyLogo';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
+import { isClientLead } from '../utils/leadActivity';
 
 interface SidebarProps {
   mobileMenuOpen: boolean;
@@ -68,9 +69,9 @@ export function Sidebar({
     total: leads.length,
     t1: leads.filter((l) => l.t === 1).length,
     withPM: leads.filter((l) => !!l.pm).length,
-    active: leads.filter((l) => !['new', 'dead', 'client'].includes(l.status)).length,
+    active: leads.filter((l) => !['new', 'dead'].includes(l.status) && !isClientLead(l)).length,
     warm: leads.filter((l) => l.status === 'interested' || l.status === 'quote').length,
-    clients: leads.filter((l) => l.status === 'client').length,
+    clients: leads.filter(isClientLead).length,
   };
 
   const navItem = (
