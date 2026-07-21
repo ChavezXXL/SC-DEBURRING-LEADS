@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
 
 export type Coords = [number, number];
 
@@ -42,9 +44,8 @@ function esc(value: string): string {
   );
 }
 
-/** Group non-exact points that share a rounded coordinate and fan them out on a
- * small ring, so a dozen leads pinned to the same city centroid don't stack into
- * one unclickable blob. Verified (exact) coordinates are left exactly where they are. */
+/** Fan route stops that share a city centroid onto a small ring so the numbered
+ * pins don't stack. (Companies don't need this — they cluster instead.) */
 function spreadCoords(all: MapPoint[]): Map<string, Coords> {
   const out = new Map<string, Coords>();
   const groups = new Map<string, MapPoint[]>();
@@ -65,7 +66,6 @@ function spreadCoords(all: MapPoint[]): Map<string, Coords> {
       out.set(bucket[0].id, bucket[0].coords);
       continue;
     }
-    // Deterministic fan-out: rings of 8, radius grows per ring (~0.45km steps).
     bucket.forEach((p, i) => {
       const ring = Math.floor(i / 8);
       const radius = 0.004 + ring * 0.004;
@@ -114,15 +114,31 @@ function shopIcon(): L.DivIcon {
   });
 }
 
+/** Cluster badge — a dark, orange count matching the app (no default blue). */
+function clusterIcon(count: number): L.DivIcon {
+  const size = count < 10 ? 34 : count < 30 ? 40 : 46;
+  const inner = size - 10;
+  return L.divIcon({
+    className: '',
+    html: `<div style="display:grid;place-items:center;width:${size}px;height:${size}px;border-radius:9999px;background:rgba(249,115,22,.20);border:1.5px solid ${ORANGE};box-shadow:0 1px 7px rgba(0,0,0,.55)">
+      <span style="display:grid;place-items:center;width:${inner}px;height:${inner}px;border-radius:9999px;background:${ORANGE};color:${INK};font:700 ${count < 100 ? 13 : 11}px/1 ui-sans-serif,system-ui,sans-serif">${count}</span>
+    </div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
 /**
  * RouteMap — an interactive Leaflet map rendered inside the CRM (no Google embed,
- * no paid API). Free CARTO dark tiles matched to the app's graphite theme. Shows
- * the shop, every company in view, and the ordered route drawn as a numbered line.
+ * no paid API). Free CARTO dark tiles matched to the app's graphite theme.
+ * Companies cluster by area (tap a badge to fan them out); the shop and the
+ * numbered route stops stay as always-visible pins with the route line.
  */
 export function RouteMap({ shop, points, route, selectedId, onSelect, className }: RouteMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
+  const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const fitSigRef = useRef<string>('');
   const selRef = useRef<string | null>(null);
   const onSelectRef = useRef(onSelect);
@@ -143,6 +159,14 @@ export function RouteMap({ shop, points, route, selectedId, onSelect, className 
       attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     }).addTo(map);
     layerRef.current = L.layerGroup().addTo(map);
+    clusterRef.current = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: true,
+      maxClusterRadius: 55,
+      chunkedLoading: true,
+      iconCreateFunction: (cluster) => clusterIcon(cluster.getChildCount()),
+    });
+    map.addLayer(clusterRef.current);
     mapRef.current = map;
     // The tab animates in; recompute size once layout settles, then keep the map
     // sized to any later container change (sidebar toggle, responsive reflow) —
@@ -156,8 +180,7 @@ export function RouteMap({ shop, points, route, selectedId, onSelect, className 
       map.remove();
       mapRef.current = null;
       layerRef.current = null;
-      // Reset derived-view refs so a re-created map (StrictMode remount) re-fits
-      // instead of reusing this instance's stale signature.
+      clusterRef.current = null;
       fitSigRef.current = '';
       selRef.current = null;
     };
@@ -168,8 +191,10 @@ export function RouteMap({ shop, points, route, selectedId, onSelect, className 
   useEffect(() => {
     const map = mapRef.current;
     const layer = layerRef.current;
-    if (!map || !layer) return;
+    const cluster = clusterRef.current;
+    if (!map || !layer || !cluster) return;
     layer.clearLayers();
+    cluster.clearLayers();
 
     const routeIndex = new Map<string, number>();
     route.forEach((r, i) => routeIndex.set(r.id, r.stopNo ?? i + 1));
@@ -180,27 +205,41 @@ export function RouteMap({ shop, points, route, selectedId, onSelect, className 
     for (const r of route) byId.set(r.id, r);
     const merged = [...byId.values()];
 
-    const display = spreadCoords(merged);
+    // Route stops get fanned so same-city numbers don't stack; companies sit on
+    // the raw centroid so the cluster groups everything in a city into one badge.
+    const routeDisplay = spreadCoords(route);
+    const bounds: Coords[] = [shop.coords];
 
+    const tip = (p: MapPoint) =>
+      `<span style="font-weight:600">${esc(p.label)}</span>${p.city ? `<br><span style="opacity:.7">${esc(p.city)}</span>` : ''}`;
+
+    const companyMarkers: L.Marker[] = [];
     for (const p of merged) {
-      const coords = display.get(p.id) ?? p.coords;
       const selected = p.id === selectedId;
       const stopNo = routeIndex.get(p.id);
-      const icon = stopNo
-        ? numberIcon(stopNo, selected)
-        : dotIcon(p.tier === 2 ? BLUE : ORANGE, selected);
-      const marker = L.marker(coords, { icon, zIndexOffset: stopNo ? 1000 : selected ? 500 : 0 });
-      marker.bindTooltip(
-        `<span style="font-weight:600">${esc(p.label)}</span>${p.city ? `<br><span style="opacity:.7">${esc(p.city)}</span>` : ''}`,
-        { direction: 'top', offset: [0, -12], opacity: 0.95 },
-      );
-      marker.on('click', () => onSelectRef.current(p.id));
-      marker.addTo(layer);
+      if (stopNo) {
+        const coords = routeDisplay.get(p.id) ?? p.coords;
+        bounds.push(coords);
+        const m = L.marker(coords, { icon: numberIcon(stopNo, selected), zIndexOffset: 1000 });
+        m.bindTooltip(tip(p), { direction: 'top', offset: [0, -12], opacity: 0.95 });
+        m.on('click', () => onSelectRef.current(p.id));
+        m.addTo(layer);
+      } else {
+        bounds.push(p.coords);
+        const m = L.marker(p.coords, {
+          icon: dotIcon(p.tier === 2 ? BLUE : ORANGE, selected),
+          zIndexOffset: selected ? 500 : 0,
+        });
+        m.bindTooltip(tip(p), { direction: 'top', offset: [0, -12], opacity: 0.95 });
+        m.on('click', () => onSelectRef.current(p.id));
+        companyMarkers.push(m);
+      }
     }
+    cluster.addLayers(companyMarkers);
 
     // Route line: shop -> each stop, in order.
     if (route.length) {
-      const line: Coords[] = [shop.coords, ...route.map((r) => display.get(r.id) ?? r.coords)];
+      const line: Coords[] = [shop.coords, ...route.map((r) => routeDisplay.get(r.id) ?? r.coords)];
       L.polyline(line, {
         color: ORANGE,
         weight: 3,
@@ -211,7 +250,7 @@ export function RouteMap({ shop, points, route, selectedId, onSelect, className 
       }).addTo(layer);
     }
 
-    // Shop marker last so it sits on top.
+    // Shop marker on the always-visible layer, on top.
     L.marker(shop.coords, { icon: shopIcon(), zIndexOffset: 2000 })
       .bindTooltip(`<span style="font-weight:600">${esc(shop.label)}</span><br><span style="opacity:.7">Start</span>`, {
         direction: 'top',
@@ -220,24 +259,16 @@ export function RouteMap({ shop, points, route, selectedId, onSelect, className 
       })
       .addTo(layer);
 
-    // Fit bounds only when the set of pins/route actually changes (not on mere
-    // selection), so clicking a company doesn't jump the whole map around.
-    // Signature = the SET of pins (order-independent). Route stops already live in
-    // `merged`, so a pure stop reorder keeps the same signature and won't refit —
-    // which means it won't throw away a zoom/pan the user set by hand.
+    // Fit bounds only when the SET of pins/route changes (order-independent), so
+    // clicking a company or reordering stops doesn't throw away a hand-set zoom.
     const sig = merged.map((p) => p.id).sort().join(',');
     if (sig !== fitSigRef.current) {
       fitSigRef.current = sig;
-      const latlngs: Coords[] = [shop.coords, ...merged.map((p) => display.get(p.id) ?? p.coords)];
-      if (latlngs.length > 1) {
-        map.fitBounds(L.latLngBounds(latlngs.map((c) => L.latLng(c[0], c[1]))).pad(0.18));
+      if (bounds.length > 1) {
+        map.fitBounds(L.latLngBounds(bounds.map((c) => L.latLng(c[0], c[1]))).pad(0.18));
       } else {
         map.setView(shop.coords, 11);
       }
-    } else if (selectedId && selectedId !== selRef.current) {
-      // Selection changed from the list — nudge the pin into view if it's off-screen.
-      const c = display.get(selectedId);
-      if (c) map.panInside(L.latLng(c[0], c[1]), { padding: [48, 48] });
     }
     selRef.current = selectedId;
   }, [points, route, selectedId, shop]);
