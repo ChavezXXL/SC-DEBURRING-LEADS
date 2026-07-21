@@ -82,6 +82,52 @@ const CITY_COORDS: Record<string, Coords> = {
   torrance: [33.8358, -118.3406],
   valencia: [34.4568, -118.5759],
   'van nuys': [34.1899, -118.4514],
+  // Wider SoCal coverage — these cities appear in the CRM but were dropping off
+  // the map (no pin) because they weren't listed. Inland Empire, San Diego,
+  // Ventura county, and the LA/OC gaps.
+  'agoura hills': [34.1533, -118.7615],
+  azusa: [34.1336, -117.9076],
+  bakersfield: [35.3733, -119.0187],
+  'buena park': [33.8675, -117.9981],
+  carlsbad: [33.1581, -117.3506],
+  carson: [33.8317, -118.282],
+  chino: [34.0122, -117.6889],
+  'chino hills': [33.9898, -117.7326],
+  'city of industry': [34.0197, -117.9587],
+  corona: [33.8753, -117.5664],
+  covina: [34.09, -117.8903],
+  'el cajon': [32.7948, -116.9625],
+  escondido: [33.1192, -117.0864],
+  fontana: [34.0922, -117.435],
+  'garden grove': [33.7739, -117.9414],
+  glendora: [34.1361, -117.8653],
+  goleta: [34.4358, -119.8276],
+  'harbor city': [33.7906, -118.2967],
+  'huntington beach': [33.6595, -117.9988],
+  irwindale: [34.107, -117.9351],
+  'la mirada': [33.9172, -118.012],
+  'los angeles': [34.0522, -118.2437],
+  'moreno valley': [33.9425, -117.2297],
+  murrieta: [33.5539, -117.2139],
+  'national city': [32.6781, -117.0992],
+  'newbury park': [34.1836, -118.9137],
+  oceanside: [33.1959, -117.3795],
+  ontario: [34.0633, -117.6509],
+  orange: [33.7879, -117.8531],
+  pasadena: [34.1478, -118.1445],
+  pomona: [34.0551, -117.7523],
+  poway: [32.9628, -117.0359],
+  'rancho cucamonga': [34.1064, -117.5931],
+  riverside: [33.9806, -117.3755],
+  'san bernardino': [34.1083, -117.2898],
+  'san diego': [32.7157, -117.1611],
+  'san marcos': [33.1434, -117.1661],
+  'santa barbara': [34.4208, -119.6982],
+  temecula: [33.4936, -117.1484],
+  tustin: [33.7458, -117.8261],
+  ventura: [34.2746, -119.229],
+  vista: [33.2, -117.2425],
+  whittier: [33.9792, -118.0328],
 };
 
 const REGION_COORDS: Record<string, Coords> = {
@@ -101,6 +147,24 @@ const REGION_COORDS: Record<string, Coords> = {
   'Antelope Valley': [34.63, -118.135],
   'Orange County': [33.72, -117.84],
   'Los Angeles Central': [34.0522, -118.2437],
+  'Inland Empire': [34.05, -117.5],
+  'San Diego': [32.7157, -117.1611],
+  'Santa Barbara': [34.4208, -119.6982],
+  'South Bay': [33.87, -118.33],
+};
+
+/** Region strings vary in the CRM (abbreviations, casing). Map the common
+ * variants onto a canonical REGION_COORDS key so a lead still gets a pin. */
+const REGION_ALIAS: Record<string, string> = {
+  IE: 'Inland Empire',
+  'Inland empire': 'Inland Empire',
+  SD: 'San Diego',
+  'San diego': 'San Diego',
+  LA: 'Los Angeles Central',
+  'Los Angeles': 'Los Angeles Central',
+  SoCal: 'Los Angeles Central',
+  OC: 'Orange County',
+  SGV: 'San Gabriel Valley / Chino',
 };
 
 function normalizeCity(city: string): string {
@@ -114,7 +178,10 @@ function coordsForLead(lead: Lead): Coords | null {
   if (typeof lead.lat === 'number' && typeof lead.lng === 'number') {
     return [lead.lat, lead.lng];
   }
-  return CITY_COORDS[normalizeCity(lead.city)] ?? REGION_COORDS[lead.r] ?? null;
+  const cityHit = CITY_COORDS[normalizeCity(lead.city)];
+  if (cityHit) return cityHit;
+  const region = REGION_COORDS[lead.r] ?? REGION_COORDS[REGION_ALIAS[lead.r] ?? ''];
+  return region ?? null;
 }
 
 function milesBetween(a: Coords, b: Coords): number {
@@ -585,7 +652,16 @@ export function FieldRouteTab({
                 <span className="grid h-4 w-4 place-items-center rounded-full bg-orange-500 text-[8px] font-bold text-black">1</span>
                 Route stop
               </span>
-              <span className="ml-auto text-slate-600">Tap a pin to preview · scroll to zoom is off, use the map buttons</span>
+              {filtered.length - mapPoints.length > 0 ? (
+                <span
+                  className="ml-auto inline-flex items-center gap-1.5 text-amber-400/90"
+                  title="These companies have no recognizable city or street address yet. Open one and add its city or address to drop it on the map."
+                >
+                  <MapPin size={11} /> {filtered.length - mapPoints.length} not on map — add a city/address
+                </span>
+              ) : (
+                <span className="ml-auto text-slate-600">Tap a pin to preview · scroll to zoom off</span>
+              )}
             </div>
           </div>
 
