@@ -18,6 +18,9 @@ export function OutreachTab() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('s3');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
+  // Once the user hand-edits Subject/Body, stop auto-refilling from the template
+  // (it was overwriting their edits on every recipient-field keystroke).
+  const [composerEdited, setComposerEdited] = useState(false);
 
   const copy = async (id: string, text: string) => {
     try {
@@ -43,14 +46,18 @@ export function OutreachTab() {
     [emailScripts, selectedTemplateId]
   );
 
+  // Choosing a different template is explicit intent to start fresh from it.
+  useEffect(() => setComposerEdited(false), [selectedTemplateId]);
+
   useEffect(() => {
-    if (!selectedTemplate) return;
+    if (!selectedTemplate || composerEdited) return;
     const filled = applyTokens(selectedTemplate.body);
     const lines = filled.split('\n');
     const hasSubject = lines[0]?.toLowerCase().startsWith('subject:');
     setEmailSubject(hasSubject ? lines[0].replace(/^subject:\s*/i, '') : `Deburring support for ${companyName || 'your company'}`);
     setEmailBody(hasSubject ? lines.slice(2).join('\n') : filled);
-  }, [selectedTemplateId, contactName, companyName, partsType]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTemplateId, contactName, companyName, partsType, composerEdited]);
 
   const gmailUrl = useMemo(() => {
     if (!emailTo.trim()) return '#';
@@ -209,7 +216,10 @@ export function OutreachTab() {
                 <label className="mb-1 block text-[11px] font-semibold text-slate-400">Subject</label>
                 <input
                   value={emailSubject}
-                  onChange={(e) => setEmailSubject(e.target.value)}
+                  onChange={(e) => {
+                    setEmailSubject(e.target.value);
+                    setComposerEdited(true);
+                  }}
                   className="w-full rounded-lg border border-white/10 bg-apex-800 px-3 py-2 text-sm text-slate-100 transition focus:border-apex-accent/60 focus:outline-none focus:ring-1 focus:ring-apex-accent/50"
                 />
               </div>
@@ -217,7 +227,10 @@ export function OutreachTab() {
                 <label className="mb-1 block text-[11px] font-semibold text-slate-400">Body</label>
                 <textarea
                   value={emailBody}
-                  onChange={(e) => setEmailBody(e.target.value)}
+                  onChange={(e) => {
+                    setEmailBody(e.target.value);
+                    setComposerEdited(true);
+                  }}
                   rows={10}
                   className="w-full rounded-lg border border-white/10 bg-apex-800 px-3 py-2 font-mono text-xs leading-relaxed text-slate-200 transition focus:border-apex-accent/60 focus:outline-none focus:ring-1 focus:ring-apex-accent/50"
                 />

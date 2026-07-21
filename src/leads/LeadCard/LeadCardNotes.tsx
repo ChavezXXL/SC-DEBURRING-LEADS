@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { FileText } from 'lucide-react';
 import type { Lead } from '../../types';
 import { renderMarkdown } from '../../utils/markdown';
@@ -9,7 +9,7 @@ interface LeadCardNotesProps {
   setEditId: (id: string | null) => void;
   draft: string;
   setDraft: (draft: string) => void;
-  saveNote: (id: string, notes: string) => void;
+  saveNote: (id: string, notes: string, baseline?: string) => void;
 }
 
 export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
@@ -20,6 +20,14 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
   setDraft,
   saveNote,
 }) => {
+  // The notes value the editor was seeded from — lets saveNote tell which
+  // activity stamps landed after editing started (so it won't clobber them).
+  const baselineRef = useRef('');
+  const beginEdit = () => {
+    baselineRef.current = lead.notes || '';
+    setEditId(lead.id);
+    setDraft(lead.notes || '');
+  };
   return (
     <div className="mb-4">
       <div className="mb-2 flex items-center justify-between">
@@ -29,10 +37,7 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
         </div>
         {lead.notes && editId !== lead.id && (
           <button
-            onClick={() => {
-              setEditId(lead.id);
-              setDraft(lead.notes || '');
-            }}
+            onClick={beginEdit}
             className="rounded px-2 py-0.5 text-[10px] font-mono text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
           >
             Edit
@@ -51,7 +56,7 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
           />
           <div className="flex gap-2">
             <button
-              onClick={() => saveNote(lead.id, draft)}
+              onClick={() => saveNote(lead.id, draft, baselineRef.current)}
               className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-500/20"
             >
               Save
@@ -67,10 +72,7 @@ export const LeadCardNotes: React.FC<LeadCardNotesProps> = ({
       ) : (
         <div
           onClick={() => {
-            if (!lead.notes) {
-              setEditId(lead.id);
-              setDraft(lead.notes || '');
-            }
+            if (!lead.notes) beginEdit();
           }}
           className={`min-h-[44px] rounded-lg border border-white/10 bg-apex-800 p-4 text-xs leading-relaxed transition-colors ${
             lead.notes

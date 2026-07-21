@@ -320,27 +320,40 @@ export default function App() {
   }, [crud, openId, toast]);
 
   // ---- toast-wrapped write actions ----------------------------------------
-  // Firestore latency compensation updates the snapshot instantly, so the
-  // toast fires immediately (before the network round-trip) and the UI never
-  // feels like it's waiting. Errors still surface through crud.appError.
+  // The lead updates instantly via Firestore latency compensation regardless, so
+  // the toast waits for the write to actually succeed — a failed write should not
+  // flash a green "success" toast next to crud.appError's red banner.
 
-  const handleMarkEmailed = useCallback((lead: Lead) => {
-    toast(`Marked emailed — ${lead.co}`);
-    return crud.markEmailed(lead);
-  }, [crud, toast]);
-
-  const handleLogCall = useCallback((lead: Lead) => {
-    toast(`Call logged — ${lead.co}`);
-    return crud.logCall(lead);
-  }, [crud, toast]);
-
-  const handleSetStatus = useCallback((id: string, st: LeadStatus) => {
-    const lead = visibleLeads.find((l) => l.id === id);
-    if (!lead || lead.status !== st) {
-      const label = STATUS.find((s) => s.k === st)?.label ?? st;
-      toast(`Moved to ${label}`);
+  const handleMarkEmailed = useCallback(async (lead: Lead) => {
+    try {
+      await crud.markEmailed(lead);
+      toast(`Marked emailed — ${lead.co}`);
+    } catch {
+      /* crud.appError already surfaces the failure */
     }
-    return crud.setStatus(id, st);
+  }, [crud, toast]);
+
+  const handleLogCall = useCallback(async (lead: Lead) => {
+    try {
+      await crud.logCall(lead);
+      toast(`Call logged — ${lead.co}`);
+    } catch {
+      /* crud.appError already surfaces the failure */
+    }
+  }, [crud, toast]);
+
+  const handleSetStatus = useCallback(async (id: string, st: LeadStatus) => {
+    const lead = visibleLeads.find((l) => l.id === id);
+    const changed = !lead || lead.status !== st;
+    try {
+      await crud.setStatus(id, st);
+      if (changed) {
+        const label = STATUS.find((s) => s.k === st)?.label ?? st;
+        toast(`Moved to ${label}`);
+      }
+    } catch {
+      /* crud.appError already surfaces the failure */
+    }
   }, [crud, toast, visibleLeads]);
 
   // ---- bulk actions --------------------------------------------------------

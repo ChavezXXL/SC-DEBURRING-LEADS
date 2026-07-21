@@ -3,7 +3,8 @@ import {
   deleteDoc,
   deleteField,
   doc,
-  getDoc,
+  increment,
+  runTransaction,
   setDoc,
   writeBatch,
 } from 'firebase/firestore';
@@ -47,7 +48,8 @@ function markEmailedFields(lead: Lead): Partial<Lead> {
   const stamp = `[${today}] Emailed (marked from app).`;
   const fields: Partial<Lead> = {
     lastContactedAt: new Date().toISOString(),
-    touchCount: (lead.touchCount || 0) + 1,
+    // Atomic server-side increment so two fast taps can't lose a touch.
+    touchCount: increment(1) as unknown as number,
     notes: lead.notes ? `${lead.notes}\n${stamp}` : stamp,
   };
   if (['new', 'called', 'voicemail'].includes(lead.status)) {
@@ -63,7 +65,7 @@ function logCallFields(lead: Lead): Partial<Lead> {
   const stamp = `[${today}] Called (logged from app).`;
   const fields: Partial<Lead> = {
     lastContactedAt: new Date().toISOString(),
-    touchCount: (lead.touchCount || 0) + 1,
+    touchCount: increment(1) as unknown as number,
     notes: lead.notes ? `${lead.notes}\n${stamp}` : stamp,
   };
   if (lead.status === 'new') {
@@ -210,21 +212,31 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
     }
   };
 
-  const saveNote = async (id: string, notes: string) => {
+  /** Save the free-form note. `baseline` = the notes the editor was seeded from,
+   * so we can tell which server stamps landed AFTER editing started. */
+  const saveNote = async (id: string, notes: string, baseline?: string) => {
+    const ref = doc(db, 'leads', id);
     try {
-      const ref = doc(db, 'leads', id);
-      // The editor seeds its draft from a snapshot of `notes` and never resyncs.
-      // Meanwhile call/email/status/reminder/value/visit writes all APPEND dated
-      // stamps to the same `notes` field. Blindly writing the draft would erase
-      // any stamp that landed while the editor was open. So re-attach any
-      // server-side stamp lines the draft doesn't already contain.
-      const snap = await getDoc(ref);
-      const serverNotes: string = (snap.exists() ? (snap.data() as any).notes : '') || '';
-      const missingStamps = serverNotes
-        .split('\n')
-        .filter((line) => STAMP_LINE_RE.test(line) && !notes.includes(line.trim()));
-      const merged = missingStamps.length ? `${notes}\n${missingStamps.join('\n')}` : notes;
-      await setDoc(ref, { notes: merged }, { merge: true });
+      // Transaction so the read + write are atomic — a stamp appended by a
+      // concurrent call/email/status write can't slip in between and get
+      // clobbered (the old getDoc-then-setDoc had a small lost-update window).
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        const serverNotes: string = (snap.exists() ? (snap.data() as { notes?: string }).notes : '') || '';
+        // Re-attach dated activity stamps that appeared AFTER the editor opened
+        // (on the server but not in the baseline) and aren't already in the draft.
+        // Comparing to the baseline — not the draft — means a stamp the user
+        // intentionally edited or deleted is NOT resurrected.
+        const base = baseline ?? notes;
+        const missing = serverNotes
+          .split('\n')
+          .filter(
+            (line) =>
+              STAMP_LINE_RE.test(line) && !base.includes(line.trim()) && !notes.includes(line.trim()),
+          );
+        const merged = missing.length ? `${notes}\n${missing.join('\n')}` : notes;
+        tx.set(ref, { notes: merged }, { merge: true });
+      });
       flashSaved();
     } catch (e: any) {
       surface(e, OperationType.UPDATE, `leads/${id}`);
@@ -329,7 +341,7 @@ export function useLeadCrud({ leads, tenantId, markDeleted }: UseLeadCrudArgs) {
         lastVisitedAt: now.toISOString(),
         lastVisitOutcome: outcome,
         lastContactedAt: now.toISOString(),
-        touchCount: (lead.touchCount || 0) + 1,
+        touchCount: increment(1) as unknown as number,
         notes: lead.notes ? `${lead.notes}\n${stamp}` : stamp,
       };
 

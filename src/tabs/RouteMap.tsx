@@ -143,6 +143,13 @@ export function RouteMap({ shop, points, route, selectedId, onSelect, className 
   const selRef = useRef<string | null>(null);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
+  // Markers by lead id so selection can restyle/pan WITHOUT tearing down and
+  // re-clustering the whole set (which flickered and collapsed spiderfied groups).
+  const markersRef = useRef<
+    Map<string, { marker: L.Marker; makeIcon: (sel: boolean) => L.DivIcon }>
+  >(new Map());
+  const selectedIdRef = useRef<string | null>(selectedId);
+  selectedIdRef.current = selectedId;
 
   // Init once. Cleanup fully so React 19 StrictMode's double-mount re-inits clean.
   useEffect(() => {
@@ -187,7 +194,9 @@ export function RouteMap({ shop, points, route, selectedId, onSelect, className 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Rebuild markers + route line whenever the data or selection changes.
+  // Build markers + route line when the DATA changes (not on selection). Splitting
+  // selection out avoids clearing/re-clustering every marker on each click (which
+  // flickered, collapsed spiderfied clusters, and could ghost markers mid-chunk).
   useEffect(() => {
     const map = mapRef.current;
     const layer = layerRef.current;
@@ -195,6 +204,7 @@ export function RouteMap({ shop, points, route, selectedId, onSelect, className 
     if (!map || !layer || !cluster) return;
     layer.clearLayers();
     cluster.clearLayers();
+    markersRef.current.clear();
 
     const routeIndex = new Map<string, number>();
     route.forEach((r, i) => routeIndex.set(r.id, r.stopNo ?? i + 1));
@@ -209,30 +219,32 @@ export function RouteMap({ shop, points, route, selectedId, onSelect, className 
     // the raw centroid so the cluster groups everything in a city into one badge.
     const routeDisplay = spreadCoords(route);
     const bounds: Coords[] = [shop.coords];
+    const sel = selectedIdRef.current;
 
     const tip = (p: MapPoint) =>
       `<span style="font-weight:600">${esc(p.label)}</span>${p.city ? `<br><span style="opacity:.7">${esc(p.city)}</span>` : ''}`;
 
     const companyMarkers: L.Marker[] = [];
     for (const p of merged) {
-      const selected = p.id === selectedId;
       const stopNo = routeIndex.get(p.id);
       if (stopNo) {
         const coords = routeDisplay.get(p.id) ?? p.coords;
         bounds.push(coords);
-        const m = L.marker(coords, { icon: numberIcon(stopNo, selected), zIndexOffset: 1000 });
+        const makeIcon = (s: boolean) => numberIcon(stopNo, s);
+        const m = L.marker(coords, { icon: makeIcon(p.id === sel), zIndexOffset: 1000 });
         m.bindTooltip(tip(p), { direction: 'top', offset: [0, -12], opacity: 0.95 });
         m.on('click', () => onSelectRef.current(p.id));
         m.addTo(layer);
+        markersRef.current.set(p.id, { marker: m, makeIcon });
       } else {
         bounds.push(p.coords);
-        const m = L.marker(p.coords, {
-          icon: dotIcon(p.tier === 2 ? BLUE : ORANGE, selected),
-          zIndexOffset: selected ? 500 : 0,
-        });
+        const color = p.tier === 2 ? BLUE : ORANGE;
+        const makeIcon = (s: boolean) => dotIcon(color, s);
+        const m = L.marker(p.coords, { icon: makeIcon(p.id === sel), zIndexOffset: p.id === sel ? 500 : 0 });
         m.bindTooltip(tip(p), { direction: 'top', offset: [0, -12], opacity: 0.95 });
         m.on('click', () => onSelectRef.current(p.id));
         companyMarkers.push(m);
+        markersRef.current.set(p.id, { marker: m, makeIcon });
       }
     }
     cluster.addLayers(companyMarkers);
@@ -270,8 +282,30 @@ export function RouteMap({ shop, points, route, selectedId, onSelect, className 
         map.setView(shop.coords, 11);
       }
     }
+  }, [points, route, shop]);
+
+  // Selection: just restyle the affected markers and nudge the selected one into
+  // view — no rebuild. On a genuine change (not initial mount) pan so a company
+  // picked from the list gives map feedback even if it's off-screen.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const prev = selRef.current;
+    if (prev && prev !== selectedId) {
+      const e = markersRef.current.get(prev);
+      if (e) e.marker.setIcon(e.makeIcon(false));
+    }
+    if (selectedId) {
+      const e = markersRef.current.get(selectedId);
+      if (e) {
+        e.marker.setIcon(e.makeIcon(true));
+        if (prev && prev !== selectedId) {
+          map.panInside(e.marker.getLatLng(), { padding: [48, 48] });
+        }
+      }
+    }
     selRef.current = selectedId;
-  }, [points, route, selectedId, shop]);
+  }, [selectedId]);
 
   return (
     <div

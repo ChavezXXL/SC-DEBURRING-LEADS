@@ -332,15 +332,17 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <a
-                    href={threadSearchUrl(lead.em)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-300 transition-colors hover:bg-violet-500/20"
-                    title="Find the existing Gmail thread and reply there"
-                  >
-                    <MessagesSquare size={14} /> Open thread
-                  </a>
+                  {lead.em?.trim() && (
+                    <a
+                      href={threadSearchUrl(lead.em)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-violet-500/20 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-300 transition-colors hover:bg-violet-500/20"
+                      title="Find the existing Gmail thread and reply there"
+                    >
+                      <MessagesSquare size={14} /> Open thread
+                    </a>
+                  )}
                   <MarkEmailedButton lead={lead} markEmailed={markEmailed} title="Log the bump after you send it" />
                 </div>
               </div>

@@ -64,7 +64,9 @@ export function OverviewPanel({ leads }: OverviewPanelProps) {
       if (isClientLead(l)) clients++;
       if (contactedAtMs(l) > 0 && now - contactedAtMs(l) < 7 * DAY_MS) touchedThisWeek++;
       if (isDueFollowUp(l, now)) dueNow++;
-      if (isHiringSignal(l)) hot++;
+      // Count only hot shops that are still callable (new/called), matching the
+      // Today "Calls to make" list — otherwise the headline number overstated it.
+      if (isHiringSignal(l) && (l.status === 'new' || l.status === 'called')) hot++;
     }
 
     // Conversion rates — guard divide-by-zero; null renders as "—".
@@ -198,7 +200,7 @@ export function OverviewPanel({ leads }: OverviewPanelProps) {
           />
           <MiniStat
             icon={<CalendarClock size={14} />}
-            label="Follow-ups due"
+            label="Bumps due"
             value={o.dueNow}
             tone="violet"
             active={o.dueNow > 0}
