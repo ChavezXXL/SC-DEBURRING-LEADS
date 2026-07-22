@@ -43,7 +43,12 @@ async function main() {
   const db = getFirestore();
   const snap = await db.collection('leads').where('tenantId', '==', 'sc-deburring').get();
   const raw = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as any[];
-  let leads = raw.filter((l) => !CLIENTISH.has(l.status) && !(typeof l.lat === 'number' && typeof l.lng === 'number') && (l.co || l.address));
+  // ONLY leads with a real street address. Geocoding by company name was proven
+  // useless (0/15) — small shops aren't in OpenStreetMap — so name-only lookups
+  // just burn rate-limited requests for nothing.
+  let leads = raw.filter(
+    (l) => !CLIENTISH.has(l.status) && !(typeof l.lat === 'number' && typeof l.lng === 'number') && l.address?.trim(),
+  );
   if (!all) leads = leads.slice(0, 15);
 
   console.log(`MODE: ${commit ? 'COMMIT (writing lat/lng)' : 'DRY-RUN (no writes)'} | candidates: ${leads.length}\n`);
