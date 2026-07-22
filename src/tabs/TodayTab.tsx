@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { Phone, PhoneCall, MailCheck, MailPlus, MessagesSquare, CalendarClock } from 'lucide-react';
+import { Phone, PhoneCall, MailCheck, MailPlus, MessagesSquare, CalendarClock, Target, Check } from 'lucide-react';
 import type { Lead } from '../types';
 import { isDueFollowUp, isHiringSignal } from '../leads/useLeadFilters';
-import { isReminderDue, isClientLead, parseStampDate, relativeDay, absoluteDate, reminderState } from '../utils/leadActivity';
+import { isReminderDue, isClientLead, parseStampDate, relativeDay, absoluteDate, reminderState, parseNotesTimeline, todayYmd } from '../utils/leadActivity';
 import { buildGmailUrl } from '../outreach/templates';
 import { OverviewPanel } from './OverviewPanel';
 import { compareLeadScore, getLeadScore } from '../utils/leadScore';
@@ -125,6 +125,10 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
 
       {/* OVERVIEW — at-a-glance funnel + this-week + momentum, above the to-dos */}
       <OverviewPanel leads={leads} />
+
+      {/* Daily goals are derived from the same lead activity already saved in
+          the CRM. No second checklist and no double entry. */}
+      <DailyGoals leads={leads} />
 
       {/* Stat chips */}
       <div className="mb-6 flex flex-wrap items-center gap-2 tabular-nums">
@@ -398,6 +402,101 @@ export function TodayTab({ leads, logCall, markEmailed, onLeadClick }: TodayTabP
 }
 
 // ---- small building blocks -------------------------------------------------
+
+const DAILY_TARGETS = {
+  research: 10,
+  drafts: 10,
+  emails: 10,
+  followUps: 5,
+  replies: 1,
+} as const;
+
+/** Counts today's saved CRM activity. This deliberately reads the lead record
+ * instead of maintaining a second task database: logging the real work checks
+ * off the matching goal automatically. */
+function DailyGoals({ leads }: { leads: Lead[] }) {
+  const goals = useMemo(() => {
+    const today = todayYmd();
+    let research = 0;
+    let drafts = 0;
+    let emails = 0;
+    let followUps = 0;
+    let replies = 0;
+
+    for (const lead of leads) {
+      const entries = parseNotesTimeline(lead.notes).entries.filter(
+        (entry) => todayYmd(entry.date.getTime()) === today,
+      );
+      const texts = entries.map((entry) => entry.text.toLowerCase());
+
+      if (
+        lead.researchCreatedAt?.startsWith(today) ||
+        lead.researchDecisionAt?.startsWith(today) ||
+        texts.some((text) => /research|hiring signal/.test(text))
+      ) research++;
+
+      if (texts.some((text) => /draft staged|draft ready|gmail draft|prepared draft/.test(text))) {
+        drafts++;
+      }
+
+      const contactedToday = lead.lastContactedAt?.startsWith(today) ?? false;
+      const emailedToday = texts.some((text) => /emailed|email sent|cold intro sent/.test(text));
+      if (contactedToday && (lead.status === 'emailed' || emailedToday)) emails++;
+      else if (emailedToday) emails++;
+
+      if (texts.some((text) => /follow[- ]?up|bump sent|floating this back up/.test(text))) {
+        followUps++;
+      }
+
+      if (
+        ['interested', 'quote', 'sample', 'po'].includes(lead.status) &&
+        texts.some((text) => /replied|responded|interested|rfq|quote received|trial/.test(text))
+      ) replies++;
+    }
+
+    return [
+      { label: 'Companies researched', value: research, target: DAILY_TARGETS.research },
+      { label: 'Drafts prepared', value: drafts, target: DAILY_TARGETS.drafts },
+      { label: 'Emails sent', value: emails, target: DAILY_TARGETS.emails },
+      { label: 'Follow-ups sent', value: followUps, target: DAILY_TARGETS.followUps },
+      { label: 'Replies / opportunities', value: replies, target: DAILY_TARGETS.replies },
+    ];
+  }, [leads]);
+
+  const completed = goals.filter((goal) => goal.value >= goal.target).length;
+
+  return (
+    <section className="mb-6 rounded-2xl bg-apex-850 p-4 shadow-lg shadow-black/40 ring-1 ring-white/10 md:p-5" aria-label="Today's sales goals">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-widest text-slate-500">
+          <Target size={13} /> Today's goals
+        </div>
+        <span className="text-xs tabular-nums text-slate-400">{completed}/{goals.length} complete</span>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        {goals.map((goal) => {
+          const done = goal.value >= goal.target;
+          const pct = Math.min(100, Math.round((goal.value / goal.target) * 100));
+          return (
+            <div key={goal.label} className={`rounded-xl p-3 ring-1 ${done ? 'bg-emerald-500/10 ring-emerald-500/30' : 'bg-apex-800 ring-white/10'}`}>
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[11px] leading-4 text-slate-400">{goal.label}</span>
+                {done && <Check size={14} className="shrink-0 text-emerald-300" />}
+              </div>
+              <div className={`mt-2 text-xl font-semibold tabular-nums ${done ? 'text-emerald-200' : 'text-slate-100'}`}>
+                {goal.value}<span className="text-xs font-normal text-slate-500">/{goal.target}</span>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/25">
+                <div className={`h-full rounded-full ${done ? 'bg-emerald-400' : 'bg-orange-400'}`} style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-[11px] text-slate-500">Updates automatically when activity is logged on a lead. Bounces do not count as replies or opportunities.</p>
+    </section>
+  );
+}
 
 function StatChip({
   label,
