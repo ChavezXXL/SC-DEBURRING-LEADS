@@ -19,20 +19,36 @@ export function isWarmLead(lead: Lead): boolean {
 }
 
 export const COLD_TEMPLATE: OutreachTemplate = {
-  subject: 'deburring help when your bench gets backed up',
+  subject: 'Precision deburring support',
   body:
-    "Hi,\n\nMy name's Santiago — I run SC Precision Deburring in Pacoima. We do hand and microscope deburring, flash and heavy burr grinding, and edge finishing on already-machined aerospace parts, titanium through aluminum.\n\nTwo things we're known for: the quality, and how fast it goes back out. Most of our customers come to us because they needed the parts yesterday — we move quick and they still leave done right. Honestly, we're one of the better shops around here for this.\n\nIf you ever get backed up, or have a batch you'd rather hand off, we're here. We pick up and drop off anywhere in SoCal.\n\nSantiago Chavez\nSC Precision Deburring · Pacoima\n(818) 389-4234 · scprecisiondeburring.com",
+    'Hi,\n\nSantiago here, owner of SC Deburring. I wanted to reach out and introduce my company. We’re a precision deburring company here in Southern California.\n\nI saw your team handles [specific parts or manufacturing work]. We specialize in precision hand and microscope deburring, internal intersections, edge breaks, blending, and finishing on difficult machined parts.\n\nI’m sure your team already has deburring handled in-house or through a supplier you trust. If you ever get backed up, need a faster turnaround, or have a difficult part that needs extra attention, give us a shot. We’re known for high-quality work and fast turnaround.\n\nFeel free to look at our website and get a better idea of our work.\n\nThank you!\n\nSantiago Chavez\nPresident, SC DEBURRING LLC\n(818) 389-4234\nSALES@SCPRECISIONDEBURRING.COM\nhttps://scprecisiondeburring.com/',
 };
 
 export const WARM_TEMPLATE: OutreachTemplate = {
   subject: 'checking in from SC Precision Deburring',
   body:
-    "Hi,\n\nIt's Santiago at SC Precision Deburring in Pacoima — we did some deburring for you a while back and I wanted to check in. What are you running these days?\n\nIf deburring or finishing is piling up, we've got the capacity right now and we're quick — happy to grab your next batch whenever it's useful.\n\nSantiago Chavez\nSC Precision Deburring · Pacoima\n(818) 389-4234 · scprecisiondeburring.com",
+    'Hi,\n\nSantiago here from SC Deburring. I wanted to check in and see how things are going.\n\nIf your team gets backed up or has a difficult part that needs extra attention, keep us in mind. We’d be happy to take a look.\n\nThank you!\n\nSantiago Chavez\nPresident, SC DEBURRING LLC\n(818) 389-4234\nSALES@SCPRECISIONDEBURRING.COM\nhttps://scprecisiondeburring.com/',
 };
+
+/** Keep CRM-generated cold drafts factual and company-specific. */
+function coldTemplateFor(lead: Lead): OutreachTemplate {
+  const companyLine = lead.parts?.trim()
+    ? `I saw the type of work ${lead.co} handles, including ${lead.parts.trim()}`
+    : `I saw the precision manufacturing work ${lead.co} handles.`;
+  const factualLine = companyLine.endsWith('.') ? companyLine : `${companyLine}.`;
+
+  return {
+    ...COLD_TEMPLATE,
+    body: COLD_TEMPLATE.body.replace(
+      'I saw your team handles [specific parts or manufacturing work].',
+      factualLine,
+    ),
+  };
+}
 
 /** Gmail compose URL for this lead, warm/cold template picked by status. */
 export function buildGmailUrl(lead: Lead): string {
-  const t = isWarmLead(lead) ? WARM_TEMPLATE : COLD_TEMPLATE;
+  const t = isWarmLead(lead) ? WARM_TEMPLATE : coldTemplateFor(lead);
   return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
     lead.em,
   )}&su=${encodeURIComponent(t.subject)}&body=${encodeURIComponent(t.body)}`;
