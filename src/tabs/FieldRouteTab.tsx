@@ -648,6 +648,12 @@ export function FieldRouteTab({
               <LegendDot color="#10b981" label="Shop" />
               <LegendDot color="#f97316" label="Priority prospect" />
               <LegendDot color="#3b82f6" label="Tier 2" />
+              <span className="inline-flex items-center gap-1.5" title="Solid = we have the real street address, so the pin is the actual building. Hollow = city only, so the pin is just the city centre.">
+                <span className="h-2.5 w-2.5 rounded-full bg-slate-400 ring-2 ring-black/40" />
+                exact address
+                <span className="ml-1.5 h-2.5 w-2.5 rounded-full border-2 border-slate-400" />
+                city only
+              </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="grid h-4 w-4 place-items-center rounded-full bg-orange-500 text-[8px] font-bold text-black">1</span>
                 Route stop

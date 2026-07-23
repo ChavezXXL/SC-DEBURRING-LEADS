@@ -27,13 +27,77 @@ const miles = (a: [number, number], b: [number, number]) => {
 };
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function geocode(q: string): Promise<{ lat: number; lng: number; label: string } | null> {
+async function geocodeOnce(q: string): Promise<{ lat: number; lng: number; label: string } | null> {
   const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=us&addressdetails=1&q=${encodeURIComponent(q)}`;
   const r = await fetch(url, { headers: { 'User-Agent': UA } });
   if (!r.ok) return null;
   const j: any = await r.json();
   if (!Array.isArray(j) || !j.length) return null;
   return { lat: parseFloat(j[0].lat), lng: parseFloat(j[0].lon), label: j[0].display_name };
+}
+
+/** Build progressively looser queries. Unit/suite designators ("Unit 12",
+ * "Suite C", "Units H-J", "#4") are the main reason a real address fails to
+ * geocode, so strip those first, then drop the ZIP. */
+function queryLadder(address: string, city: string): string[] {
+  const a = address.trim();
+  const noUnit = a
+    .replace(/,?\s*(unit|units|ste|suite|bldg|building|#)\s*[a-z0-9\-]+/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/,\s*,/g, ',')
+    .trim();
+  const noZip = noUnit.replace(/\s*\b\d{5}(-\d{4})?\b\s*$/, '').replace(/,\s*$/, '').trim();
+  // street + city + CA only
+  const street = noZip.split(',')[0].trim();
+  const cityClean = (city || '').replace(/,?\s*CA$/i, '').trim();
+  const streetCity = cityClean ? `${street}, ${cityClean}, CA` : `${street}, CA`;
+  // Valencia/Newhall/Saugus are neighbourhoods of Santa Clarita — OSM often
+  // only knows the parent city.
+  const alt = /valencia|newhall|saugus|canyon country/i.test(cityClean)
+    ? `${street}, Santa Clarita, CA`
+    : '';
+  // Last resort: drop the house number and land on the STREET. Still far more
+  // useful for driving than a city-centre blob, since OSM's US house-number
+  // coverage is patchy even where the street itself exists.
+  const noNumber = street.replace(/^\s*\d+[a-z]?\s+/i, '').trim();
+  const streetOnly = noNumber && cityClean ? `${noNumber}, ${cityClean}, CA` : '';
+  return [...new Set([a, noUnit, noZip, streetCity, alt, streetOnly].filter(Boolean))];
+}
+
+/** Nominatim's STRUCTURED search. Far more reliable than free text for US
+ * industrial-park streets ("29170 Avenue Penn, Valencia") that free-form
+ * matching fumbles. */
+async function geocodeStructured(address: string, city: string): Promise<{ lat: number; lng: number; label: string } | null> {
+  const noUnit = address
+    .replace(/,?\s*(unit|units|ste|suite|bldg|building|#)\s*[a-z0-9\-]+/gi, '')
+    .trim();
+  const parts = noUnit.split(',').map((p) => p.trim()).filter(Boolean);
+  const street = parts[0] || '';
+  const cityGuess = city || parts[1] || '';
+  const zipMatch = noUnit.match(/\b(\d{5})(-\d{4})?\b/);
+  if (!street) return null;
+  const p = new URLSearchParams({ format: 'jsonv2', limit: '1', addressdetails: '1', country: 'US', state: 'CA', street });
+  if (cityGuess) p.set('city', cityGuess.replace(/,?\s*CA$/i, '').trim());
+  if (zipMatch) p.set('postalcode', zipMatch[1]);
+  const r = await fetch('https://nominatim.openstreetmap.org/search?' + p.toString(), { headers: { 'User-Agent': UA } });
+  if (!r.ok) return null;
+  const j: any = await r.json();
+  if (!Array.isArray(j) || !j.length) return null;
+  return { lat: parseFloat(j[0].lat), lng: parseFloat(j[0].lon), label: j[0].display_name };
+}
+
+async function geocode(address: string, city: string, sleepMs: number): Promise<{ lat: number; lng: number; label: string } | null> {
+  const tries = queryLadder(address, city);
+  for (let i = 0; i < tries.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, sleepMs));
+    try {
+      const hit = await geocodeOnce(tries[i]);
+      if (hit) return hit;
+    } catch { /* try the next, looser form */ }
+  }
+  // Last resort: structured lookup.
+  await new Promise((r) => setTimeout(r, sleepMs));
+  try { return await geocodeStructured(address, city); } catch { return null; }
 }
 
 async function main() {
@@ -54,9 +118,8 @@ async function main() {
   console.log(`MODE: ${commit ? 'COMMIT (writing lat/lng)' : 'DRY-RUN (no writes)'} | candidates: ${leads.length}\n`);
   let hit = 0, rejected = 0, miss = 0;
   for (const l of leads) {
-    const q = l.address?.trim() ? `${l.address}, ${l.city || ''} CA` : `${l.co}, ${l.city || ''}, CA, USA`;
     let res: { lat: number; lng: number; label: string } | null = null;
-    try { res = await geocode(q); } catch { res = null; }
+    try { res = await geocode(l.address, l.city || '', 1100); } catch { res = null; }
     await sleep(1100); // Nominatim: max ~1 req/sec
 
     const centroid = CITY[norm(l.city)];

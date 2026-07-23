@@ -80,14 +80,26 @@ function spreadCoords(all: MapPoint[]): Map<string, Coords> {
   return out;
 }
 
-function dotIcon(color: string, selected: boolean): L.DivIcon {
+/** SOLID dot = we have the company's real street address, so the pin is the
+ * actual building. HOLLOW ring = we only know the city, so the pin is a city
+ * centre guess — the map should not imply precision it doesn't have. */
+function dotIcon(color: string, selected: boolean, exact: boolean): L.DivIcon {
   const size = selected ? 18 : 14;
-  const ring = selected ? `,0 0 0 4px ${color}55` : `,0 0 0 1px ${color}88`;
+  const sel = selected ? `,0 0 0 4px ${color}55` : '';
+  if (exact) {
+    return L.divIcon({
+      className: '',
+      html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:9999px;background:${color};border:2px solid ${INK};box-shadow:0 1px 3px rgba(0,0,0,.6),0 0 0 1px ${color}88${sel}"></span>`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+    });
+  }
+  const s = size + 2;
   return L.divIcon({
     className: '',
-    html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:9999px;background:${color};border:2px solid ${INK};box-shadow:0 1px 3px rgba(0,0,0,.6)${ring}"></span>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    html: `<span style="display:block;width:${s}px;height:${s}px;border-radius:9999px;background:${color}1f;border:2.5px solid ${color};opacity:.9;box-shadow:0 1px 3px rgba(0,0,0,.45)${sel}"></span>`,
+    iconSize: [s, s],
+    iconAnchor: [s / 2, s / 2],
   });
 }
 
@@ -181,9 +193,22 @@ export function RouteMap({ shop, points, route, selectedId, onSelect, className 
     const t = setTimeout(() => map.invalidateSize(), 60);
     const ro = new ResizeObserver(() => map.invalidateSize());
     ro.observe(container);
+
+    // Scroll-to-zoom starts OFF so scrolling the page past the map doesn't get
+    // hijacked — but that made zooming a chore. Clicking or touching the map is
+    // clear intent, so turn it on then; turn it back off when the pointer leaves.
+    const enableScroll = () => map.scrollWheelZoom.enable();
+    const disableScroll = () => map.scrollWheelZoom.disable();
+    map.on('click', enableScroll);
+    map.on('focus', enableScroll);
+    container.addEventListener('touchstart', enableScroll, { passive: true });
+    map.on('mouseout', disableScroll);
+    map.on('blur', disableScroll);
+
     return () => {
       clearTimeout(t);
       ro.disconnect();
+      container.removeEventListener('touchstart', enableScroll);
       map.remove();
       mapRef.current = null;
       layerRef.current = null;
@@ -239,7 +264,8 @@ export function RouteMap({ shop, points, route, selectedId, onSelect, className 
       } else {
         bounds.push(p.coords);
         const color = p.tier === 2 ? BLUE : ORANGE;
-        const makeIcon = (s: boolean) => dotIcon(color, s);
+        const isExact = !!p.exact;
+        const makeIcon = (s: boolean) => dotIcon(color, s, isExact);
         const m = L.marker(p.coords, { icon: makeIcon(p.id === sel), zIndexOffset: p.id === sel ? 500 : 0 });
         m.bindTooltip(tip(p), { direction: 'top', offset: [0, -12], opacity: 0.95 });
         m.on('click', () => onSelectRef.current(p.id));
